@@ -1,16 +1,16 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import RegisterForm from './components/RegisterForm';
+import LoginForm from './components/LoginForm';
 
 function App() {
-  const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    axios.get("http://localhost:5000/")
-      .then((response) => setMessage(response.data))
-      .catch((error) => console.error(error));
-  }, []);
-
-  return <h1>{message}</h1>;
+    return (
+        <Router>
+            <Routes>
+                <Route path="/register" element={<RegisterForm />} />
+                <Route path="/login" element={<LoginForm />} />
+            </Routes>
+        </Router>
+    );
 }
 
 export default App;
