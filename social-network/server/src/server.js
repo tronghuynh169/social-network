@@ -12,5 +12,5 @@ app.use(express.json());
 app.use(cors());
 
 route(app);
-
+console.log('JWT_SECRET:', process.env.JWT_SECRET);
 app.listen(5000, () => console.log('🚀 Server running on port 5000'));

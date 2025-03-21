@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-exports.authMiddleware = (req, res, next) => {
+const auth = (req, res, next) => {
     const token = req.header('Authorization');
     if (!token)
         return res.status(401).json({ message: 'Không có quyền truy cập' });
@@ -13,3 +13,5 @@ exports.authMiddleware = (req, res, next) => {
         res.status(401).json({ message: 'Token không hợp lệ' });
     }
 };
+
+module.exports = auth; // ✅ Export mặc định

@@ -48,3 +48,7 @@ exports.login = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+//Get user
+exports.getUser = (req, res) => {
+    res.json({ message: 'User authenticated', userId: req.user.id });
+};
