@@ -1,5 +1,5 @@
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import ProtectedRoute from "./components/ProtectedRoute";
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import PrivateRoute from "./routes/PrivateRoute.jsx";
 import Register from './pages/Register.jsx';
 import Login from './pages/Login.jsx';
 import Home from './pages/Home'
@@ -14,9 +14,9 @@ function App() {
             <Route
             path="/"
             element={
-                <ProtectedRoute>
+                <PrivateRoute>
                 <Home />
-                </ProtectedRoute>
+                </PrivateRoute>
                 }
             />
             </Routes>
