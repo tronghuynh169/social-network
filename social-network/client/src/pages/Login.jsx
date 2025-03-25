@@ -55,7 +55,7 @@ const Login = () => {
         onChange={handleChange}
         required
       />
-      <button type="submit" disabled={loading}>
+      <button type="submit" disabled={loading} className='text-white-500 bg-white p-0'>
         {loading ? 'Đang đăng nhập...' : 'Đăng Nhập'}
       </button>
       {message && <p>{message}</p>}
