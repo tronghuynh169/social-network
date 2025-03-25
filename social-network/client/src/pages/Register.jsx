@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { register } from '../api/auth';
+import AuthLayout from "../components/layout/AuthLayout";
 
 const Register = () => {
     const [formData, setFormData] = useState({
@@ -24,31 +25,36 @@ const Register = () => {
     };
 
     return (
-        <form onSubmit={handleSubmit}>
-            <input
-                type="text"
-                name="username"
-                placeholder="Username"
-                onChange={handleChange}
-                required
-            />
-            <input
-                type="email"
-                name="email"
-                placeholder="Email"
-                onChange={handleChange}
-                required
-            />
-            <input
-                type="password"
-                name="password"
-                placeholder="Password"
-                onChange={handleChange}
-                required
-            />
-            <button type="submit">Đăng Ký</button>
-            {message && <p>{message}</p>}
-        </form>
+        <AuthLayout>
+            <form onSubmit={handleSubmit}>
+                <input
+                    className="text-black"
+                    type="text"
+                    name="username"
+                    placeholder="Username"
+                    onChange={handleChange}
+                    required
+                />
+                <input
+                    className="text-black"
+                    type="email"
+                    name="email"
+                    placeholder="Email"
+                    onChange={handleChange}
+                    required
+                />
+                <input
+                    className="text-black"
+                    type="password"
+                    name="password"
+                    placeholder="Password"
+                    onChange={handleChange}
+                    required
+                />
+                <button className="h-[32px] w-[64px]" type="submit">Đăng Ký</button>
+                {message && <p>{message}</p>}
+            </form>
+        </AuthLayout>
     );
 };
 

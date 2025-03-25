@@ -1,27 +1,23 @@
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import PrivateRoute from "./routes/PrivateRoute.jsx";
-import Register from './pages/Register.jsx';
-import Login from './pages/Login.jsx';
-import Home from './pages/Home'
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { routes } from "./routes";
 
 function App() {
+  return (
+    <Router>
+      <Routes>
+        {routes.map(({ path, element, children }, index) => (
+          <Route key={index} path={path} element={element}>
+            {children.map(({ path, element: ChildElement }, childIndex) => (
+              <Route key={childIndex} path={path} element={ChildElement} />
+            ))}
+          </Route>
+        ))}
 
-    return (
-        <Router>
-            <Routes>
-            <Route path="/register" element={<Register />}/>
-            <Route path="/login" element={<Login />} />
-            <Route
-            path="/"
-            element={
-                <PrivateRoute>
-                    <Home />
-                </PrivateRoute>
-                }
-            />
-            </Routes>
-        </Router>
-    );
+        {/* Redirect nếu không tìm thấy route */}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </Router>
+  );
 }
 
 export default App;
