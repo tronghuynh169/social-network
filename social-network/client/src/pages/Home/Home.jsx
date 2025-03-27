@@ -10,8 +10,8 @@ const Home = () => {
 
   return (
     <div>
-      <h2>Home Page</h2>
-      <button onClick={handleLogout}>Logout</button>
+      <h2 className="text-white">Home Page</h2>
+      <button className="bg-white" onClick={handleLogout}>Logout</button>
     </div>
   );
 };
