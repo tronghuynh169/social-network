@@ -1,41 +1,63 @@
 import { Navigate, Outlet } from "react-router-dom";
-import Home from "~/pages/Home/Home";
+import DefaultLayout from "~/components/layout/DefaultLayout";
 import Login from "~/pages/AuthPage/Login";
 import Register from "~/pages/AuthPage/Register";
 import ForgotPassword from "~/pages/AuthPage/ForgotPassword";
-import ResetPassword from "~/pages/AuthPage/ResetPassword"; // Thêm ResetPassword
+import ResetPassword from "~/pages/AuthPage/ResetPassword";
+import HomePage from "~/pages/HomePage/HomePage";
+import FriendPage from "~/pages/FriendPage/FriendPage";
+import ProfilePage from "~/pages/ProfilePage/ProfilePage";
 
 // ✅ Route dành cho người ĐÃ đăng nhập
 const PrivateRoute = () => {
-  const token = localStorage.getItem("token");
-  return token ? <Outlet /> : <Navigate to="/login" />;
+    const token = localStorage.getItem("token");
+    return token ? (
+        <DefaultLayout>
+            <Outlet />
+        </DefaultLayout>
+    ) : (
+        <Navigate to="/login" />
+    );
 };
 
 // ✅ Route dành cho khách (chưa đăng nhập)
 const PublicRoute = () => {
-  const token = localStorage.getItem("token");
-  return token ? <Navigate to="/" /> : <Outlet />;
+    const token = localStorage.getItem("token");
+    return token ? <Navigate to="/" /> : <Outlet />;
 };
 
-// ✅ Danh sách routes
+// ✅ Danh sách routes với DefaultLayout được áp dụng đúng cách
 export const routes = [
-  {
-    path: "/", // Route dành cho người ĐÃ đăng nhập
-    element: <PrivateRoute />,
-    children: [{ path: "", element: <Home /> }],
-  },
-  {
-    path: "/", // Route dành cho khách (chưa đăng nhập)
-    element: <PublicRoute />,
-    children: [
-      { path: "login", element: <Login /> },
-      { path: "register", element: <Register /> },
-      { path: "forgot-password", element: <ForgotPassword /> },
-      { path: "reset-password/:token", element: <ResetPassword /> }, // Route đặt lại mật khẩu
-    ],
-  },
-  {
-    path: "*", // Trang 404 nếu route không tồn tại
-    element: <Navigate to="/" />,
-  },
+    {
+        path: "/", // Route dành cho người ĐÃ đăng nhập
+        element: <PrivateRoute />,
+        children: [
+            {
+                path: "",
+                element: <HomePage />,
+            },
+            {
+                path: "friend",
+                element: <FriendPage />,
+            },
+            {
+                path: "profile",
+                element: <ProfilePage />,
+            },
+        ],
+    },
+    {
+        path: "/", // Route dành cho khách (chưa đăng nhập)
+        element: <PublicRoute />,
+        children: [
+            { path: "login", element: <Login /> },
+            { path: "register", element: <Register /> },
+            { path: "forgot-password", element: <ForgotPassword /> },
+            { path: "reset-password/:token", element: <ResetPassword /> },
+        ],
+    },
+    {
+        path: "*", // Trang 404 nếu route không tồn tại
+        element: <Navigate to="/" />,
+    },
 ];

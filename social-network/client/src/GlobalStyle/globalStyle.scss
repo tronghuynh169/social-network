@@ -1,10 +1,11 @@
 @import url("https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap");
 // Định nghĩa các biến màu sắc, font-size, v.v.
 $primary-color: #000;
-
+$text-primary-color: #fff;
 body {
-  margin: 0;
-  padding: 0;
-  font-family: "Roboto", sans-serif;
-  background-color: $primary-color;
+    margin: 0;
+    padding: 0;
+    font-family: "Roboto", sans-serif;
+    background-color: $primary-color;
+    color: $text-primary-color;
 }

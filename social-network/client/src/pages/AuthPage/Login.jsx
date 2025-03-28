@@ -49,7 +49,7 @@ const Login = () => {
         <form className="bg-black text-white p-6 rounded-lg shadow-md w-96 text-center border border-gray-700 " onSubmit={handleSubmit}>
           {/* Logo Instagram */}
           <div className='p-2 mb-4'>
-            <h1 className="text-3xl font-semibold mb-3 font-serif">KONEX</h1>
+            <h1 className="text-3xl font-semibold mb-3 font-serif">MOCHI</h1>
           </div>
 
           {/* Input Username or Email */}

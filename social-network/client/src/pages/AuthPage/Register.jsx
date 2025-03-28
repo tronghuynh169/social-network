@@ -5,22 +5,25 @@ import AuthLayout from "~/components/layout/AuthLayout";
 
 const Register = () => {
     const navigate = useNavigate();
-    
+
     const [formData, setFormData] = useState({
-        fullName: '',
-        username: '',
-        email: '',
-        password: '',
-        dateOfBirth: { day: "", month: "", year: "" }
+        fullName: "",
+        username: "",
+        email: "",
+        password: "",
+        dateOfBirth: { day: "", month: "", year: "" },
     });
 
     const [errors, setErrors] = useState({});
-    const [message, setMessage] = useState('');
+    const [message, setMessage] = useState("");
 
     // Danh sách ngày, tháng, năm
     const days = Array.from({ length: 31 }, (_, i) => i + 1);
     const months = Array.from({ length: 12 }, (_, i) => i + 1);
-    const years = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i);
+    const years = Array.from(
+        { length: 100 },
+        (_, i) => new Date().getFullYear() - i
+    );
 
     // Kiểm tra dữ liệu hợp lệ
     const validateField = (name, value) => {
@@ -46,20 +49,20 @@ const Register = () => {
             }
         }
 
-        setErrors(prev => ({ ...prev, [name]: error }));
+        setErrors((prev) => ({ ...prev, [name]: error }));
     };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
-    
+
         // Nếu input rỗng thì xóa lỗi
         if (!value.trim()) {
-            setErrors(prev => ({ ...prev, [name]: "" }));
+            setErrors((prev) => ({ ...prev, [name]: "" }));
         } else {
             validateField(name, value);
         }
-        setErrors(prev => ({ ...prev, [name]: "" }));
+        setErrors((prev) => ({ ...prev, [name]: "" }));
     };
 
     const handleBlur = (e) => {
@@ -69,25 +72,32 @@ const Register = () => {
 
     const handleDateChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
+        setFormData((prev) => ({
             ...prev,
-            dateOfBirth: { ...prev.dateOfBirth, [name]: value }
+            dateOfBirth: { ...prev.dateOfBirth, [name]: value },
         }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-    
+
         // Kiểm tra nếu có lỗi từ phía client
-        if (Object.values(errors).some(error => error)) return;
-        if (!formData.dateOfBirth.day || !formData.dateOfBirth.month || !formData.dateOfBirth.year) {
-            setErrors(prev => ({ ...prev, dateOfBirth: "Vui lòng chọn đầy đủ ngày sinh!" }));
+        if (Object.values(errors).some((error) => error)) return;
+        if (
+            !formData.dateOfBirth.day ||
+            !formData.dateOfBirth.month ||
+            !formData.dateOfBirth.year
+        ) {
+            setErrors((prev) => ({
+                ...prev,
+                dateOfBirth: "Vui lòng chọn đầy đủ ngày sinh!",
+            }));
             return;
         }
-    
+
         const { day, month, year } = formData.dateOfBirth;
         const formattedDate = new Date(year, month - 1, day);
-    
+
         try {
             await register({ ...formData, dateOfBirth: formattedDate });
             setMessage("Đăng ký thành công!");
@@ -100,13 +110,17 @@ const Register = () => {
             }
         }
     };
-    
 
     return (
         <AuthLayout>
             <div className="flex items-center justify-center">
-                <form onSubmit={handleSubmit} className="p-6 bg-black rounded-lg shadow-lg w-96 border border-gray-700">
-                    <h2 className="text-white text-3xl font-bold text-center mb-6">KONEX</h2>
+                <form
+                    onSubmit={handleSubmit}
+                    className="p-6 bg-black rounded-lg shadow-lg w-96 border border-gray-700"
+                >
+                    <h2 className="text-white text-3xl font-bold text-center mb-6">
+                        MOCHI
+                    </h2>
 
                     {/* Họ và tên */}
                     <input
@@ -127,7 +141,11 @@ const Register = () => {
                             onChange={handleDateChange}
                         >
                             <option value="">Ngày</option>
-                            {days.map(d => <option key={d} value={d}>{d}</option>)}
+                            {days.map((d) => (
+                                <option key={d} value={d}>
+                                    {d}
+                                </option>
+                            ))}
                         </select>
                         <select
                             name="month"
@@ -135,7 +153,11 @@ const Register = () => {
                             onChange={handleDateChange}
                         >
                             <option value="">Tháng</option>
-                            {months.map(m => <option key={m} value={m}>{m}</option>)}
+                            {months.map((m) => (
+                                <option key={m} value={m}>
+                                    {m}
+                                </option>
+                            ))}
                         </select>
                         <select
                             name="year"
@@ -143,12 +165,24 @@ const Register = () => {
                             onChange={handleDateChange}
                         >
                             <option value="">Năm</option>
-                            {years.map(y => <option key={y} value={y}>{y}</option>)}
+                            {years.map((y) => (
+                                <option key={y} value={y}>
+                                    {y}
+                                </option>
+                            ))}
                         </select>
                     </div>
-                    {errors.dateOfBirth && <p className="text-red-500 text-sm mb-2">{errors.dateOfBirth}</p>}
+                    {errors.dateOfBirth && (
+                        <p className="text-red-500 text-sm mb-2">
+                            {errors.dateOfBirth}
+                        </p>
+                    )}
 
-                    {errors.username && <p className="text-red-500 text-sm mb-1">{errors.username}</p>}
+                    {errors.username && (
+                        <p className="text-red-500 text-sm mb-1">
+                            {errors.username}
+                        </p>
+                    )}
                     {/* Tài khoản */}
                     <input
                         className="w-full p-3 mb-3 border border-gray-700 bg-black text-white rounded-md focus:outline-none focus:border-gray-500"
@@ -161,7 +195,11 @@ const Register = () => {
                         autoComplete="off" // Tắt autocomplete
                     />
                     {/* Email */}
-                    {errors.email && <p className="text-red-500 text-sm mb-1">{errors.email}</p>}
+                    {errors.email && (
+                        <p className="text-red-500 text-sm mb-1">
+                            {errors.email}
+                        </p>
+                    )}
                     <input
                         className="w-full p-3 mb-3 border border-gray-700 bg-black text-white rounded-md focus:outline-none focus:border-gray-500"
                         type="email"
@@ -173,7 +211,11 @@ const Register = () => {
                         autoComplete="off" // Tắt autocomplete
                     />
                     {/* Mật khẩu */}
-                    {errors.password && <p className="text-red-500 text-sm mb-1">{errors.password}</p>}
+                    {errors.password && (
+                        <p className="text-red-500 text-sm mb-1">
+                            {errors.password}
+                        </p>
+                    )}
                     <input
                         className="w-full p-3 mb-3 border border-gray-700 bg-black text-white rounded-md focus:outline-none focus:border-gray-500"
                         type="password"
@@ -186,32 +228,32 @@ const Register = () => {
 
                     {/* Nút đăng ký */}
                     <button
-                    type="submit"
-                    className={`w-full p-3 mt-3 text-white rounded-md transition duration-300 font-bold ${
-                        Object.values(errors).some(error => error) || 
-                        !formData.fullName || 
-                        !formData.username || 
-                        !formData.email || 
-                        !formData.password || 
-                        !formData.dateOfBirth.day || 
-                        !formData.dateOfBirth.month || 
-                        !formData.dateOfBirth.year
-                        ? "bg-blue-400" // Màu xanh nhạt khi chưa nhập đủ
-                        : "bg-blue-600 hover:bg-blue-500 text-white cursor-pointer" // Bình thường
-                    }`}
-                    disabled={
-                        Object.values(errors).some(error => error) || 
-                        !formData.fullName || 
-                        !formData.username || 
-                        !formData.email || 
-                        !formData.password || 
-                        !formData.dateOfBirth.day || 
-                        !formData.dateOfBirth.month || 
-                        !formData.dateOfBirth.year
-                    }
-                >
-                    Đăng ký
-                </button>
+                        type="submit"
+                        className={`w-full p-3 mt-3 text-white rounded-md transition duration-300 font-bold ${
+                            Object.values(errors).some((error) => error) ||
+                            !formData.fullName ||
+                            !formData.username ||
+                            !formData.email ||
+                            !formData.password ||
+                            !formData.dateOfBirth.day ||
+                            !formData.dateOfBirth.month ||
+                            !formData.dateOfBirth.year
+                                ? "bg-blue-400" // Màu xanh nhạt khi chưa nhập đủ
+                                : "bg-blue-600 hover:bg-blue-500 text-white cursor-pointer" // Bình thường
+                        }`}
+                        disabled={
+                            Object.values(errors).some((error) => error) ||
+                            !formData.fullName ||
+                            !formData.username ||
+                            !formData.email ||
+                            !formData.password ||
+                            !formData.dateOfBirth.day ||
+                            !formData.dateOfBirth.month ||
+                            !formData.dateOfBirth.year
+                        }
+                    >
+                        Đăng ký
+                    </button>
 
                     <div className="border-t border-gray-600 my-4"></div>
 
@@ -227,7 +269,11 @@ const Register = () => {
                     </p>
 
                     {/* Thông báo lỗi chung */}
-                    {message && <p className="text-red-500 mt-3 text-center">{message}</p>}
+                    {message && (
+                        <p className="text-red-500 mt-3 text-center">
+                            {message}
+                        </p>
+                    )}
                 </form>
             </div>
         </AuthLayout>
