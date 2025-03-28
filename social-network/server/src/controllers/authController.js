@@ -14,11 +14,21 @@ const transporter = nodemailer.createTransport({
 exports.register = async (req, res) => {
     try {
         const { username, email, password, fullName, dateOfBirth } = req.body;
+        let errors = {};
+
+        // Kiểm tra username đã tồn tại chưa
+        if (await User.findOne({ username })) {
+            errors.username = 'Tên tài khoản đã tồn tại';
+        }
 
         // Kiểm tra email đã tồn tại chưa
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ message: 'Email đã tồn tại' });
+        if (await User.findOne({ email })) {
+            errors.email = 'Email đã được sử dụng';
+        }
+
+        // Nếu có lỗi thì trả về luôn
+        if (Object.keys(errors).length > 0) {
+            return res.status(400).json({ errors });
         }
 
         // Mã hóa mật khẩu
@@ -30,13 +40,13 @@ exports.register = async (req, res) => {
             email,
             password: hashedPassword,
             fullName,
-            dateOfBirth, // Ngày sinh
+            dateOfBirth,
         });
 
         await newUser.save();
         res.status(201).json({ message: 'Đăng ký thành công!' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ message: 'Lỗi server, vui lòng thử lại sau.' });
     }
 };
 

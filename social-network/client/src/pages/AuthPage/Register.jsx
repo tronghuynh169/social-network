@@ -36,7 +36,7 @@ const Register = () => {
         if (name === "email") {
             const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
             if (!emailRegex.test(value)) {
-                error = "Email phải có định dạng @gmail.com!";
+                error = "Email phải có dạng abc@gmail.com và không dấu!";
             }
         }
 
@@ -52,6 +52,18 @@ const Register = () => {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
+    
+        // Nếu input rỗng thì xóa lỗi
+        if (!value.trim()) {
+            setErrors(prev => ({ ...prev, [name]: "" }));
+        } else {
+            validateField(name, value);
+        }
+        setErrors(prev => ({ ...prev, [name]: "" }));
+    };
+
+    const handleBlur = (e) => {
+        const { name, value } = e.target;
         validateField(name, value);
     };
 
@@ -65,24 +77,30 @@ const Register = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+    
+        // Kiểm tra nếu có lỗi từ phía client
         if (Object.values(errors).some(error => error)) return;
         if (!formData.dateOfBirth.day || !formData.dateOfBirth.month || !formData.dateOfBirth.year) {
             setErrors(prev => ({ ...prev, dateOfBirth: "Vui lòng chọn đầy đủ ngày sinh!" }));
             return;
         }
-
+    
         const { day, month, year } = formData.dateOfBirth;
-        const formattedDate = new Date(year, month - 1, day); // Chuyển đổi thành kiểu Date
-
+        const formattedDate = new Date(year, month - 1, day);
+    
         try {
             await register({ ...formData, dateOfBirth: formattedDate });
             setMessage("Đăng ký thành công!");
             setTimeout(() => navigate("/login"), 1500);
         } catch (error) {
-            setMessage(error.response?.data?.message || "Lỗi đăng ký");
+            if (error.response?.data?.errors) {
+                setErrors(error.response.data.errors); // Cập nhật toàn bộ lỗi từ backend
+            } else {
+                setMessage(error.response?.data?.message || "Lỗi đăng ký");
+            }
         }
     };
+    
 
     return (
         <AuthLayout>
@@ -98,6 +116,7 @@ const Register = () => {
                         placeholder="Họ và tên"
                         onChange={handleChange}
                         required
+                        autoComplete="off" // Tắt autocomplete
                     />
 
                     {/* Ngày sinh */}
@@ -129,6 +148,7 @@ const Register = () => {
                     </div>
                     {errors.dateOfBirth && <p className="text-red-500 text-sm mb-2">{errors.dateOfBirth}</p>}
 
+                    {errors.username && <p className="text-red-500 text-sm mb-1">{errors.username}</p>}
                     {/* Tài khoản */}
                     <input
                         className="w-full p-3 mb-3 border border-gray-700 bg-black text-white rounded-md focus:outline-none focus:border-gray-500"
@@ -137,10 +157,11 @@ const Register = () => {
                         placeholder="Tên tài khoản"
                         onChange={handleChange}
                         required
+                        onBlur={handleBlur} // Chỉ kiểm tra lỗi khi rời khỏi ô nhập
+                        autoComplete="off" // Tắt autocomplete
                     />
-                    {errors.username && <p className="text-red-500 text-sm mb-2">{errors.username}</p>}
-
                     {/* Email */}
+                    {errors.email && <p className="text-red-500 text-sm mb-1">{errors.email}</p>}
                     <input
                         className="w-full p-3 mb-3 border border-gray-700 bg-black text-white rounded-md focus:outline-none focus:border-gray-500"
                         type="email"
@@ -148,19 +169,20 @@ const Register = () => {
                         placeholder="Email (@gmail.com)"
                         onChange={handleChange}
                         required
+                        onBlur={handleBlur} // Chỉ kiểm tra lỗi khi rời khỏi ô nhập
+                        autoComplete="off" // Tắt autocomplete
                     />
-                    {errors.email && <p className="text-red-500 text-sm mb-2">{errors.email}</p>}
-
                     {/* Mật khẩu */}
+                    {errors.password && <p className="text-red-500 text-sm mb-1">{errors.password}</p>}
                     <input
-                        className="w-full p-3 mb-1 border border-gray-700 bg-black text-white rounded-md focus:outline-none focus:border-gray-500"
+                        className="w-full p-3 mb-3 border border-gray-700 bg-black text-white rounded-md focus:outline-none focus:border-gray-500"
                         type="password"
                         name="password"
                         placeholder="Mật khẩu"
                         onChange={handleChange}
+                        onBlur={handleBlur} // Chỉ kiểm tra lỗi khi rời khỏi ô nhập
                         required
                     />
-                    {errors.password && <p className="text-red-500 text-sm mb-2">{errors.password}</p>}
 
                     {/* Nút đăng ký */}
                     <button
