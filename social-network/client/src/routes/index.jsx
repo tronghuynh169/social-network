@@ -41,7 +41,7 @@ export const routes = [
                 element: <FriendPage />,
             },
             {
-                path: "profile",
+                path: ":slug",
                 element: <ProfilePage />,
             },
         ],
