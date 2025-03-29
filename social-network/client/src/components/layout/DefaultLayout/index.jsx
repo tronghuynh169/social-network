@@ -3,7 +3,7 @@ import SideBar from "../SideBar";
 function DefaultLayout({ children }) {
     return (
         <div className="flex min-h-screen">
-            <div className="w-1/6 border-r border-[#262626] border-opacity-10 shadow-[inset_-1px_0_0_rgba(255,255,255,0.2)]">
+            <div className="w-1/6 border-r border-[var(--secondary-color)] border-opacity-10 shadow-[inset_-1px_0_0_rgba(255,255,255,0.2)]">
                 <SideBar />
             </div>
 

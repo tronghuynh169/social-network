@@ -35,7 +35,7 @@ const DropdownMenu = () => {
             </button>
 
             {isOpen && (
-                <div className="absolute bottom-full left-0 mb-2 w-64 bg-[#262626] text-white rounded-lg shadow-lg z-10">
+                <div className="absolute bottom-full left-0 mb-2 w-64 bg-[var(--secondary-color)] text-white rounded-lg shadow-lg z-10">
                     <ul className="flex flex-col">
                         <MenuItem
                             icon={<Settings size={20} />}

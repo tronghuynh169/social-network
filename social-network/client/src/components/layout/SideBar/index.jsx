@@ -1,5 +1,5 @@
-import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useLocation, useParams } from "react-router-dom";
 import {
     Home,
     Search,
@@ -12,12 +12,28 @@ import {
 import Logo from "~/assets/img/Logo.png";
 import DropdownMenu from "~/components/ui/DropdownMenu";
 import { useUser } from "~/context/UserContext"; // Import context để lấy slug
+import { getProfileBySlug } from "~/api/profile";
 
 const Sidebar = () => {
+    const { slug } = useParams();
     const location = useLocation();
     const { user } = useUser(); // Lấy thông tin user từ context
+    const [profile, setProfile] = useState(null);
 
-    return (    
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const data = await getProfileBySlug(slug);
+                setProfile(data);
+            } catch (err) {
+                MessageCircle(err);
+            }
+        };
+
+        fetchProfile();
+    }, [slug]);
+
+    return (
         <div className="h-screen w-64 bg-black text-white p-4 flex flex-col">
             {/* Logo */}
             <Link to="/">
@@ -55,16 +71,19 @@ const Sidebar = () => {
                     <Link to={`/${user.slug}`}>
                         <MenuItem
                             icon={
-                                <img
-                                    src="https://via.placeholder.com/40"
-                                    className="rounded-full w-6 h-6"
-                                    alt="Avatar"
-                                />
+                                // Kiểm tra profile và avatar trước khi hiển thị
+                                profile && profile.avatar ? (
+                                    <img
+                                        src={profile.avatar}
+                                        className="rounded-full w-6 h-6"
+                                        alt="Avatar"
+                                    />
+                                ) : (
+                                    <Users size={24} />
+                                )
                             }
                             text="Trang cá nhân"
-                            active={
-                                location.pathname === `/${user.slug}`
-                            }
+                            active={location.pathname === `/${user.slug}`}
                         />
                     </Link>
                 ) : (

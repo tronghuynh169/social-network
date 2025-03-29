@@ -70,7 +70,7 @@ exports.register = async (req, res) => {
             fullName,
             slug, // Lưu slug vào Profile
             bio: "Chưa có giới thiệu.",
-            avatar: "https://example.com/default-avatar.png",
+            avatar: "/DefaultAvatar.png",
         });
 
         await newProfile.save();

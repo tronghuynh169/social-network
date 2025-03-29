@@ -9,3 +9,10 @@ body {
     background-color: $primary-color;
     color: $text-primary-color;
 }
+
+:root {
+    --primary-color: #000; 
+    --secondary-color: #262626;
+}
+
+// [var(--secondary-color)]
