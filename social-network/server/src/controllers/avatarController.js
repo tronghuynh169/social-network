@@ -24,38 +24,77 @@ const upload = multer({ storage: storage }).single("image");
 // ✅ API cập nhật avatar theo `slug`
 exports.updateAvatar = async (req, res) => {
     upload(req, res, async (err) => {
-        if (err)
-            return res.status(500).json({ message: "Lỗi upload", error: err });
+        if (err) {
+            return res.status(500).json({
+                success: false,
+                message: "Lỗi upload",
+                error: err,
+            });
+        }
 
-        if (!req.file)
-            return res
-                .status(400)
-                .json({ message: "Không có ảnh nào được gửi lên" });
-
-        const imageUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "Không có ảnh nào được gửi lên",
+            });
+        }
 
         try {
-            const { slug } = req.body; // Nhận slug từ request
+            const { slug } = req.body;
+            const newImageUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+            const defaultAvatar =
+                "http://localhost:5173/images/default-avatar.png";
 
-            // Tìm profile theo slug và cập nhật avatar
-            const profile = await Profile.findOneAndUpdate(
+            // 1. Tìm profile hiện tại để lấy avatar cũ
+            const currentProfile = await Profile.findOne({ slug });
+
+            if (!currentProfile) {
+                // Nếu không tìm thấy profile, xóa file vừa upload
+                fs.unlinkSync(path.join(uploadDir, req.file.filename));
+                return res.status(404).json({
+                    success: false,
+                    message: "Không tìm thấy profile",
+                });
+            }
+
+            // 2. Xóa avatar cũ (nếu có và không phải avatar mặc định)
+            if (
+                currentProfile.avatar &&
+                currentProfile.avatar !== defaultAvatar &&
+                currentProfile.avatar.includes("http://localhost:5000/uploads/")
+            ) {
+                const oldFilename = path.basename(currentProfile.avatar);
+                const oldPath = path.join(uploadDir, oldFilename);
+
+                if (fs.existsSync(oldPath)) {
+                    fs.unlinkSync(oldPath);
+                }
+            }
+
+            // 3. Cập nhật avatar mới
+            const updatedProfile = await Profile.findOneAndUpdate(
                 { slug },
-                { avatar: imageUrl },
+                { avatar: newImageUrl },
                 { new: true }
             );
 
-            if (!profile) {
-                return res
-                    .status(404)
-                    .json({ message: "Không tìm thấy profile" });
-            }
-
             res.status(200).json({
+                success: true,
                 message: "Cập nhật avatar thành công",
-                imageUrl: profile.avatar,
+                imageUrl: updatedProfile.avatar,
             });
         } catch (error) {
-            res.status(500).json({ message: "Lỗi server", error });
+            // Nếu có lỗi, xóa file vừa upload
+            if (req.file) {
+                fs.unlinkSync(path.join(uploadDir, req.file.filename));
+            }
+
+            console.error("Lỗi server:", error);
+            res.status(500).json({
+                success: false,
+                message: "Lỗi server",
+                error: error.message,
+            });
         }
     });
 };

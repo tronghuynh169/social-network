@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
     Menu,
     Settings,
@@ -13,6 +14,27 @@ import {
 const DropdownMenu = () => {
     const [isOpen, setIsOpen] = useState(false);
     const navigate = useNavigate();
+    const dropdownRef = useRef(null); // 🔥 Tạo ref cho dropdown
+
+    // Đóng menu nếu click ra ngoài
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(event.target)
+            ) {
+                setIsOpen(false);
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [isOpen]);
 
     const handleLogout = () => {
         localStorage.removeItem("token");
@@ -20,15 +42,13 @@ const DropdownMenu = () => {
     };
 
     return (
-        <div className="relative mt-auto">
-            {/* Nút 'Xem thêm' (không phải MenuItem) */}
+        <div className="relative mt-auto" ref={dropdownRef}>
+            {/* Nút 'Xem thêm' */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className={`
-          flex items-center space-x-3 p-2 cursor-pointer rounded-lg
-          hover:bg-gray-800
-          ${isOpen ? "bg-gray-800" : ""}
-        `}
+                className={`flex items-center space-x-3 p-2 cursor-pointer rounded-lg hover:bg-gray-800 ${
+                    isOpen ? "bg-gray-800" : ""
+                }`}
             >
                 <Menu size={24} />
                 <span>Xem thêm</span>
@@ -37,10 +57,12 @@ const DropdownMenu = () => {
             {isOpen && (
                 <div className="absolute bottom-full left-0 mb-2 w-64 bg-[var(--secondary-color)] text-white rounded-lg shadow-lg z-10">
                     <ul className="flex flex-col">
-                        <MenuItem
-                            icon={<Settings size={20} />}
-                            text="Cài đặt"
-                        />
+                        <Link to="/account/edit-profile">
+                            <MenuItem
+                                icon={<Settings size={20} />}
+                                text="Cài đặt"
+                            />
+                        </Link>
                         <MenuItem
                             icon={<Users size={20} />}
                             text="Hoạt động của bạn"

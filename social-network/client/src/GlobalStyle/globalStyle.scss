@@ -1,7 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap");
 // Định nghĩa các biến màu sắc, font-size, v.v.
 $primary-color: #000;
-$text-primary-color: #fff;
+$text-primary-color: #F5F5F5;
 body {
     margin: 0;
     padding: 0;
@@ -13,6 +13,9 @@ body {
 :root {
     --primary-color: #000; 
     --secondary-color: #262626;
+    --button-color: #363636;
+    --text-primary-color: #F5F5F5;
+    --text-secondary-color: #A8A8A8;
 }
 
 // [var(--secondary-color)]

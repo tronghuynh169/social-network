@@ -3,6 +3,7 @@ import Modal from "react-modal";
 import PreviewImageModal from "./PreviewImageModal";
 import ViewAvatarModal from "./ViewAvatarModal"; // Import modal mới
 import { updateAvatar, deleteAvatar } from "~/api/avatar";
+import { useUser } from "~/context/UserContext";
 
 Modal.setAppElement("#root");
 
@@ -14,6 +15,7 @@ const AvatarSyncModal = ({
     profileSlug,
     onAvatarUpdated,
 }) => {
+    const { setAvatar } = useUser();
     const fileInputRef = useRef(null);
     const [previewModalOpen, setPreviewModalOpen] = useState(false);
     const [previewImage, setPreviewImage] = useState(null);
@@ -42,8 +44,14 @@ const AvatarSyncModal = ({
 
         try {
             const result = await updateAvatar(selectedFile, profileSlug);
-            onAvatarUpdated(result.imageUrl);
-            alert("Cập nhật avatar thành công!");
+
+            // ✅ Sửa lỗi: Chỉ gọi `onAvatarUpdated`, không gọi `setAvatar`
+            if (onAvatarUpdated) {
+                onAvatarUpdated(result.imageUrl);
+            } else {
+                console.error("onAvatarUpdated is not defined");
+            }
+            setAvatar(result.imageUrl);
         } catch (error) {
             console.error("Lỗi khi cập nhật avatar:", error);
             alert("Lỗi khi cập nhật avatar!");
@@ -55,12 +63,24 @@ const AvatarSyncModal = ({
 
     // 🔴 Xử lý xóa ảnh khi bấm "Gỡ ảnh hiện tại"
     const handleRemoveAvatar = async () => {
+        // Đường dẫn avatar mặc định (phải khớp với giá trị trong CSDL)
+        const DEFAULT_AVATAR =
+            "http://localhost:5173/images/default-avatar.png";
+
+        // Kiểm tra nếu avatar hiện tại là mặc định
+        if (avatar === DEFAULT_AVATAR) {
+            alert("Không thể gỡ ảnh mặc định!");
+            return; // Dừng hàm ngay tại đây
+        }
+
         if (!window.confirm("Bạn có chắc muốn gỡ ảnh đại diện?")) return;
 
         try {
             await deleteAvatar(profileSlug);
-            onAvatarUpdated(null); // Cập nhật giao diện (xóa ảnh)
-            alert("Đã gỡ ảnh đại diện!");
+            if (typeof onAvatarUpdated === "function") {
+                onAvatarUpdated(DEFAULT_AVATAR); // Đặt lại avatar mặc định
+            }
+            setAvatar(DEFAULT_AVATAR);
         } catch (error) {
             console.error("Lỗi khi gỡ ảnh:", error);
             alert("Lỗi khi gỡ ảnh!");

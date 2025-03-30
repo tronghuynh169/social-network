@@ -7,6 +7,8 @@ import ResetPassword from "~/pages/AuthPage/ResetPassword";
 import HomePage from "~/pages/HomePage/HomePage";
 import FriendPage from "~/pages/FriendPage/FriendPage";
 import ProfilePage from "~/pages/ProfilePage/ProfilePage";
+import AccountLayout from "~/pages/Account/AccountLayout";
+import EditProfile from "~/pages/Account/EditProfile";
 
 // ✅ Route dành cho người ĐÃ đăng nhập
 const PrivateRoute = () => {
@@ -44,6 +46,21 @@ export const routes = [
                 path: ":slug",
                 element: <ProfilePage />,
             },
+            // {
+            //     path: "account",
+            //     element: <AccountLayout />,
+            //     children: [
+            //         {
+            //             index: true,
+            //             element: <Navigate to="edit-profile" replace />,
+            //         }, 
+            //         { path: "edit-profile", element: <EditProfile /> }, // Route bạn muốn truy cập
+            //     ],
+            // },
+            {
+                path: "account/edit-profile",
+                element: <EditProfile />,
+            },  
         ],
     },
     {

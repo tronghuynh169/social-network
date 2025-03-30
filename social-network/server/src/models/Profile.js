@@ -16,8 +16,8 @@ const ProfileSchema = new mongoose.Schema(
         location: { type: String, default: "" }, // Địa điểm
         isPrivate: { type: Boolean, default: false }, // Tài khoản riêng tư
 
-        followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Người theo dõi
-        following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Đang theo dõi
+        followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Profile" }], // Người theo dõi
+        following: [{ type: mongoose.Schema.Types.ObjectId, ref: "Profile" }], // Đang theo dõi
 
         posts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }], // Bài đăng
         savedPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }], // Bài đăng đã lưu

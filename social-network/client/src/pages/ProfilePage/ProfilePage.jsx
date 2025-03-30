@@ -1,22 +1,53 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { getProfileBySlug } from "~/api/profile";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { getProfileBySlug, getProfileByUsername } from "~/api/profile";
 import { Settings } from "lucide-react";
-import AvatarSyncModal from "~/components/ui/AvatarModal";
+import AvatarSyncModal from "~/components/ui/ProfileUI/AvatarModal";
+import { useUser } from "~/context/UserContext";
+import FollowButton from "~/components/ui/ProfileUI/FollowButton/FollowButton";
 
-const ProfilePage = () => {
+const ProfilePage = ({ setAvatar }) => {
     const { slug } = useParams();
     const navigate = useNavigate();
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+    const [isFollowing, setIsFollowing] = useState(false);
+    const { user } = useUser();
+    const isOwner = user?.slug === profile?.slug;
+    const [currentProfileId, setCurrentProfileId] = useState(null);
+
+    useEffect(() => {
+        const fetchCurrentProfile = async () => {
+            if (user?.username) {
+                const userProfile = await getProfileByUsername(user.username);
+                if (userProfile) {
+                    setCurrentProfileId(userProfile._id);
+                }
+            }
+        };
+    
+        fetchCurrentProfile();
+    }, [user]);
 
     useEffect(() => {
         const fetchProfile = async () => {
             try {
                 const data = await getProfileBySlug(slug);
                 setProfile(data);
+
+                // Kiểm tra followers với cả user._id và user.id (vì có thể khác nhau)
+                if (user && data?.followers) {
+                    const isUserFollowing = data.followers.some(
+                        (follower) =>
+                            follower._id === user._id ||
+                            follower._id === user.id ||
+                            follower === user._id ||
+                            follower === user.id
+                    );
+                    setIsFollowing(isUserFollowing);
+                }
             } catch (err) {
                 setError(err);
                 setTimeout(() => navigate("/"), 2000);
@@ -24,65 +55,96 @@ const ProfilePage = () => {
                 setLoading(false);
             }
         };
+        // 🚀 Đợi user có dữ liệu rồi mới gọi API
+        if (user !== null) {
+            fetchProfile();
+        }
 
         fetchProfile();
-    }, [slug, navigate]);
+    }, [slug, navigate, user]); // ⚠️ Thêm `user` để đảm bảo cập nhật khi user thay đổi
 
     if (loading) return <p className="text-white">Đang tải...</p>;
     if (error) return <p className="text-red-500">{error}</p>;
 
     return (
-        <div className="bg-black text-white min-h-screen flex flex-col items-center mt-3">
+        <div className="bg-black min-h-screen flex flex-col items-center mt-3">
             <div className="w-full max-w-4xl p-6 flex items-center space-x-8">
-                {/* Avatar - Bấm để mở modal */}
+                {/* Avatar */}
                 <div className="relative group">
                     <img
                         src={profile.avatar}
                         alt="Avatar"
-                        className="w-32 text-center h-32 mx-auto rounded-full border-4 border-gray-700 cursor-pointer transition-transform hover:scale-105 active:scale-95"
-                        onClick={() => setIsAvatarModalOpen(true)}
+                        className="w-32 h-32 mx-auto rounded-full border-4 border-gray-700 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                        onClick={
+                            isOwner ? () => setIsAvatarModalOpen(true) : null
+                        }
                     />
                 </div>
 
                 <div className="flex flex-col space-y-2 ml-10">
                     <div className="flex items-center space-x-4">
                         <h1 className="text-2xl">{profile.fullName}</h1>
-                        <button className="bg-gray-800 px-4 py-2 rounded-md">
-                            Chỉnh sửa trang cá nhân
-                        </button>
-                        <Settings className="cursor-pointer" />
+                        {isOwner ? (
+                            <Link to="/account/edit-profile">
+                                <button className="bg-[var(--button-color)] px-4 py-1 rounded-md cursor-pointer text-[14px]">
+                                    Chỉnh sửa trang cá nhân
+                                </button>
+                            </Link>
+                        ) : (
+                            <>
+                                {user && profile && (
+                                    <FollowButton
+                                        currentUserId={currentProfileId} // ✅ Chỉ render khi user đã có dữ liệu
+                                        profileId={profile._id}
+                                        isFollowing={isFollowing}
+                                        setIsFollowing={setIsFollowing}
+                                    />
+                                )}
+
+                                {/* Nút Nhắn tin */}
+                                <button className="bg-gray-700 text-white px-4 py-1 rounded-md cursor-pointer text-[14px]">
+                                    Nhắn tin
+                                </button>
+                            </>
+                        )}
+                        {isOwner && <Settings className="cursor-pointer" />}
                     </div>
-                    <div className="flex space-x-6 mt-4">
+                    <div className="flex space-x-6 mt-4 text-[var(--text-secondary-color)]">
                         <span>
-                            <strong>{profile.posts || 0}</strong> bài viết
+                            <strong className="text-[var(--text-primary-color)]">
+                                {profile.posts?.length || 0}
+                            </strong>{" "}
+                            bài viết
                         </span>
                         <span>
-                            <strong>{profile.followers || 0}</strong> người theo
-                            dõi
+                            <strong className="text-[var(--text-primary-color)]">
+                                {profile.followers?.length || 0}
+                            </strong>{" "}
+                            người theo dõi
                         </span>
                         <span>
                             Đang theo dõi{" "}
-                            <strong>{profile.following || 0}</strong> người dùng
+                            <strong className="text-[var(--text-primary-color)]">
+                                {profile.following?.length || 0}
+                            </strong>{" "}
+                            người dùng
                         </span>
                     </div>
-                    <span className="font-semibold mt-4">{profile.bio}</span>
+                    <span className="mt-4">{profile.bio}</span>
                 </div>
             </div>
 
+            {/* Avatar Modal */}
             <AvatarSyncModal
                 isOpen={isAvatarModalOpen}
                 onClose={() => setIsAvatarModalOpen(false)}
                 avatar={profile.avatar}
                 fullName={profile.fullName}
                 profileSlug={profile.slug}
-                onAvatarUpdated={(newAvatarUrl) =>
-                    setProfile((prevProfile) => ({
-                        ...prevProfile,
-                        avatar:
-                            newAvatarUrl ||
-                            "http://localhost:5173/images/default-avatar.png",
-                    }))
-                }
+                onAvatarUpdated={(newAvatar) => {
+                    setProfile((prev) => ({ ...prev, avatar: newAvatar }));
+                    setAvatar(newAvatar);
+                }}
             />
         </div>
     );
