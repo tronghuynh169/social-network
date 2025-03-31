@@ -19,27 +19,27 @@ const ProfilePage = ({ setAvatar }) => {
     const [currentProfileId, setCurrentProfileId] = useState(null);
 
     useEffect(() => {
-        const fetchCurrentProfile = async () => {
-            if (user?.username) {
-                const userProfile = await getProfileByUsername(user.username);
-                if (userProfile) {
-                    setCurrentProfileId(userProfile._id);
-                }
-            }
-        };
-    
-        fetchCurrentProfile();
-    }, [user]);
-
-    useEffect(() => {
-        const fetchProfile = async () => {
+        const fetchAllData = async () => {
             try {
-                const data = await getProfileBySlug(slug);
-                setProfile(data);
+                setLoading(true);
 
-                // Kiểm tra followers với cả user._id và user.id (vì có thể khác nhau)
-                if (user && data?.followers) {
-                    const isUserFollowing = data.followers.some(
+                // 1. Fetch current user profile nếu có user
+                if (user?.username) {
+                    const userProfile = await getProfileByUsername(
+                        user.username
+                    );
+                    if (userProfile) {
+                        setCurrentProfileId(userProfile._id);
+                    }
+                }
+
+                // 2. Fetch profile chính
+                const profileData = await getProfileBySlug(slug);
+                setProfile(profileData);
+
+                // 3. Kiểm tra trạng thái follow
+                if (user && profileData?.followers) {
+                    const isUserFollowing = profileData.followers.some(
                         (follower) =>
                             follower._id === user._id ||
                             follower._id === user.id ||
@@ -55,17 +55,27 @@ const ProfilePage = ({ setAvatar }) => {
                 setLoading(false);
             }
         };
-        // 🚀 Đợi user có dữ liệu rồi mới gọi API
-        if (user !== null) {
-            fetchProfile();
-        }
 
-        fetchProfile();
-    }, [slug, navigate, user]); // ⚠️ Thêm `user` để đảm bảo cập nhật khi user thay đổi
+        fetchAllData();
+    }, [slug, navigate, user]);
 
-    if (loading) return <p className="text-white">Đang tải...</p>;
-    if (error) return <p className="text-red-500">{error}</p>;
+    // Hiển thị loading page hoàn toàn
+    if (loading) {
+        return (
+            <div className="bg-black min-h-screen flex items-center justify-center">
+            </div>
+        );
+    }
 
+    if (error) {
+        return (
+            <div className="bg-black min-h-screen flex items-center justify-center">
+                <p className="text-red-500">{error.message}</p>
+            </div>
+        );
+    }
+
+    // Chỉ render giao diện khi tất cả dữ liệu đã sẵn sàng
     return (
         <div className="bg-black min-h-screen flex flex-col items-center mt-3">
             <div className="w-full max-w-4xl p-6 flex items-center space-x-8">
@@ -94,7 +104,7 @@ const ProfilePage = ({ setAvatar }) => {
                             <>
                                 {user && profile && (
                                     <FollowButton
-                                        currentUserId={currentProfileId} // ✅ Chỉ render khi user đã có dữ liệu
+                                        currentUserId={currentProfileId}
                                         profileId={profile._id}
                                         isFollowing={isFollowing}
                                         setIsFollowing={setIsFollowing}

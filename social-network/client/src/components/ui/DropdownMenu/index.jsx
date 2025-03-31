@@ -11,12 +11,11 @@ import {
     LogOut,
 } from "lucide-react";
 
-const DropdownMenu = () => {
+const DropdownMenu = ({ isCollapsed }) => {
     const [isOpen, setIsOpen] = useState(false);
     const navigate = useNavigate();
-    const dropdownRef = useRef(null); // 🔥 Tạo ref cho dropdown
+    const dropdownRef = useRef(null);
 
-    // Đóng menu nếu click ra ngoài
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (
@@ -43,15 +42,19 @@ const DropdownMenu = () => {
 
     return (
         <div className="relative mt-auto" ref={dropdownRef}>
-            {/* Nút 'Xem thêm' */}
+            {/* Nút Xem thêm */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className={`flex items-center space-x-3 p-2 cursor-pointer rounded-lg hover:bg-gray-800 ${
                     isOpen ? "bg-gray-800" : ""
-                }`}
+                } transition-all duration-300 ease-in-out`}
             >
                 <Menu size={24} />
-                <span>Xem thêm</span>
+                {!isCollapsed && (
+                    <span className="transition-opacity duration-300">
+                        Xem thêm
+                    </span>
+                )}
             </button>
 
             {isOpen && (
@@ -95,10 +98,16 @@ const DropdownMenu = () => {
 };
 
 // Mỗi mục trong dropdown
-const MenuItem = ({ icon, text }) => (
-    <li className="flex items-center space-x-3 p-3 hover:bg-gray-800 cursor-pointer rounded-lg">
+const MenuItem = ({ icon, text, isCollapsed }) => (
+    <li
+        className={`flex items-center p-3 cursor-pointer rounded-lg hover:bg-gray-800 transition-all duration-300 ease-in-out ${
+            isCollapsed ? "justify-center" : "space-x-3"
+        }`}
+    >
         {icon}
-        <span>{text}</span>
+        {!isCollapsed && (
+            <span className="transition-opacity duration-300">{text}</span>
+        )}
     </li>
 );
 
