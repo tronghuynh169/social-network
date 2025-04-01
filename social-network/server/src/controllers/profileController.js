@@ -23,12 +23,13 @@ exports.getProfileBySlug = async (req, res) => {
 exports.updateProfileByUsername = async (req, res) => {
     try {
         const { bio, website, location, gender } = req.body;
-        const profile = await Profile.findOneAndUpdate({
-            bio,
-            website,
-            location,
-            gender,
-        });
+        const { username } = req.params; // ✅ Lấy username từ URL
+
+        const profile = await Profile.findOneAndUpdate(
+            { username }, // 🔥 Điều kiện tìm kiếm theo username
+            { bio, website, location, gender }, // 🔥 Dữ liệu cần cập nhật
+            { new: true } // 🔥 Trả về dữ liệu mới sau khi cập nhật
+        );
 
         if (!profile)
             return res.status(404).json({ message: "Profile không tồn tại!" });

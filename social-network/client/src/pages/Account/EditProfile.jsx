@@ -1,24 +1,27 @@
 import React, { useState, useEffect } from "react";
 import { useUser } from "~/context/UserContext";
-import { getProfileByUsername } from "~/api/profile";
+import { getProfileByUsername, updateProfileByUsername } from "~/api/profile";
 
 const EditProfile = () => {
     const { user } = useUser();
     const [profile, setProfile] = useState(null);
     const [bio, setBio] = useState("");
     const [gender, setGender] = useState("Khác");
+    const [originalProfile, setOriginalProfile] = useState(null);
+    const [website, setWebsite] = useState("");
+    const [location, setLocation] = useState("");
 
     useEffect(() => {
         const fetchProfileData = async () => {
             try {
                 const profileData = await getProfileByUsername(user.username);
-
                 if (profileData) {
                     setProfile(profileData);
-                    setBio(profileData.bio || ""); // Gán dữ liệu từ API vào state
+                    setOriginalProfile(profileData); // ✅ Lưu trạng thái ban đầu
+                    setBio(profileData.bio || "");
                     setGender(profileData.gender || "Khác");
-                } else {
-                    console.warn("⚠ API không trả về dữ liệu!");
+                    setWebsite(profileData.website || "");
+                    setLocation(profileData.location || "");
                 }
             } catch (err) {
                 console.error("❌ Lỗi khi lấy profile:", err);
@@ -27,10 +30,50 @@ const EditProfile = () => {
 
         if (user?.username) {
             fetchProfileData();
-        } else {
-            console.warn("⚠ user.username không tồn tại!");
         }
     }, [user?.username]);
+
+    const isChanged = () => {
+        return (
+            bio !== originalProfile?.bio ||
+            gender !== originalProfile?.gender ||
+            website !== originalProfile?.website ||
+            location !== originalProfile?.location
+        );
+    };
+
+    const handleSave = async () => {
+        if (!isChanged()) return;
+
+        try {
+            const updatedProfile = {
+                bio,
+                gender,
+                website,
+                location,
+            };
+
+            console.log(
+                "🚀 Dữ liệu sẽ gửi đi:",
+                JSON.stringify(updatedProfile)
+            ); // Log dữ liệu trước khi gửi
+
+            const response = await updateProfileByUsername(
+                user.username,
+                updatedProfile
+            );
+
+            console.log("✅ API phản hồi dữ liệu mới:", response);
+
+            setProfile(response); // Cập nhật state
+            setOriginalProfile(response);
+
+            alert("✅ Cập nhật thành công!");
+        } catch (err) {
+            console.error("❌ Lỗi khi cập nhật profile:", err);
+            alert("❌ Cập nhật thất bại!");
+        }
+    };
 
     if (!profile) {
         return <p>Đang tải dữ liệu...</p>;
@@ -67,28 +110,22 @@ const EditProfile = () => {
             </div>
 
             {/* Trang Web */}
-            <div className="mt-4">
-                <label className="block mt-8 mb-3 font-semibold">
-                    Trang web cá nhân
-                </label>
-                <input
-                    type="text"
-                    value={profile?.website || ""}
-                    placeholder="Trang web"
-                    className="w-full p-2 border-[1px] border-[var(--secondary-color)] rounded-md"
-                />
-            </div>
+            <input
+                type="text"
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+                placeholder="Trang web"
+                className="w-full p-2 border-[1px] border-[var(--secondary-color)] rounded-md"
+            />
 
             {/* Địa chỉ */}
-            <div className="mt-4">
-                <label className="block mt-8 mb-3 font-semibold">Địa chỉ</label>
-                <input
-                    type="text"
-                    value={profile?.location || ""}
-                    placeholder="Nhập địa chỉ"
-                    className="w-full p-2 border-[1px] border-[var(--secondary-color)] rounded-md"
-                />
-            </div>
+            <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="Nhập địa chỉ"
+                className="w-full p-2 border-[1px] border-[var(--secondary-color)] rounded-md"
+            />
 
             {/* Tiểu sử */}
             <div className="mt-4">
@@ -121,7 +158,15 @@ const EditProfile = () => {
 
             {/* Nút Lưu */}
             <div className="mt-6 text-end">
-                <button className="w-[40%] bg-blue-500 py-2 rounded-md rounded-2xl font-semibold hover:bg-blue-600 cursor-pointer">
+                <button
+                    className={`w-[40%] py-2 rounded-md rounded-2xl font-semibold cursor-pointer ${
+                        isChanged()
+                            ? "bg-blue-500 hover:bg-blue-600"
+                            : "bg-gray-400 cursor-not-allowed"
+                    }`}
+                    disabled={!isChanged()}
+                    onClick={handleSave}
+                >
                     Lưu thay đổi
                 </button>
             </div>

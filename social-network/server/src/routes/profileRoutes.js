@@ -29,7 +29,7 @@ router.get("/following/:profileId", getFollowing);
 
 // 📌 Lấy profile đầy đủ theo username
 router.get("/:slug", getProfileBySlug);
-router.put("/:username", auth, updateProfileByUsername);
+router.put("/:username", updateProfileByUsername);
 router.get("/username/:username", getProfileByUsername);
 router.get("/user/:userId", getProfileByUserId);
 

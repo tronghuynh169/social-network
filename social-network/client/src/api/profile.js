@@ -27,12 +27,27 @@ export const getProfileByUsername = async (username) => {
 
 export const getProfileByUserId = async (userId) => {
     try {
-        console.log("📌 Debug: Đang gọi API lấy profile từ userId:", userId);
         const response = await axios.get(`${API_URL}/profile/user/${userId}`);
-        console.log("✅ Debug: Kết quả API getProfileByUserId:", response.data);
         return response.data;
     } catch (error) {
         console.error("❌ Lỗi khi lấy profile từ userId:", error);
+        return null;
+    }
+};
+
+export const updateProfileByUsername = async (username, updatedProfile) => {
+    try {
+        const response = await axios.put(
+            `${API_URL}/${username}`,
+            updatedProfile,
+            {
+                headers: { "Content-Type": "application/json" }, // Đảm bảo đúng Content-Type
+            }
+        );
+
+        return response.data;
+    } catch (error) {
+        console.error("❌ Lỗi khi cập nhật profile:", error);
         return null;
     }
 };
