@@ -10,20 +10,26 @@ const ResetPassword = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (newPassword.length < 8) {
+            setMessage("Mật khẩu phải có ít nhất 8 ký tự!");
+            return;
+        }
+    
         console.log("Gửi request với password:", newPassword); // Debug
     
         try {
             const res = await resetPassword(token, newPassword);
             setMessage(res.data.message);
-            setTimeout(() => navigate("/login"), 2000);
+            setTimeout(() => navigate("/"), 2000);
         } catch (error) {
             setMessage(error.response?.data?.message || "Lỗi hệ thống!");
         }
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-900">
-            <form onSubmit={handleSubmit} className="p-6 bg-black text-white rounded-md w-96 shadow-lg">
+        <div className="flex items-center justify-center min-h-screen">
+            <form onSubmit={handleSubmit} className="p-6 bg-black text-white rounded-md w-96 shadow-lg border border-gray-700">
                 <h2 className="text-2xl font-bold text-center mb-4">Đặt Lại Mật Khẩu</h2>
                 <input
                     type="password"
@@ -35,11 +41,11 @@ const ResetPassword = () => {
                 />
                 <button
                     type="submit"
-                    className="w-full p-3 bg-blue-600 text-white rounded-md hover:bg-blue-500 transition duration-300 font-semibold"
+                    className="w-full p-3 bg-blue-600 text-white rounded-md hover:bg-blue-500 transition duration-300 font-semibold cursor-pointer"
                 >
                     Cập Nhật
                 </button>
-                {message && <p className="text-green-400 text-sm mt-2 text-center">{message}</p>}
+                {message && <p className="text-red-400 text-sm mt-2 text-center">{message}</p>}
             </form>
         </div>
     );

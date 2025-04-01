@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { forgotPassword } from "~/api/auth";
+import { Link } from "react-router-dom";
 
 const ForgotPassword = () => {
     const [email, setEmail] = useState("");
@@ -16,8 +17,8 @@ const ForgotPassword = () => {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-900">
-            <form onSubmit={handleSubmit} className="p-6 bg-black text-white rounded-md w-96 shadow-lg">
+        <div className="flex items-center justify-center min-h-screen border border-gray-700">
+            <form onSubmit={handleSubmit} className="p-6 bg-black text-white rounded-md w-96 shadow-lg border border-gray-700">
                 <h2 className="text-2xl font-bold text-center mb-4">Quên Mật Khẩu</h2>
                 <input
                     type="email"
@@ -29,11 +30,21 @@ const ForgotPassword = () => {
                 />
                 <button
                     type="submit"
-                    className="w-full p-3 bg-blue-600 text-white rounded-md hover:bg-blue-500 transition duration-300 font-semibold"
+                    className="w-full p-3 bg-blue-600 text-white rounded-md hover:bg-blue-500 transition duration-300 font-semibold cursor-pointer"
                 >
                     Gửi Yêu Cầu
                 </button>
-                {message && <p className="text-green-400 text-sm mt-2 text-center">{message}</p>}
+                {message && <p className="text-red-400 text-sm mt-2 text-center">{message}</p>}
+
+                <div className="border-t border-gray-600 my-4"></div>
+                <Link
+                        to="/"
+                        className="block mt-6 text-gray-400 hover:underline text-sm text-center"
+                    >
+                        Đăng nhập
+                </Link>
+
+    
             </form>
         </div>
     );
