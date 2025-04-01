@@ -15,7 +15,6 @@ import { useUser } from "~/context/UserContext";
 import SearchSidebar from "../../ui/SearchSidebarUI/SearchSidebar";
 
 const Sidebar = memo(({ onSearchToggle }) => {
-    console.log("Sidebar re-render");
     const location = useLocation();
     const { user, avatar } = useUser();
     const [isSearchOpen, setIsSearchOpen] = useState(false);

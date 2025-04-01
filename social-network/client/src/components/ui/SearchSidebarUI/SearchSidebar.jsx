@@ -2,7 +2,6 @@ import React, { useState, useEffect, memo, useRef } from "react";
 import { X } from "lucide-react";
 
 const SearchSidebar = memo(({ isOpen }) => {
-    console.log("SearchSidebar re-render");
     const [closing, setClosing] = useState(false);
     const timeoutRef = useRef(null);
 

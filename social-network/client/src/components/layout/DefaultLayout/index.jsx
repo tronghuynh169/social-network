@@ -5,7 +5,6 @@ import { useParams } from "react-router-dom";
 import ProfilePage from "~/pages/ProfilePage/ProfilePage";
 
 const DefaultLayout = memo(({ children }) => {
-    console.log("DefaultLayout re-render");
     const [avatar, setAvatar] = useState(null);
     const { slug } = useParams();
     const [isBorderHidden, setIsBorderHidden] = useState(false);

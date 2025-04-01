@@ -11,7 +11,6 @@ export const getProfileBySlug = async (slug) => {
         throw error;
     }
 };
-
 // Lấy profile theo username
 export const getProfileByUsername = async (username) => {
     try {
