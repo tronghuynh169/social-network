@@ -14,6 +14,12 @@ const ProfileSchema = new mongoose.Schema(
         avatar: { type: String, default: "" }, // Ảnh đại diện
         website: { type: String, default: "" }, // Link website cá nhân
         location: { type: String, default: "" }, // Địa điểm
+        gender: {
+            type: String,
+            enum: ["Nam", "Nữ", "Khác"],
+            default: "Khác",
+        },
+        
         isPrivate: { type: Boolean, default: false }, // Tài khoản riêng tư
 
         followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Profile" }], // Người theo dõi

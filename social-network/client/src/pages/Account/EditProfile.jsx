@@ -52,9 +52,9 @@ const EditProfile = () => {
                     onChange={(e) => setGender(e.target.value)}
                     className="w-full p-2 border-[1px] border-[var(--secondary-color)] rounded-md cursor-pointer"
                 >
+                    <option className="bg-[var(--secondary-color)]">Khác</option>
                     <option className="bg-[var(--secondary-color)]">Nam</option>
                     <option className="bg-[var(--secondary-color)]">Nữ</option>
-                    <option className="bg-[var(--secondary-color)]">Khác</option>
                 </select>
                 <p className="text-gray-400 text-sm mt-2">
                     Thông tin này sẽ không xuất hiện trên trang cá nhân công khai của bạn.

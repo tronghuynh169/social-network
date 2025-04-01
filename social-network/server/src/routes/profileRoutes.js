@@ -13,6 +13,7 @@ const {
     getFollowers,
     getFollowing,
     getProfileByUserId,
+    updateProfile,
 } = require("../controllers/profileController");
 
 // 🛠 Kiểm tra trạng thái theo dõi

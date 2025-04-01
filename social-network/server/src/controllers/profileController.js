@@ -22,12 +22,13 @@ exports.getProfileBySlug = async (req, res) => {
 // Cập nhật profile theo username
 exports.updateProfileByUsername = async (req, res) => {
     try {
-        const { fullName, bio, avatar } = req.body;
-        const profile = await Profile.findOneAndUpdate(
-            { username: req.params.username },
-            { fullName, bio, avatar },
-            { new: true }
-        );
+        const { bio, website, location, gender } = req.body;
+        const profile = await Profile.findOneAndUpdate({
+            bio,
+            website,
+            location,
+            gender,
+        });
 
         if (!profile)
             return res.status(404).json({ message: "Profile không tồn tại!" });
@@ -70,7 +71,9 @@ exports.checkFollowingStatus = async (req, res) => {
         const { user } = req.query;
         const profile = await Profile.findById(user);
         if (!profile) {
-            return res.status(404).json({ message: "User không tồn tại", isFollowing: false });
+            return res
+                .status(404)
+                .json({ message: "User không tồn tại", isFollowing: false });
         }
         const isFollowing = profile.following.includes(req.params.profileId);
         res.json({ isFollowing });
@@ -188,6 +191,39 @@ exports.getFollowing = async (req, res) => {
 
         res.status(200).json({ following: profile.following });
     } catch (err) {
+        res.status(500).json({ message: "Lỗi server", error: err.message });
+    }
+};
+
+exports.updateProfile = async (req, res) => {
+    try {
+        const { bio, website, location, gender } = req.body;
+        const { profileId } = req.params;
+
+        console.log("📌 Profile ID nhận được:", profileId);
+
+        // Kiểm tra profileId có hợp lệ không
+        if (!mongoose.Types.ObjectId.isValid(profileId)) {
+            return res.status(400).json({ message: "ID không hợp lệ" });
+        }
+
+        // Tìm profile và cập nhật
+        const updatedProfile = await Profile.findByIdAndUpdate(
+            profileId,
+            { $set: { bio, website, location, gender } },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedProfile) {
+            return res.status(404).json({ message: "Không tìm thấy profile" });
+        }
+
+        res.status(200).json({
+            message: "Cập nhật profile thành công",
+            profile: updatedProfile,
+        });
+    } catch (err) {
+        console.error("🔥 Lỗi khi cập nhật profile:", err);
         res.status(500).json({ message: "Lỗi server", error: err.message });
     }
 };

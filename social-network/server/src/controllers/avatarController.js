@@ -4,7 +4,7 @@ const multer = require("multer");
 const Profile = require("../models/Profile");
 
 // Tạo thư mục `uploads/` nếu chưa có
-const uploadDir = path.join(__dirname, "../uploads");
+const uploadDir = path.join(__dirname, "../uploads/avatars");
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -41,7 +41,7 @@ exports.updateAvatar = async (req, res) => {
 
         try {
             const { slug } = req.body;
-            const newImageUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+            const newImageUrl = `http://localhost:5000/uploads/avatars/${req.file.filename}`;
             const defaultAvatar =
                 "http://localhost:5173/images/default-avatar.png";
 
@@ -61,7 +61,7 @@ exports.updateAvatar = async (req, res) => {
             if (
                 currentProfile.avatar &&
                 currentProfile.avatar !== defaultAvatar &&
-                currentProfile.avatar.includes("http://localhost:5000/uploads/")
+                currentProfile.avatar.includes("http://localhost:5000/uploads/avatars/")
             ) {
                 const oldFilename = path.basename(currentProfile.avatar);
                 const oldPath = path.join(uploadDir, oldFilename);
