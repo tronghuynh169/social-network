@@ -45,8 +45,8 @@ const DropdownMenu = ({ isCollapsed }) => {
             {/* Nút Xem thêm */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className={`flex items-center space-x-3 p-2 cursor-pointer rounded-lg hover:bg-gray-800 ${
-                    isOpen ? "bg-gray-800" : ""
+                className={`flex items-center space-x-3 p-2 cursor-pointer rounded-lg hover:bg-[var(--button-color)] ${
+                    isOpen ? "hover:bg-[var(--button-color)]" : ""
                 } transition-all duration-300 ease-in-out`}
             >
                 <Menu size={24} />
@@ -58,8 +58,8 @@ const DropdownMenu = ({ isCollapsed }) => {
             </button>
 
             {isOpen && (
-                <div className="absolute bottom-full left-0 mb-2 w-64 bg-[var(--secondary-color)] text-white rounded-lg shadow-lg z-10">
-                    <ul className="flex flex-col">
+                <div className="absolute bottom-full left-0 mb-2 w-64 bg-[var(--secondary-color)] rounded-lg shadow-lg z-10">
+                    <ul className="flex flex-col my-2">
                         <Link to="/account/edit-profile">
                             <MenuItem
                                 icon={<Settings size={20} />}
@@ -100,7 +100,7 @@ const DropdownMenu = ({ isCollapsed }) => {
 // Mỗi mục trong dropdown
 const MenuItem = ({ icon, text, isCollapsed }) => (
     <li
-        className={`flex items-center p-3 cursor-pointer rounded-lg hover:bg-gray-800 transition-all duration-300 ease-in-out ${
+        className={`flex items-center mx-auto w-[95%] p-3 cursor-pointer rounded-lg hover:bg-[var(--button-color)] transition-all duration-300 ease-in-out ${
             isCollapsed ? "justify-center" : "space-x-3"
         }`}
     >

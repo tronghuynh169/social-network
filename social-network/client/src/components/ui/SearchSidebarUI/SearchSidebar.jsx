@@ -1,62 +1,80 @@
-import React, { useState, useEffect, memo, useRef } from "react";
-import { X } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Search } from "lucide-react";
 
-const SearchSidebar = memo(({ isOpen }) => {
-    const [closing, setClosing] = useState(false);
-    const timeoutRef = useRef(null);
+const SearchBar = () => {
+    const [query, setQuery] = useState("");
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef(null);
 
     useEffect(() => {
-        if (!isOpen) {
-            setClosing(true);
-            timeoutRef.current = setTimeout(() => setClosing(false), 500);
-        } else {
-            setClosing(false);
-            clearTimeout(timeoutRef.current);
-        }
-    }, [isOpen]);
+        setIsDropdownOpen(query.trim() !== "");
+    }, [query]);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(event.target)
+            ) {
+                setIsDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
 
     return (
-        <div
-            className={`fixed top-0 left-[-180px] h-screen w-96 rounded-2xl bg-[var(--primary-color)] shadow-lg 
-                transition-transform duration-300 ease-in-out z-10 border-[1px] border-[var(--secondary-color)]
-                ${
-                    isOpen
-                        ? "search-slide-in"
-                        : closing
-                        ? "search-slide-out"
-                        : "hidden"
-                }`}
-        >
-            <div className="flex justify-between items-center p-4">
-                <h2 className="text-[25px] font-semibold">Tìm kiếm</h2>
+        <div className="relative w-full max-w-md mx-auto">
+            {/* Ô tìm kiếm */}
+            <div className="relative">
+                <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Tìm kiếm..."
+                    className={`w-full bg-[var(--secondary-color)] px-4 py-2 pl-10 focus:outline-none shadow-md transition-all ${
+                        isDropdownOpen ? "rounded-t-xl" : "rounded-xl"
+                    }`}
+                />
+                <Search
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary-color)]"
+                    size={18}
+                />
             </div>
 
-            <input
-                type="text"
-                placeholder="Tìm kiếm"
-                className="w-[90%] mx-auto mt-4 p-2 bg-[var(--button-color)] rounded-lg outline-none block "
-            />
-
-            <div className="mt-4 p-4 border-t-[1px] border-[var(--secondary-color)]">
-                <div className="flex justify-between items-center">
-                    <h3 className="text-[16px] font-bold">Mới đây</h3>
-                    <p className="text-blue-500 cursor-pointer">Xóa tất cả</p>
+            {/* Dropdown kết quả */}
+            {isDropdownOpen && (
+                <div
+                    ref={dropdownRef}
+                    className="absolute left-0 right-0 bg-[var(--secondary-color)] shadow-lg z-10 overflow-hidden rounded-b-xl"
+                >
+                    <ul className="overflow-auto my-2">
+                        {[1, 2, 3, 4, 5].map((item) => (
+                            <li
+                                key={item}
+                                className="flex items-center gap-3 p-2 mx-auto w-[93%] cursor-pointer rounded-lg hover:bg-[var(--button-color)] transition-all"
+                            >
+                                <img
+                                    src="https://via.placeholder.com/40"
+                                    alt="avatar"
+                                    className="w-10 h-10 rounded-full"
+                                />
+                                <div>
+                                    <p className="font-medium">Ngọc</p>
+                                    <p className="text-[13px] text-[var(--text-secondary-color)]">
+                                        • Đang theo dõi
+                                    </p>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
                 </div>
-
-                <ul className="mt-2 space-y-2">
-                    <button className="w-full flex justify-between items-center p-2 hover:bg-[var(--secondary-color)]">
-                        <div className="flex items-center space-x-2">
-                            <img src="" alt="avatar" />
-                            <div>
-                                <p className="font-bold text-sm">quannvu275</p>
-                            </div>
-                        </div>
-                        <X size={16} className="cursor-pointer" />
-                    </button>
-                </ul>
-            </div>
+            )}
         </div>
     );
-});
+};
 
-export default SearchSidebar;
+export default SearchBar;

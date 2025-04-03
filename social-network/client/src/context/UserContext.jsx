@@ -15,19 +15,17 @@ export const UserProvider = ({ children }) => {
             return null;
         }
     });
-    const [profile, setProfile] = useState(null);
-    const [avatar, setAvatar] = useState("/default-avatar.png");
-    
 
-    useEffect(() => {
-        const handleBeforeUnload = () => {
-            localStorage.removeItem("isSearchOpen"); // Xóa trạng thái khi rời trang
-        };
-
-        window.addEventListener("beforeunload", handleBeforeUnload);
-        return () =>
-            window.removeEventListener("beforeunload", handleBeforeUnload);
-    }, []);
+    const [profile, setProfile] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem("profile")) || null;
+        } catch {
+            return null;
+        }
+    });
+    const [avatar, setAvatar] = useState(
+        profile?.avatar || "/default-avatar.png"
+    );
 
     useEffect(() => {
         if (user) {
