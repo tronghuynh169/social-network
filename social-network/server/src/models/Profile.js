@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const removeAccents = require("remove-accents");
 
 const ProfileSchema = new mongoose.Schema(
     {
@@ -9,6 +10,7 @@ const ProfileSchema = new mongoose.Schema(
         },
         username: { type: String, unique: true, required: true },
         fullName: { type: String, required: true },
+        fullNameUnsigned: { type: String },
         slug: { type: String, unique: true, required: true },
         bio: { type: String, default: "" }, // Mô tả ngắn
         avatar: { type: String, default: "" }, // Ảnh đại diện
@@ -19,7 +21,7 @@ const ProfileSchema = new mongoose.Schema(
             enum: ["Nam", "Nữ", "Khác"],
             default: "Khác",
         },
-        
+
         isPrivate: { type: Boolean, default: false }, // Tài khoản riêng tư
 
         followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Profile" }], // Người theo dõi
@@ -31,5 +33,11 @@ const ProfileSchema = new mongoose.Schema(
     },
     { timestamps: true }
 );
+
+// 👇 Tự động cập nhật fullNameUnsigned trước khi lưu
+ProfileSchema.pre("save", function (next) {
+    this.fullNameUnsigned = removeAccents(this.fullName.toLowerCase());
+    next();
+});
 
 module.exports = mongoose.model("Profile", ProfileSchema);

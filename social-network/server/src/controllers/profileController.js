@@ -1,6 +1,7 @@
 const mongoose = require("mongoose"); // Thêm dòng này
 const Profile = require("../models/Profile");
 const User = require("../models/User");
+const removeAccents = require("remove-accents");
 
 // Lấy profile theo username
 exports.getProfileBySlug = async (req, res) => {
@@ -55,6 +56,43 @@ exports.getProfileByUsername = async (req, res) => {
     }
 };
 
+exports.getProfileByFullName = async (req, res) => {
+    try {
+        let { fullname } = req.params;
+
+        // Kiểm tra nếu fullname không có giá trị hoặc là chuỗi rỗng
+        if (!fullname || fullname.trim() === "") {
+            return res.json([]); // Trả về mảng rỗng nếu không có fullname
+        }
+
+        // Bỏ dấu + chuẩn hóa từ khóa tìm kiếm
+        const keyword = removeAccents(
+            fullname.toLowerCase().trim().replace(/\s+/g, " ")
+        );
+
+        // Tìm kiếm với regex an toàn hơn (tránh injection)
+        const regex = new RegExp(
+            keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+            "i"
+        );
+
+        const profiles = await Profile.find({
+            fullNameUnsigned: { $regex: regex }, // Sử dụng trường đã được xử lý sẵn (khuyến nghị)
+        }).limit(5);
+
+        // Nếu không tìm thấy profile, trả về mảng rỗng
+        if (!profiles.length) {
+            return res.json([]); // Trả về mảng rỗng thay vì thông báo lỗi
+        }
+
+        res.json(profiles);
+    } catch (err) {
+        // Tránh lỗi 500, và trả về mảng rỗng nếu có lỗi server
+        console.error("Lỗi:", err);
+        return res.json([]); // Trả về mảng rỗng thay vì lỗi
+    }
+};
+
 exports.getProfileByUserId = async (req, res) => {
     try {
         const profile = await Profile.findOne({ userId: req.params.userId });
@@ -69,16 +107,27 @@ exports.getProfileByUserId = async (req, res) => {
 
 exports.checkFollowingStatus = async (req, res) => {
     try {
-        const { user } = req.query;
+        const { user } = req.query; // user chính là currentUserId
+        const { profileId } = req.params; // profileId là ID người cần kiểm tra follow
+
+        if (!user || !profileId) {
+            return res
+                .status(400)
+                .json({ message: "Thiếu user hoặc profileId!" });
+        }
+
         const profile = await Profile.findById(user);
         if (!profile) {
             return res
                 .status(404)
                 .json({ message: "User không tồn tại", isFollowing: false });
         }
-        const isFollowing = profile.following.includes(req.params.profileId);
+
+        const isFollowing = profile.following.includes(profileId);
+
         res.json({ isFollowing });
     } catch (err) {
+        console.error("❌ Lỗi server:", err);
         res.status(500).json({ message: "Lỗi server", error: err.message });
     }
 };
@@ -192,39 +241,6 @@ exports.getFollowing = async (req, res) => {
 
         res.status(200).json({ following: profile.following });
     } catch (err) {
-        res.status(500).json({ message: "Lỗi server", error: err.message });
-    }
-};
-
-exports.updateProfile = async (req, res) => {
-    try {
-        const { bio, website, location, gender } = req.body;
-        const { profileId } = req.params;
-
-        console.log("📌 Profile ID nhận được:", profileId);
-
-        // Kiểm tra profileId có hợp lệ không
-        if (!mongoose.Types.ObjectId.isValid(profileId)) {
-            return res.status(400).json({ message: "ID không hợp lệ" });
-        }
-
-        // Tìm profile và cập nhật
-        const updatedProfile = await Profile.findByIdAndUpdate(
-            profileId,
-            { $set: { bio, website, location, gender } },
-            { new: true, runValidators: true }
-        );
-
-        if (!updatedProfile) {
-            return res.status(404).json({ message: "Không tìm thấy profile" });
-        }
-
-        res.status(200).json({
-            message: "Cập nhật profile thành công",
-            profile: updatedProfile,
-        });
-    } catch (err) {
-        console.error("🔥 Lỗi khi cập nhật profile:", err);
         res.status(500).json({ message: "Lỗi server", error: err.message });
     }
 };

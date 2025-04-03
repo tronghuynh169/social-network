@@ -13,24 +13,25 @@ const {
     getFollowers,
     getFollowing,
     getProfileByUserId,
-    updateProfile,
+    getProfileByFullName,
 } = require("../controllers/profileController");
 
-// 🛠 Kiểm tra trạng thái theo dõi
-router.get("/:profileId/is-following", checkFollowingStatus);
+// 1️⃣ Route đặc biệt (có prefix rõ ràng)
+router.get("/user/:userId", auth, getProfileByUserId); // /api/profile/user/123
+router.get("/username/:username", auth, getProfileByUsername); // /api/profile/username/bfngoc
+router.get("/fullname/:fullname", auth, getProfileByFullName); // /api/profile/fullname/Nguyen Van A
+router.put("/username/:username", auth, updateProfileByUsername); // /api/profile/username/bfngoc
 
-// 📌 Theo dõi & hủy theo dõi trước
-router.post("/follow/:profileId", followUser);
-router.delete("/unfollow/:profileId", unfollowUser);
+// 2️⃣ Follow/unfollow routes
+router.post("/follow/:profileId", auth, followUser); // /api/profile/follow/123
+router.delete("/unfollow/:profileId", auth, unfollowUser); // /api/profile/unfollow/123
+router.get("/:profileId/is-following", auth, checkFollowingStatus);
 
-// 📌 Lấy danh sách followers & following
-router.get("/followers/:profileId", getFollowers);
-router.get("/following/:profileId", getFollowing);
+// 3️⃣ Followers/following lists
+router.get("/:profileId/followers", auth, getFollowers); // /api/profile/123/followers
+router.get("/:profileId/following", auth, getFollowing); // /api/profile/123/following
 
-// 📌 Lấy profile đầy đủ theo username
-router.get("/:slug", getProfileBySlug);
-router.put("/:username", updateProfileByUsername);
-router.get("/username/:username", getProfileByUsername);
-router.get("/user/:userId", getProfileByUserId);
+// 4️⃣ Route tổng quát (slug) - ĐẶT CUỐI CÙNG
+router.get("/:slug", auth, getProfileBySlug); // /api/profile/bfngoc-slug
 
 module.exports = router;

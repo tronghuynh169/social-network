@@ -5,7 +5,6 @@ const FollowButton = ({ currentUserId, profileId }) => {
     const [isFollowing, setIsFollowing] = useState(null); // null = chưa có dữ liệu
     const [loading, setLoading] = useState(true); // Mặc định là true khi khởi tạo
     const [actionLoading, setActionLoading] = useState(false); // Loading khi thực hiện action
-
     // Kiểm tra trạng thái theo dõi khi component render
     useEffect(() => {
         const fetchFollowingStatus = async () => {
