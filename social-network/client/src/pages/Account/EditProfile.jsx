@@ -110,22 +110,18 @@ const EditProfile = () => {
             </div>
 
             {/* Trang Web */}
-            <input
-                type="text"
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
-                placeholder="Trang web"
-                className="w-full p-2 border-[1px] border-[var(--secondary-color)] rounded-md"
-            />
-
-            {/* Địa chỉ */}
-            <input
-                type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="Nhập địa chỉ"
-                className="w-full p-2 border-[1px] border-[var(--secondary-color)] rounded-md"
-            />
+            <div className="mt-8">
+                <label className="block mt-8 mb-3 font-semibold">
+                    Trang web
+                </label>
+                <input
+                    type="text"
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                    placeholder="Trang web"
+                    className="w-full p-2 border-[1px] border-[var(--secondary-color)] rounded-md"
+                />
+            </div>
 
             {/* Tiểu sử */}
             <div className="mt-4">
@@ -134,21 +130,32 @@ const EditProfile = () => {
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
                     maxLength={150}
-                    className="w-full p-2 border-[1px] border-[var(--secondary-color)] rounded-md"
+                    className="w-full p-2 h-24 border-[1px] border-[var(--secondary-color)] rounded-md"
                     placeholder="Nhập tiểu sử"
                 ></textarea>
                 <p className="text-right text-sm">{bio.length} / 150</p>
             </div>
 
+            {/* Địa chỉ */}
+            <div className="mt-3">
+                <label className="block mb-3 font-semibold">Địa chỉ</label>
+                <input
+                    type="text"
+                    maxLength={100}
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="Nhập địa chỉ"
+                    className="w-full p-2 border-[1px] border-[var(--secondary-color)] rounded-md"
+                />
+            </div>
+
             {/* Giới tính */}
-            <div className="mt-4">
-                <label className="block mt-8 mb-3 font-semibold">
-                    Giới tính
-                </label>
+            <div className="mt-8">
+                <label className="block mb-3 font-semibold">Giới tính</label>
                 <select
                     value={gender}
                     onChange={(e) => setGender(e.target.value)}
-                    className="w-full p-2 border-[1px] border-[var(--secondary-color)] rounded-md cursor-pointer"
+                    className="w-full p-3 border-[1px] bg-[var(--secondary-color)] border-[var(--secondary-color)] rounded-md cursor-pointer"
                 >
                     <option value="Khác">Khác</option>
                     <option value="Nam">Nam</option>
@@ -159,10 +166,10 @@ const EditProfile = () => {
             {/* Nút Lưu */}
             <div className="mt-6 text-end">
                 <button
-                    className={`w-[40%] py-2 rounded-md rounded-2xl font-semibold cursor-pointer ${
+                    className={`w-[40%] py-2 rounded-md font-semibold cursor-pointer ${
                         isChanged()
-                            ? "bg-blue-500 hover:bg-blue-600"
-                            : "bg-gray-400 cursor-not-allowed"
+                            ? "bg-[var(--button-enable-color)] hover:bg-blue-500"
+                            : "bg-[var(--button-disable-color)] cursor-not-allowed"
                     }`}
                     disabled={!isChanged()}
                     onClick={handleSave}

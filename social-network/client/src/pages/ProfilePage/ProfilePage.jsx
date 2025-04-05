@@ -133,7 +133,7 @@ const ProfilePage = ({ setAvatar }) => {
 
                 <div className="flex flex-col space-y-2 ml-10">
                     <div className="flex items-center space-x-4">
-                        <h1 className="text-2xl">{profile.fullName}</h1>
+                        <h1 className="text-2xl w-80">{profile.fullName}</h1>
                         {isOwner ? (
                             <Link to="/account/edit-profile">
                                 <button className="bg-[var(--button-color)] px-4 py-1 rounded-md cursor-pointer text-[14px]">
@@ -187,7 +187,10 @@ const ProfilePage = ({ setAvatar }) => {
                             người dùng
                         </span>
                     </div>
-                    <span className="mt-4">{profile.bio}</span>
+                    <a href={profile.website} className="mt-4">
+                        {profile.website}
+                    </a>
+                    <span className="">{profile.bio}</span>
                 </div>
             </div>
 

@@ -131,6 +131,7 @@ const Register = () => {
                         onChange={handleChange}
                         required
                         autoComplete="off" // Tắt autocomplete
+                        maxLength={30}
                     />
 
                     {/* Ngày sinh */}

@@ -87,7 +87,7 @@ export const getProfileByFullName = async (fullname) => {
 
 export const updateProfileByUsername = async (username, updatedProfile) => {
     try {
-        const response = await apiClient.put(`/${username}`, updatedProfile);
+        const response = await apiClient.put(`/username/${username}`, updatedProfile);
         return response.data;
     } catch (error) {
         console.error("❌ Lỗi khi cập nhật profile:", error);
