@@ -218,7 +218,7 @@ exports.getFollowers = async (req, res) => {
     try {
         const profile = await Profile.findById(req.params.profileId).populate(
             "followers",
-            "username fullName avatar"
+            "username fullName avatar slug"
         );
         if (!profile)
             return res.status(404).json({ message: "Profile không tồn tại" });
@@ -234,7 +234,7 @@ exports.getFollowing = async (req, res) => {
     try {
         const profile = await Profile.findById(req.params.profileId).populate(
             "following",
-            "username fullName avatar"
+            "username fullName avatar slug _id"
         );
         if (!profile)
             return res.status(404).json({ message: "Profile không tồn tại" });

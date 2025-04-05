@@ -1,10 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { getProfileBySlug, getProfileByUsername } from "~/api/profile";
+import {
+    getProfileBySlug,
+    getProfileByUsername,
+    getFollowers,
+    getFollowing,
+} from "~/api/profile";
 import { Settings } from "lucide-react";
 import AvatarSyncModal from "~/components/ui/ProfileUI/AvatarModal";
 import { useUser } from "~/context/UserContext";
 import FollowButton from "~/components/ui/ProfileUI/FollowButton/FollowButton";
+import FollowersDialog from "~/components/ui/ProfileUI/FollowDialogUI/FollowersDialog";
+import FollowingDialog from "~/components/ui/ProfileUI/FollowDialogUI/FollowingDialog";
 
 const ProfilePage = ({ setAvatar }) => {
     const { slug } = useParams();
@@ -17,6 +24,10 @@ const ProfilePage = ({ setAvatar }) => {
     const { user } = useUser();
     const isOwner = user?.slug === profile?.slug;
     const [currentProfileId, setCurrentProfileId] = useState(null);
+    const [isFollowersDialogOpen, setIsFollowersDialogOpen] = useState(false);
+    const [followersList, setFollowersList] = useState([]);
+    const [isFollowingDialogOpen, setIsFollowingDialogOpen] = useState(false);
+    const [followingList, setFollowingList] = useState([]);
 
     useEffect(() => {
         const fetchAllData = async () => {
@@ -59,11 +70,40 @@ const ProfilePage = ({ setAvatar }) => {
         fetchAllData();
     }, [slug, navigate, user]);
 
+    // Thêm hàm fetch followers
+    const fetchFollowers = async () => {
+        try {
+            const followers = await getFollowers(profile._id);
+            setFollowersList(followers);
+        } catch (error) {
+            console.error("Lỗi khi lấy danh sách followers:", error);
+        }
+    };
+
+    const handleOpenFollowers = async () => {
+        await fetchFollowers();
+        setIsFollowersDialogOpen(true);
+    };
+
+    const fetchFollowing = async () => {
+        try {
+            const following = await getFollowing(profile._id);
+            setFollowingList(following);
+        } catch (error) {
+            console.error("Lỗi khi lấy danh sách following:", error);
+        }
+    };
+
+    // Hàm mở dialog following
+    const handleOpenFollowing = async () => {
+        await fetchFollowing();
+        setIsFollowingDialogOpen(true);
+    };
+
     // Hiển thị loading page hoàn toàn
     if (loading) {
         return (
-            <div className="bg-black min-h-screen flex items-center justify-center">
-            </div>
+            <div className="bg-black min-h-screen flex items-center justify-center"></div>
         );
     }
 
@@ -126,13 +166,20 @@ const ProfilePage = ({ setAvatar }) => {
                             </strong>{" "}
                             bài viết
                         </span>
-                        <span>
+                        <span
+                            className="cursor-pointer"
+                            onClick={handleOpenFollowers}
+                        >
                             <strong className="text-[var(--text-primary-color)]">
                                 {profile.followers?.length || 0}
                             </strong>{" "}
                             người theo dõi
                         </span>
-                        <span>
+
+                        <span
+                            className="cursor-pointer"
+                            onClick={handleOpenFollowing}
+                        >
                             Đang theo dõi{" "}
                             <strong className="text-[var(--text-primary-color)]">
                                 {profile.following?.length || 0}
@@ -156,6 +203,21 @@ const ProfilePage = ({ setAvatar }) => {
                     setAvatar(newAvatar);
                 }}
             />
+
+            {isFollowersDialogOpen && (
+                <FollowersDialog
+                    followers={followersList}
+                    onClose={() => setIsFollowersDialogOpen(false)}
+                    isOpen={isFollowersDialogOpen}
+                />
+            )}
+            {isFollowingDialogOpen && (
+                <FollowingDialog
+                    following={followingList}
+                    onClose={() => setIsFollowingDialogOpen(false)}
+                    isOpen={isFollowingDialogOpen}
+                />
+            )}
         </div>
     );
 };

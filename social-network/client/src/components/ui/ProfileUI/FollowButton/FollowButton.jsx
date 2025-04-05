@@ -60,7 +60,7 @@ const FollowButton = ({ currentUserId, profileId }) => {
 
     return (
         <button
-            className={`px-4 py-2 cursor-pointer text-white rounded-lg transition-all ${
+            className={`px-4 py-2 cursor-pointer rounded-lg transition-all ${
                 isFollowing
                     ? "bg-red-500 hover:bg-red-600"
                     : "bg-blue-500 hover:bg-blue-600"
