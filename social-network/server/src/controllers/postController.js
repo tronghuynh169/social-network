@@ -104,29 +104,45 @@ exports.getUserPosts = async (req, res) => {
 // Lấy tất cả bài viết (chỉ hiện bài của mình và người mình follow)
 exports.getAllPosts = async (req, res) => {
     try {
-        // 1. Lấy thông tin profile của user hiện tại
+        // 1. Lấy thông tin profile hiện tại
         const currentProfile = await Profile.findOne({
             userId: req.user.id,
         }).select('following');
+
         if (!currentProfile) {
             return res.status(404).json({ message: 'Profile not found' });
         }
 
-        // 2. Tìm các bài post theo điều kiện
+        // 2. Lấy userId của những người mình follow
+        const followedProfiles = await Profile.find({
+            _id: { $in: currentProfile.following },
+        }).select('userId');
+
+        const followedUserIds = followedProfiles.map(
+            (profile) => profile.userId
+        );
+
+        // 3. Truy vấn bài viết theo 3 nhóm:
         const posts = await Post.find({
             $or: [
-                { userId: req.user._id }, // Bài viết của chính mình
+                // Bài viết của chính mình
+                { userId: req.user._id },
+
+                // Bài viết của người mình follow (public hoặc followers)
                 {
-                    userId: { $in: currentProfile.following }, // Bài viết của người mình follow
+                    userId: { $in: followedUserIds },
                     visibility: { $in: ['public', 'followers'] },
                 },
+
+                // Bài viết public của người mình không follow
                 {
-                    visibility: 'public', // Bài viết public của mọi người
+                    userId: { $nin: followedUserIds.concat(req.user._id) },
+                    visibility: 'public',
                 },
             ],
         })
-            .populate('userId', 'username avatar') // Populate thông tin người đăng
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .populate('userId', 'username avatar');
 
         res.json(posts);
     } catch (err) {
