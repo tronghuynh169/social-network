@@ -12,57 +12,21 @@ import {
 import Logo from "~/assets/img/Logo.png";
 import DropdownMenu from "~/components/ui/DropdownMenu";
 import { useUser } from "~/context/UserContext";
-import PostUpload from "~/pages/PostPage/PostUpload";
-import PostMenu from "~/pages/PostPage/PostMenu";
-import { uploadPost } from "~/api/post"; // Import hàm uploadPost từ API
 import SearchBar from "~/components/ui/SearchSidebarUI/SearchSidebar";
+import CreateMenuPost from "~/components/ui/PostUI/CreateMenuPost";
+
 
 const Sidebar = memo(() => {
     const location = useLocation();
     const { user, avatar } = useUser();
     const sidebarRef = useRef(null); // 🔥 Thêm ref cho sidebar
-    const [isPostMenuOpen, setIsPostMenuOpen] = useState(false);
-    const [isPostUploadOpen, setIsPostUploadOpen] = useState(false);
-    const menuRef = useRef(null);
+    const [showCreateMenuPost, setShowCreateMenuPost] = useState(false);
     const buttonRef = useRef(null);
 
-    const handleMenuToggle = (e) => {
+    const handleToggleMenu = (e) => {
         e.stopPropagation();
-        e.preventDefault();
-        console.log("render");
-        setIsPostMenuOpen((prev) => !prev);
-    };
-
-    // Hàm xử lý upload bài viết
-    const handleUploadPost = async (files, caption) => {
-        try {
-            const response = await uploadPost(files, caption);
-            return !!response; // Trả về true nếu upload thành công
-        } catch (error) {
-            console.error("Upload failed:", error);
-            return false;
-        }
-    };
-
-    // Đóng menu khi click ra ngoài
-    // Đóng menu khi click ra ngoài (không đóng nếu bấm vào nút "Tạo")
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (
-                menuRef.current &&
-                !menuRef.current.contains(event.target) &&
-                buttonRef.current &&
-                !buttonRef.current.contains(event.target) // ✅ Không đóng nếu bấm nút "Tạo"
-            ) {
-                setTimeout(() => setIsPostMenuOpen(false), 50);
-            }
-        };
-
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
-    }, []);
+        setShowCreateMenuPost((prev) => !prev);
+      };
 
     return (
         <div className="flex" ref={sidebarRef}>
@@ -105,40 +69,20 @@ const Sidebar = memo(() => {
                         text="Tin nhắn"
                     />
                     <MenuItem icon={<Heart size={24} />} text="Thông báo" />
-                    <div className="relative" ref={menuRef}>
+
+                    <div className="relative">
+                        <div ref={buttonRef}>
                         <MenuItem
-                            ref={buttonRef}
                             icon={<PlusSquare size={24} />}
                             text="Tạo"
-                            onClick={handleMenuToggle} // Toggle menu
+                            onClick={handleToggleMenu}
                         />
-
-                        {isPostMenuOpen && (
-                            <PostMenu
-                                isOpen={isPostMenuOpen}
-                                onClose={() => setIsPostMenuOpen(false)}
-                                onSelectPost={() => {
-                                    setIsPostUploadOpen(true);
-                                    setIsPostMenuOpen(false);
-                                }}
-                                style={{
-                                    position: "absolute",
-                                    left: 0,
-                                    top: "100%",
-                                    marginTop: "8px",
-                                    zIndex: 50,
-                                }}
-                            />
-                        )}
-
-                        {isPostUploadOpen && (
-                            <PostUpload
-                                isOpen={isPostUploadOpen}
-                                onClose={() => setIsPostUploadOpen(false)}
-                                uploadPost={uploadPost}
-                            />
+                        </div>
+                        {showCreateMenuPost && (
+                        <CreateMenuPost onClose={() => setShowCreateMenuPost(false)} />
                         )}
                     </div>
+
 
                     {user ? (
                         <Link to={`/${user.slug}`}>

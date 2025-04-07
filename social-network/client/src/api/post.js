@@ -1,112 +1,58 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api/posts';
+// Tạo instance để dễ quản lý baseURL và headers
+const api = axios.create({
+    baseURL: 'http://localhost:5000/api/posts', // Đổi URL nếu khác
+    withCredentials: true, // nếu bạn dùng cookie-based auth
+});
 
-export const fetchPosts = async () => {
-    try {
-        const response = await axios.get(API_URL, { withCredentials: true });
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching posts:', error);
-        return [];
-    }
+// Đăng bài viết (nhiều ảnh/video)
+export const createPost = async (formData) => {
+    return await api.post('/', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
 };
 
-export const uploadPost = async (images, caption) => {
-    try {
-        const token = localStorage.getItem('token'); // 🔥 Lấy token từ localStorage
-        if (!token) {
-            throw new Error('Bạn chưa đăng nhập! Hãy đăng nhập lại.');
-        }
-
-        const formData = new FormData();
-        images.forEach((image) => formData.append('images', image));
-        formData.append('caption', caption);
-
-        const response = await axios.post(API_URL, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-                Authorization: `Bearer ${token}`, // 🔥 Gửi token vào header
-            },
-            withCredentials: true,
-        });
-
-        return response.data;
-    } catch (error) {
-        console.error(
-            'Lỗi khi upload bài viết:',
-            error.response?.data || error.message
-        );
-        return null;
-    }
+// Lấy tất cả bài viết của mình và người follow
+export const getAllPosts = async () => {
+    return await api.get('/');
 };
 
-export const likePost = async (postId) => {
-    try {
-        const response = await axios.post(
-            `${API_URL}/${postId}/like`,
-            {},
-            { withCredentials: true }
-        );
-        return response.data.post.likes;
-    } catch (error) {
-        console.error('Error liking post:', error);
-        return null;
-    }
+// Lấy bài viết của một user cụ thể
+export const getUserPosts = async (userId) => {
+    return await api.get(`/user/${userId}`);
 };
 
-export const addComment = async (postId, text) => {
-    try {
-        const response = await axios.post(
-            `${API_URL}/${postId}/comments`,
-            { text },
-            { withCredentials: true }
-        );
-        return response.data.comment;
-    } catch (error) {
-        console.error('Error adding comment:', error);
-        return null;
-    }
+// Xóa bài viết
+export const deletePost = async (postId) => {
+    return await api.delete(`/${postId}`);
 };
 
+// Like hoặc Unlike bài viết
+export const toggleLike = async (postId) => {
+    return await api.post(`/${postId}/like`);
+};
+
+// Thêm comment vào bài viết
+export const addComment = async (postId, content) => {
+    return await api.post(`/${postId}/comments`, { content });
+};
+
+// Thêm reply vào comment
+export const addReply = async (postId, commentId, content) => {
+    return await api.post(`/${postId}/comments/${commentId}/replies`, {
+        content,
+    });
+};
+
+// Like / Unlike comment
 export const toggleCommentLike = async (postId, commentId) => {
-    try {
-        const response = await axios.post(
-            `${API_URL}/${postId}/comments/${commentId}/like`,
-            {},
-            { withCredentials: true }
-        );
-        return response.data.comment.likes;
-    } catch (error) {
-        console.error('Error liking comment:', error);
-        return null;
-    }
+    return await api.post(`/${postId}/comments/${commentId}/like`);
 };
 
-export const addReply = async (postId, commentId, text) => {
-    try {
-        const response = await axios.post(
-            `${API_URL}/${postId}/comments/${commentId}/replies`,
-            { text },
-            { withCredentials: true }
-        );
-        return response.data.reply;
-    } catch (error) {
-        console.error('Error adding reply:', error);
-        return null;
-    }
-};
-
-export const toggleReplyLike = async (postId, commentId, replyId) => {
-    try {
-        const response = await axios.post(
-            `${API_URL}/${postId}/comments/${commentId}/replies/${replyId}/like`,
-            {},
-            { withCredentials: true }
-        );
-        return response.data.reply.likes;
-    } catch (error) {
-        console.error('Error liking reply:', error);
-        return null;
-    }
+// Lấy chi tiết bài viết (likes + comments)
+export const getPostDetails = async (postId) => {
+    return await api.get(`/${postId}/details`);
 };
