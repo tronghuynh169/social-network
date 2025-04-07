@@ -8,8 +8,9 @@ const PostSchema = new mongoose.Schema({
         required: true,
     },
     // Sửa thành mảng để lưu nhiều ảnh
-    images: [{ type: String, required: true }],
-    caption: { type: String, default: '' },
+    images: [{ type: String }],
+    caption: { type: String },
+    videos: [{ type: String }],
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     visibility: {
         type: String,

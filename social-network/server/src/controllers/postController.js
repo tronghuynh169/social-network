@@ -6,18 +6,42 @@ const User = require('../models/User');
 // Đăng bài viết (Sửa để upload nhiều ảnh)
 exports.createPost = async (req, res) => {
     try {
-        // Xử lý nhiều file upload
-        const files = req.files; // Đổi từ req.file sang req.files
-        if (!files || files.length === 0) {
-            return res
-                .status(400)
-                .json({ message: 'Vui lòng chọn ít nhất 1 ảnh' });
+        // Lấy caption từ req.body
+        const { caption, visibility } = req.body;
+        // Lấy files (nếu có)
+        const files = req.files;
+
+        // Nếu không có caption và không có files, trả về lỗi
+        if (
+            (!files || files.length === 0) &&
+            (!caption || caption.trim() === '')
+        ) {
+            return res.status(400).json({
+                message:
+                    'Vui lòng cung cấp ít nhất một nội dung: caption hoặc ảnh/video',
+            });
         }
+
+        let images = [];
+        let videos = [];
+
+        // Nếu có files, phân loại chúng
+        if (files && files.length > 0) {
+            files.forEach((file) => {
+                if (file.mimetype.startsWith('image/')) {
+                    images.push('/uploads/posts/' + file.filename);
+                } else if (file.mimetype.startsWith('video/')) {
+                    videos.push('/uploads/posts/' + file.filename);
+                }
+            });
+        }
+
         const newPost = new Post({
             userId: req.user.id,
-            images: files.map((file) => '/uploads/posts/' + file.filename), // Đường dẫn đúng
-            caption: req.body.caption,
-            visibility: req.body.visibility || 'public',
+            caption: caption || '', // Nếu không có caption, lưu chuỗi rỗng
+            images: images, // Mảng ảnh (có thể rỗng)
+            videos: videos, // Mảng video (có thể rỗng)
+            visibility: visibility || 'public',
         });
 
         await newPost.save();
@@ -81,7 +105,6 @@ exports.getUserPosts = async (req, res) => {
 exports.getAllPosts = async (req, res) => {
     try {
         // 1. Lấy thông tin profile của user hiện tại
-        console.log('Current user ID:', req.user.id);
         const currentProfile = await Profile.findOne({
             userId: req.user.id,
         }).select('following');
@@ -156,7 +179,7 @@ exports.addComment = async (req, res) => {
     try {
         const { content } = req.body;
         const newComment = new Comment({
-            userId: req.user._id,
+            userId: req.user.id,
             postId: req.params.postId,
             content,
             createdAt: Date.now(),
@@ -175,7 +198,7 @@ exports.addReply = async (req, res) => {
     try {
         const { content } = req.body;
         const newReply = new Comment({
-            userId: req.user._id,
+            userId: req.user.id,
             postId: req.params.postId,
             content,
             replyTo: req.params.commentId,
@@ -196,7 +219,7 @@ exports.toggleCommentLike = async (req, res) => {
         if (!comment)
             return res.status(404).json({ message: 'Comment not found' });
 
-        const userId = req.user._id;
+        const userId = req.user.id;
         const index = comment.likes.indexOf(userId);
 
         if (index === -1) {
@@ -210,4 +233,64 @@ exports.toggleCommentLike = async (req, res) => {
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
+};
+
+// API lấy chi tiết bài viết, bao gồm danh sách like và comment (với nested reply)
+exports.getPostDetails = async (req, res) => {
+    try {
+        const postId = req.params.postId;
+
+        // Tìm bài viết theo postId và populate thông tin người đăng
+        const post = await Post.findById(postId)
+            .populate('userId', 'username profilePicture')
+            .lean();
+
+        if (!post) {
+            return res.status(404).json({ message: 'Bài viết không tồn tại' });
+        }
+
+        // Lấy danh sách like: Giả sử post.likes chứa mảng userId
+        const likeUsers = await User.find({ _id: { $in: post.likes } })
+            .select('username profilePicture')
+            .lean();
+
+        // Lấy danh sách bình luận gốc (không là reply)
+        const comments = await Comment.find({
+            postId: postId,
+            $or: [{ replyTo: { $exists: false } }, { replyTo: null }],
+        })
+            .populate('userId', 'username profilePicture')
+            .sort({ createdAt: 1 })
+            .lean();
+
+        // Với mỗi bình luận gốc, lấy nested replies (đệ quy)
+        for (let comment of comments) {
+            comment.replies = await getReplies(comment._id);
+        }
+
+        res.status(200).json({
+            post,
+            likes: likeUsers,
+            comments,
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Lỗi khi lấy chi tiết bài viết!',
+            error,
+        });
+    }
+};
+
+// Hàm đệ quy lấy nested replies
+const getReplies = async (commentId) => {
+    const replies = await Comment.find({ replyTo: commentId })
+        .populate('userId', 'username profilePicture')
+        .sort({ createdAt: 1 })
+        .lean();
+
+    for (let reply of replies) {
+        reply.replies = await getReplies(reply._id);
+    }
+
+    return replies;
 };

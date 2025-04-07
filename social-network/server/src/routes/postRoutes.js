@@ -10,7 +10,7 @@ const {
     addComment,
     addReply,
     toggleCommentLike,
-    toggleReplyLike,
+    getPostDetails,
 } = require('../controllers/postController');
 const auth = require('../middlewares/authMiddleware');
 const upload = require('../middlewares/uploadMiddleware');
@@ -20,7 +20,7 @@ const router = express.Router();
 router.post(
     '/',
     auth,
-    upload.array('images', 10),
+    upload.array('files', 10),
     (req, res, next) => {
         console.log('Uploaded files:', req.files);
         next();
@@ -34,5 +34,6 @@ router.post('/:postId/like', auth, toggleLike);
 router.post('/:postId/comments', auth, addComment);
 router.post('/:postId/comments/:commentId/replies', auth, addReply);
 router.post('/:postId/comments/:commentId/like', auth, toggleCommentLike);
+router.get('/:postId/details', getPostDetails);
 
 module.exports = router;
