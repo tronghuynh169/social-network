@@ -19,6 +19,7 @@ body {
     --button-disable-color: #002d4a;
     --button-disable-secondary-color: ##303030;
     --button-enable-color: #0095f6;
+    --message-me-color: #3797f0;
     --text-primary-color: #f5f5f5;
     --text-secondary-color: #a8a8a8;
     --text-button-color: #ed4956;
@@ -28,24 +29,24 @@ body {
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
-  }
-  
-  ::-webkit-scrollbar-track {
+}
+
+::-webkit-scrollbar-track {
     background: transparent;
-  }
-  
-  ::-webkit-scrollbar-thumb {
+}
+
+::-webkit-scrollbar-thumb {
     background-color: #888;
     border-radius: 4px;
     border: 2px solid transparent;
     background-clip: content-box;
-  }
-  
-  ::-webkit-scrollbar-thumb:hover {
+}
+
+::-webkit-scrollbar-thumb:hover {
     background-color: #555;
-  }
+}
 
 [contenteditable]:empty:before {
     content: attr(data-placeholder);
     color: #888;
-  }
+}

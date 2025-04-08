@@ -32,7 +32,7 @@ const DefaultLayout = memo(({ children }) => {
                 <SideBar />
             </div>
 
-            <div className="w-[85.6] px-4 max-w-[1200px] mx-auto flex-grow">
+            <div className="w-[85.6] flex-grow">
                 {slug ? <ProfilePage setAvatar={setAvatar} /> : children}
             </div>
         </div>

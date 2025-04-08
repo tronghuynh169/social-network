@@ -6,8 +6,8 @@ import ForgotPassword from "~/pages/AuthPage/ForgotPassword";
 import ResetPassword from "~/pages/AuthPage/ResetPassword";
 import HomePage from "~/pages/HomePage/HomePage";
 import FriendPage from "~/pages/FriendPage/FriendPage";
+import MessagePage from "~/pages/MessagePage/MessagePage";
 import ProfilePage from "~/pages/ProfilePage/ProfilePage";
-import AccountLayout from "~/pages/Account/AccountLayout";
 import EditProfile from "~/pages/Account/EditProfile";
 
 // ✅ Route dành cho người ĐÃ đăng nhập
@@ -43,6 +43,10 @@ export const routes = [
                 element: <FriendPage />,
             },
             {
+                path: "message",
+                element: <MessagePage />,
+            },
+            {
                 path: ":slug",
                 element: <ProfilePage />,
             },
@@ -53,14 +57,14 @@ export const routes = [
             //         {
             //             index: true,
             //             element: <Navigate to="edit-profile" replace />,
-            //         }, 
+            //         },
             //         { path: "edit-profile", element: <EditProfile /> }, // Route bạn muốn truy cập
             //     ],
             // },
             {
                 path: "account/edit-profile",
                 element: <EditProfile />,
-            },  
+            },
         ],
     },
     {

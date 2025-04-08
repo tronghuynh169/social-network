@@ -15,7 +15,6 @@ import { useUser } from "~/context/UserContext";
 import SearchBar from "~/components/ui/SearchSidebarUI/SearchSidebar";
 import CreateMenuPost from "~/components/ui/PostUI/CreateMenuPost";
 
-
 const Sidebar = memo(() => {
     const location = useLocation();
     const { user, avatar } = useUser();
@@ -26,7 +25,7 @@ const Sidebar = memo(() => {
     const handleToggleMenu = (e) => {
         e.stopPropagation();
         setShowCreateMenuPost((prev) => !prev);
-      };
+    };
 
     return (
         <div className="flex" ref={sidebarRef}>
@@ -64,25 +63,29 @@ const Sidebar = memo(() => {
                         />
                     </Link>
                     <MenuItem icon={<Compass size={24} />} text="Khám phá" />
-                    <MenuItem
-                        icon={<MessageCircle size={24} />}
-                        text="Tin nhắn"
-                    />
+                    <Link to="/message">
+                        <MenuItem
+                            icon={<MessageCircle size={24} />}
+                            text="Tin nhắn"
+                            active={location.pathname === "/message"}
+                        />
+                    </Link>
                     <MenuItem icon={<Heart size={24} />} text="Thông báo" />
 
                     <div className="relative">
                         <div ref={buttonRef}>
-                        <MenuItem
-                            icon={<PlusSquare size={24} />}
-                            text="Tạo"
-                            onClick={handleToggleMenu}
-                        />
+                            <MenuItem
+                                icon={<PlusSquare size={24} />}
+                                text="Tạo"
+                                onClick={handleToggleMenu}
+                            />
                         </div>
                         {showCreateMenuPost && (
-                        <CreateMenuPost onClose={() => setShowCreateMenuPost(false)} />
+                            <CreateMenuPost
+                                onClose={() => setShowCreateMenuPost(false)}
+                            />
                         )}
                     </div>
-
 
                     {user ? (
                         <Link to={`/${user.slug}`}>
