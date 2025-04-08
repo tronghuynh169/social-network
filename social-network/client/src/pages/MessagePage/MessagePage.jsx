@@ -25,7 +25,7 @@ const MessagePage = () => {
             {/* Sidebar trái */}
             <div className="w-[25%] border-r border-[var(--secondary-color)] flex flex-col">
                 <div className="pt-9 pb-3 px-6 font-bold text-[20px] flex items-center justify-between">
-                    <p>bfngoc.bfngoc</p>
+                    <p>{profile.fullName}</p>
                     <SquarePen className="w-5 h-5 cursor-pointer" />
                 </div>
                 <div className="px-6 pt-3.5 pb-2.5 text-[16px] font-bold">

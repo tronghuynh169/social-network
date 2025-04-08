@@ -154,7 +154,7 @@ const ProfilePage = ({ setAvatar }) => {
                                 )}
 
                                 {/* Nút Nhắn tin */}
-                                <button className="bg-[var(--button-color)] hover:bg-[var(--secondary-color)] px-4 py-1 rounded-md cursor-pointer text-[14px]">
+                                <button className="bg-[var(--button-color)] hover:bg-[var(--secondary-color)] px-4 py-2 rounded-md cursor-pointer text-[14px]">
                                     Nhắn tin
                                 </button>
                             </>

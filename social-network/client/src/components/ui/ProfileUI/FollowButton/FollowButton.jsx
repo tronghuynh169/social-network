@@ -60,9 +60,9 @@ const FollowButton = ({ currentUserId, profileId }) => {
 
     return (
         <button
-            className={`px-4 py-1 cursor-pointer rounded-md text-[14px] transition-all ${
+            className={`px-4 py-2 cursor-pointer rounded-lg transition-all ${
                 isFollowing
-                    ? "bg-red-500 hover:bg-red-600"
+                    ? "bg-[var(--button-color)] hover:bg-[var(--secondary-color)]"
                     : "bg-blue-500 hover:bg-blue-600"
             } ${actionLoading ? "opacity-50 cursor-not-allowed" : ""}`}
             onClick={handleFollowToggle}
