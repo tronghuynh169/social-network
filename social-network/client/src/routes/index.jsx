@@ -47,6 +47,10 @@ export const routes = [
                 element: <MessagePage />,
             },
             {
+                path: "message/:slug",
+                element: <MessagePage />,
+            },
+            {
                 path: ":slug",
                 element: <ProfilePage />,
             },

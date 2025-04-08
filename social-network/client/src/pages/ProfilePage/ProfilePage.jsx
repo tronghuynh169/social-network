@@ -103,13 +103,13 @@ const ProfilePage = ({ setAvatar }) => {
     // Hiển thị loading page hoàn toàn
     if (loading) {
         return (
-            <div className="bg-black min-h-screen flex items-center justify-center"></div>
+            <div className=" min-h-screen flex items-center justify-center"></div>
         );
     }
 
     if (error) {
         return (
-            <div className="bg-black min-h-screen flex items-center justify-center">
+            <div className=" min-h-screen flex items-center justify-center">
                 <p className="text-red-500">{error.message}</p>
             </div>
         );
@@ -117,14 +117,14 @@ const ProfilePage = ({ setAvatar }) => {
 
     // Chỉ render giao diện khi tất cả dữ liệu đã sẵn sàng
     return (
-        <div className="bg-black min-h-screen flex flex-col items-center mt-3">
-            <div className="w-full max-w-4xl p-6 flex items-center space-x-8">
+        <div className=" min-h-screen flex flex-col items-center mt-3">
+            <div className="max-w-4xl p-6 flex items-center space-x-8 mx-auto">
                 {/* Avatar */}
                 <div className="relative group">
                     <img
                         src={profile.avatar}
                         alt="Avatar"
-                        className="w-32 h-32 mx-auto rounded-full border-4 border-gray-700 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                        className="w-32 h-32 mx-auto rounded-full cursor-pointer transition-transform hover:scale-105 active:scale-95"
                         onClick={
                             isOwner ? () => setIsAvatarModalOpen(true) : null
                         }
@@ -154,7 +154,7 @@ const ProfilePage = ({ setAvatar }) => {
                                 )}
 
                                 {/* Nút Nhắn tin */}
-                                <button className="bg-gray-700 text-white px-4 py-1 rounded-md cursor-pointer text-[14px]">
+                                <button className="bg-[var(--button-color)] hover:bg-[var(--secondary-color)] px-4 py-1 rounded-md cursor-pointer text-[14px]">
                                     Nhắn tin
                                 </button>
                             </>
