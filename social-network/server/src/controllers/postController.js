@@ -45,7 +45,12 @@ exports.createPost = async (req, res) => {
         });
 
         await newPost.save();
-        res.status(201).json({ message: 'Bài viết đã đăng!', post: newPost });
+        const postUrl = `http://localhost:5173/posts/${newPost._id}`;
+        res.status(201).json({
+            message: 'Bài viết đã đăng!',
+            post: newPost,
+            link: postUrl,
+        });
     } catch (error) {
         res.status(500).json({ message: 'Lỗi khi đăng bài!', error });
     }

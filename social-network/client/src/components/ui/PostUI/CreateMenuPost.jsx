@@ -1,9 +1,11 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ImagePlus, Sparkles, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion"; // Import Framer Motion
+import PostModal from "./PostModal";
 
 const CreateMenuPost = ({ onClose }) => {
     const menuRef = useRef();
+    const [showModal, setShowModal] = useState(false);
 
     useEffect(() => {
         const handleClickOutside = (e) => {
@@ -41,9 +43,13 @@ const CreateMenuPost = ({ onClose }) => {
             transition={{ duration: 0.2 }}
           >
             <div>
-              <button className="flex justify-between items-center w-full p-3 text-sm hover:bg-neutral-700 cursor-pointer">
+              <button
+                onClick={() => setShowModal(true)}
+                className="flex justify-between items-center w-full p-3 text-sm hover:bg-neutral-700 cursor-pointer">
                 Bài viết <ImagePlus size={18} />
               </button>
+              <PostModal isOpen={showModal} onClose={() => setShowModal(false)} />
+
               <button className="flex justify-between items-center w-full p-3 text-sm hover:bg-neutral-700 cursor-pointer">
                 AI <Sparkles size={18} />
               </button>
