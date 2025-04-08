@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Search } from "lucide-react";
 import { getProfileByFullName, checkFollowingStatus } from "~/api/profile";
 import { useUser } from "~/context/UserContext";
-import { useNavigate  } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const SearchBar = () => {
     const { user, profile } = useUser();
@@ -34,9 +34,9 @@ const SearchBar = () => {
                 if (user && profiles.length > 0) {
                     const followStatuses = await Promise.all(
                         profiles.map((profilesearch) =>
-                            checkFollowingStatus(profilesearch._id, profile._id) // Truyền profile._id và user._id
+                            checkFollowingStatus(profile._id, profilesearch._id) // Truyền profile._id và user._id
                                 .then((res) => ({
-                                    id: profile._id,
+                                    id: profilesearch._id,
                                     isFollowing: res.isFollowing,
                                 }))
                                 .catch((error) => {
@@ -93,8 +93,8 @@ const SearchBar = () => {
 
     // Xử lý khi nhấp vào kết quả tìm kiếm
     const handleResultClick = (slug) => {
-        setIsDropdownOpen(false); 
-        setQuery(""); 
+        setIsDropdownOpen(false);
+        setQuery("");
         navigate(`/${slug}`); // Chuyển hướng tới đường dẫn mới
     };
 
@@ -128,7 +128,9 @@ const SearchBar = () => {
                             <li
                                 key={profilesearch._id}
                                 className="flex items-center gap-3 p-2 mx-auto w-[93%] cursor-pointer rounded-lg hover:bg-[var(--button-color)] transition-all"
-                                onClick={() => handleResultClick(profilesearch.slug)} // Thêm sự kiện onClick
+                                onClick={() =>
+                                    handleResultClick(profilesearch.slug)
+                                } // Thêm sự kiện onClick
                             >
                                 <img
                                     src={
@@ -142,7 +144,7 @@ const SearchBar = () => {
                                     <p className="font-medium">
                                         {profilesearch.fullName}
                                     </p>
-                                    {followingStatus[profile._id] && (
+                                    {followingStatus[profilesearch._id] && (
                                         <p className="text-[13px] text-[var(--text-secondary-color)]">
                                             • Đang theo dõi
                                         </p>

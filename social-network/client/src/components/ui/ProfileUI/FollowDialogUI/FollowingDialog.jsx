@@ -8,8 +8,8 @@ import { useUser } from "~/context/UserContext";
 
 const FollowingDialog = ({ following, onClose }) => {
     const { profile } = useUser();
-    const [followStatus, setFollowStatus] = useState({}); // Lưu trạng thái theo dõi cho từng người dùng
-    const [actionLoading, setActionLoading] = useState(false); // Loading khi thực hiện action
+    const [followStatus, setFollowStatus] = useState({});
+    const [actionLoadingMap, setActionLoadingMap] = useState({});
     const [searchQuery, setSearchQuery] = useState("");
     const [localFollowing, setLocalFollowing] = useState(following);
     const [confirmUnfollow, setConfirmUnfollow] = useState({
@@ -20,7 +20,6 @@ const FollowingDialog = ({ following, onClose }) => {
     });
     const navigate = useNavigate();
 
-    // Khi mở dialog, thiết lập trạng thái followStatus cho tất cả người dùng trong danh sách following là false
     useEffect(() => {
         const initialFollowStatus = {};
         following.forEach((user) => {
@@ -39,7 +38,6 @@ const FollowingDialog = ({ following, onClose }) => {
         setSearchQuery(e.target.value);
     };
 
-    // Hàm lọc người theo dõi không dấu
     const filteredFollowing = localFollowing.filter((user) =>
         unidecode(user.fullName)
             .toLowerCase()
@@ -47,9 +45,8 @@ const FollowingDialog = ({ following, onClose }) => {
     );
 
     const handleFollowToggle = async (userId) => {
-        if (!profile?._id || actionLoading) return;
+        if (!profile?._id || actionLoadingMap[userId]) return;
 
-        // Nếu đang follow -> hiển thị confirm modal
         if (followStatus[userId]) {
             const user = localFollowing.find((u) => u._id === userId);
             if (user) {
@@ -63,23 +60,19 @@ const FollowingDialog = ({ following, onClose }) => {
             return;
         }
 
-        // Nếu đang unfollow -> follow lại bình thường
         await performFollow(userId);
     };
 
     const performUnfollow = async (userId) => {
-        setActionLoading(true);
+        setActionLoadingMap((prev) => ({ ...prev, [userId]: true }));
         try {
             setFollowStatus((prev) => ({ ...prev, [userId]: false }));
             await unfollowUser(userId, profile._id);
-            setLocalFollowing((prev) =>
-                prev.filter((user) => user._id !== userId)
-            );
         } catch (error) {
             console.error("Error:", error);
             setFollowStatus((prev) => ({ ...prev, [userId]: true }));
         } finally {
-            setActionLoading(false);
+            setActionLoadingMap((prev) => ({ ...prev, [userId]: false }));
             setConfirmUnfollow({
                 show: false,
                 userId: null,
@@ -90,21 +83,25 @@ const FollowingDialog = ({ following, onClose }) => {
     };
 
     const performFollow = async (userId) => {
-        setActionLoading(true);
+        setActionLoadingMap((prev) => ({ ...prev, [userId]: true }));
         try {
             setFollowStatus((prev) => ({ ...prev, [userId]: true }));
-            await followUser(userId, profile._id);
+            await followUser(profile._id, userId);
             const userToAdd =
                 localFollowing.find((u) => u._id === userId) ||
                 following.find((u) => u._id === userId);
-            if (userToAdd) {
+
+            if (
+                userToAdd &&
+                !localFollowing.some((u) => u._id === userToAdd._id)
+            ) {
                 setLocalFollowing((prev) => [...prev, userToAdd]);
             }
         } catch (error) {
             console.error("Error:", error);
             setFollowStatus((prev) => ({ ...prev, [userId]: false }));
         } finally {
-            setActionLoading(false);
+            setActionLoadingMap((prev) => ({ ...prev, [userId]: false }));
         }
     };
 
@@ -163,7 +160,7 @@ const FollowingDialog = ({ following, onClose }) => {
                         {filteredFollowing.length > 0 ? (
                             filteredFollowing.map((user) => (
                                 <div
-                                    key={user.id}
+                                    key={user._id}
                                     className="flex items-center justify-between p-4"
                                 >
                                     <div className="flex items-center space-x-3">
@@ -177,9 +174,8 @@ const FollowingDialog = ({ following, onClose }) => {
                                             )}
                                         </div>
                                         <div>
-                                            {/* Khi nhấn vào tên sẽ điều hướng đến /slug */}
                                             <p
-                                                className="font-medium cursor-pointer"
+                                                className="font-medium cursor-pointer max-w-[250px]"
                                                 onClick={() =>
                                                     handleNavigate(user.slug)
                                                 }
@@ -190,17 +186,17 @@ const FollowingDialog = ({ following, onClose }) => {
                                     </div>
                                     <button
                                         onClick={() => {
-                                            handleFollowToggle(user._id); // Kiểm tra dữ liệu user
+                                            handleFollowToggle(user._id);
                                         }}
                                         className={`px-4 py-2 text-sm font-medium cursor-pointer rounded-lg ${
                                             followStatus[user._id]
-                                                ? "bg-green-500 hover:bg-green-600"
-                                                : "bg-gray-500 hover:bg-gray-600"
+                                                ? "bg-[var(--button-secondary-color)] hover:bg-[var(--button-color)]"
+                                                : "bg-[var(--button-enable-color)] hover:bg-blue-500"
                                         }`}
-                                        disabled={actionLoading}
+                                        disabled={actionLoadingMap[user._id]}
                                     >
-                                        {actionLoading
-                                            ? "Đang thực hiện..."
+                                        {actionLoadingMap[user._id]
+                                            ? "Đang xử lý..."
                                             : followStatus[user._id]
                                             ? "Bỏ theo dõi"
                                             : "Theo dõi"}
@@ -209,14 +205,14 @@ const FollowingDialog = ({ following, onClose }) => {
                             ))
                         ) : (
                             <p className="text-center text-sm text-[var(--text-secondary-color)] py-4">
-                                Bạn chưa theo dõi ai.
+                                Không tìm thấy người dùng nào.
                             </p>
                         )}
                     </div>
                 </motion.div>
             </motion.div>
 
-            {/* Thêm Confirm Modal */}
+            {/* Confirm unfollow modal */}
             {confirmUnfollow.show && (
                 <motion.div
                     className="fixed inset-0 bg-opacity-10 backdrop-brightness-50 modal-overlay transition-opacity duration-300 flex items-center justify-center z-50"
@@ -244,9 +240,11 @@ const FollowingDialog = ({ following, onClose }) => {
                                     performUnfollow(confirmUnfollow.userId)
                                 }
                                 className="py-3 px-8 cursor-pointer text-[var(--text-button-color)] font-bold border-t border-[var(--button-color)]"
-                                disabled={actionLoading}
+                                disabled={
+                                    actionLoadingMap[confirmUnfollow.userId]
+                                }
                             >
-                                {actionLoading
+                                {actionLoadingMap[confirmUnfollow.userId]
                                     ? "Đang xử lý..."
                                     : "Bỏ theo dõi"}
                             </button>
@@ -255,7 +253,8 @@ const FollowingDialog = ({ following, onClose }) => {
                                     setConfirmUnfollow({
                                         show: false,
                                         userId: null,
-                                        username: "",
+                                        fullName: "",
+                                        avatar: "",
                                     })
                                 }
                                 className="py-3 px-8 cursor-pointer border-t border-[var(--button-color)]"
