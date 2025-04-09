@@ -9,21 +9,22 @@ const CreateMenuPost = ({ onClose }) => {
 
     useEffect(() => {
         const handleClickOutside = (e) => {
-        if (menuRef.current && !menuRef.current.contains(e.target)) {
-            onClose(); // đóng menu khi click ra ngoài
-        }
-        };
+          if (showModal) return;
+          if (menuRef.current && !menuRef.current.contains(e.target)) {
+              onClose(); // đóng menu khi click ra ngoài
+          }
+          };
 
-        // Đăng ký sau khi tick hiện tại đã hoàn thành
-        const timer = setTimeout(() => {
-        document.addEventListener("click", handleClickOutside);
-        }, 0);
+          // Đăng ký sau khi tick hiện tại đã hoàn thành
+          const timer = setTimeout(() => {
+          document.addEventListener("click", handleClickOutside);
+          }, 0);
 
-        return () => {
-        clearTimeout(timer);
-        document.removeEventListener("click", handleClickOutside);
-        };
-    }, [onClose]);
+          return () => {
+          clearTimeout(timer);
+          document.removeEventListener("click", handleClickOutside);
+          };
+    }, [onClose, showModal]);
 
     const menuVariants = {
         hidden: { opacity: 0, y: -10 },

@@ -6,12 +6,9 @@ const User = require('../models/User');
 // Đăng bài viết (Sửa để upload nhiều ảnh)
 exports.createPost = async (req, res) => {
     try {
-        // Lấy caption từ req.body
         const { caption, visibility } = req.body;
-        // Lấy files (nếu có)
         const files = req.files;
 
-        // Nếu không có caption và không có files, trả về lỗi
         if (
             (!files || files.length === 0) &&
             (!caption || caption.trim() === '')
@@ -22,29 +19,24 @@ exports.createPost = async (req, res) => {
             });
         }
 
-        let images = [];
-        let videos = [];
+        let media = [];
 
-        // Nếu có files, phân loại chúng
         if (files && files.length > 0) {
-            files.forEach((file) => {
-                if (file.mimetype.startsWith('image/')) {
-                    images.push('/uploads/posts/' + file.filename);
-                } else if (file.mimetype.startsWith('video/')) {
-                    videos.push('/uploads/posts/' + file.filename);
-                }
-            });
+            media = files.map((file) => ({
+                type: file.mimetype.startsWith('image/') ? 'image' : 'video',
+                url: '/uploads/posts/' + file.filename,
+            }));
         }
 
         const newPost = new Post({
             userId: req.user.id,
-            caption: caption || '', // Nếu không có caption, lưu chuỗi rỗng
-            images: images, // Mảng ảnh (có thể rỗng)
-            videos: videos, // Mảng video (có thể rỗng)
+            caption: caption || '',
+            media,
             visibility: visibility || 'public',
         });
 
         await newPost.save();
+
         const postUrl = `http://localhost:5173/posts/${newPost._id}`;
         res.status(201).json({
             message: 'Bài viết đã đăng!',

@@ -7,10 +7,17 @@ const PostSchema = new mongoose.Schema({
         ref: 'User',
         required: true,
     },
-    // Sửa thành mảng để lưu nhiều ảnh
-    images: [{ type: String }],
     caption: { type: String },
-    videos: [{ type: String }],
+    media: [
+        {
+            type: {
+                type: String,
+                enum: ['image', 'video'],
+                required: true,
+            },
+            url: { type: String, required: true },
+        },
+    ],
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     visibility: {
         type: String,
