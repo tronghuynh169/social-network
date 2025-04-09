@@ -64,7 +64,7 @@ const SearchFriendModal = ({ open, onClose, profileId, onSelect }) => {
                     </h2>
                     <button
                         onClick={onClose}
-                        className="text-gray-500 hover:text-white"
+                        className="text-gray-500 cursor-pointer"
                     >
                         <X />
                     </button>
