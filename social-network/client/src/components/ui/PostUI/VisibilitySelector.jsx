@@ -18,7 +18,7 @@ const VisibilitySelector = ({ value, onChange }) => {
                 <button
                     type="button"
                     onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center justify-between w-[150px] px-4 py-2 text-sm bg-[var(--primary-color)] text-white border border-[var(--border-color)] rounded-md"
+                    className="flex items-center justify-between w-[150px] px-4 py-2 text-sm bg-[var(--primary-color)]/40 text-[var(--text-primary-color)] border border-[var(--border-color)] rounded-md"
                 >
                     <span className="flex items-center">
                         {selected.icon}
@@ -32,7 +32,7 @@ const VisibilitySelector = ({ value, onChange }) => {
                         {visibilityOptions.map((option) => (
                             <div
                                 key={option.value}
-                                className="px-4 py-2 flex items-center text-sm text-white hover:bg-[var(--secondary-color)] cursor-pointer"
+                                className="px-4 py-2 flex items-center text-sm text-[var(--text-primary-color)] hover:bg-[var(--secondary-color)] cursor-pointer"
                                 onClick={() => {
                                     event.stopPropagation()
                                     onChange(option.value);

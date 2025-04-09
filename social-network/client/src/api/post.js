@@ -6,6 +6,15 @@ const api = axios.create({
     withCredentials: true, // nếu bạn dùng cookie-based auth
 });
 
+// 🛠️ Thêm interceptor để gắn token vào tất cả request
+api.interceptors.request.use((config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
 // Đăng bài viết (nhiều ảnh/video)
 export const createPost = async (formData) => {
     return await api.post('/', formData, {
