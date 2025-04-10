@@ -123,7 +123,7 @@ exports.getAllPosts = async (req, res) => {
         const posts = await Post.find({
             $or: [
                 // Bài viết của chính mình
-                { userId: req.user._id },
+                { userId: req.user.id },
 
                 // Bài viết của người mình follow (public hoặc followers)
                 {
@@ -133,7 +133,7 @@ exports.getAllPosts = async (req, res) => {
 
                 // Bài viết public của người mình không follow
                 {
-                    userId: { $nin: followedUserIds.concat(req.user._id) },
+                    userId: { $nin: followedUserIds.concat(req.user.id) },
                     visibility: 'public',
                 },
             ],
@@ -153,7 +153,7 @@ exports.deletePost = async (req, res) => {
     try {
         const post = await Post.findById(req.params.id);
         // Sửa post.user thành post.userId
-        if (!post || !post.userId.equals(req.user._id)) {
+        if (!post || !post.userId.equals(req.user.id)) {
             return res
                 .status(403)
                 .json({ message: 'Bạn không có quyền xóa bài này!' });
@@ -278,7 +278,7 @@ exports.getPostDetails = async (req, res) => {
 
         // Với mỗi bình luận gốc, lấy nested replies (đệ quy)
         for (let comment of comments) {
-            comment.replies = await getReplies(comment._id);
+            comment.replies = await getReplies(comment.id);
         }
 
         res.status(200).json({
@@ -302,7 +302,7 @@ const getReplies = async (commentId) => {
         .lean();
 
     for (let reply of replies) {
-        reply.replies = await getReplies(reply._id);
+        reply.replies = await getReplies(reply.id);
     }
 
     return replies;

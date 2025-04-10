@@ -13,7 +13,7 @@ import Logo from "~/assets/img/Logo.png";
 import DropdownMenu from "~/components/ui/DropdownMenu";
 import { useUser } from "~/context/UserContext";
 import SearchBar from "~/components/ui/SearchSidebarUI/SearchSidebar";
-import CreateMenuPost from "~/components/ui/PostUI/CreateMenuPost";
+import CreateMenuPost from "~/components/ui/PostUI/PostUpLoadUI/CreateMenuPost";
 
 const Sidebar = memo(() => {
     const location = useLocation();
