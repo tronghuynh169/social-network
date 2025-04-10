@@ -1,31 +1,35 @@
 const Conversation = require("../models/Conversation");
 const Message = require("../models/Message");
+const mongoose = require("mongoose");
 
 // Tạo cuộc trò chuyện mới
 exports.createConversation = async (req, res) => {
-    const { members } = req.body;
-
-    if (!members || members.length < 2) {
-        return res.status(400).json({ error: "Cần ít nhất 2 thành viên" });
-    }
-
-    const sortedMembers = [...members].sort(); // sắp xếp để tránh trùng thứ tự
-
     try {
-        console.log("Conversation:", Conversation);
-        const existing = await Conversation.findOne({
-            members: { $all: sortedMembers, $size: sortedMembers.length },
-        });
+        const { members, isGroup, admin, name, avatar  } = req.body;
 
-        if (existing) return res.status(200).json(existing);
+        // Kiểm tra members có hợp lệ không
+        if (!Array.isArray(members)) {
+            return res
+                .status(400)
+                .json({ message: "Danh sách thành viên không hợp lệ." });
+        }
 
-        const newConversation = await Conversation.create({
+        const sortedMembers = [...members].sort();
+
+        // Ví dụ: tạo cuộc trò chuyện
+        const conversation = new Conversation({
             members: sortedMembers,
+            isGroup,
+            admin,
+            name,
+            avatar,
         });
-        res.status(201).json(newConversation);
-    } catch (err) {
-        console.error("❌ Lỗi khi tạo cuộc trò chuyện:", err);
-        res.status(500).json({ error: "Tạo cuộc trò chuyện thất bại" });
+
+        await conversation.save();
+        res.status(201).json(conversation);
+    } catch (error) {
+        console.error("❌ Lỗi tạo conversation:", error);
+        res.status(500).json({ message: "Lỗi server." });
     }
 };
 
@@ -68,9 +72,13 @@ exports.getMessages = async (req, res) => {
 exports.getUserConversations = async (req, res) => {
     const { userId } = req.params;
     try {
-        const conversations = await Conversation.find({ members: userId });
+        const objectUserId = new mongoose.Types.ObjectId(userId); // ép kiểu
+        const conversations = await Conversation.find({
+            members: objectUserId,
+        });
         res.status(200).json(conversations);
     } catch (err) {
+        console.error("Lỗi khi lấy conversation:", err);
         res.status(500).json({ error: "Lấy cuộc trò chuyện thất bại" });
     }
 };

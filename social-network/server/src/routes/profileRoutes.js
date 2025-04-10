@@ -14,6 +14,7 @@ const {
     getFollowing,
     getProfileByUserId,
     getProfileByFullName,
+    getProfileById,
 } = require("../controllers/profileController");
 
 // 1️⃣ Route đặc biệt (có prefix rõ ràng)
@@ -21,6 +22,7 @@ router.get("/user/:userId", auth, getProfileByUserId); // /api/profile/user/123
 router.get("/username/:username", auth, getProfileByUsername); // /api/profile/username/bfngoc
 router.get("/fullname/:fullname", auth, getProfileByFullName); // /api/profile/fullname/Nguyen Van A
 router.put("/username/:username", auth, updateProfileByUsername); // /api/profile/username/bfngoc
+router.get("/id/:id", auth, getProfileById);
 
 // 2️⃣ Follow/unfollow routes
 router.post("/follow/:profileId", auth, followUser); // /api/profile/follow/123

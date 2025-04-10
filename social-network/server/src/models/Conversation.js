@@ -1,8 +1,9 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const conversationSchema = new mongoose.Schema(
     {
         name: { type: String }, // Tên nhóm (tuỳ chọn)
+        avatar: { type: String },
         isGroup: { type: Boolean, default: false },
         members: [
             {

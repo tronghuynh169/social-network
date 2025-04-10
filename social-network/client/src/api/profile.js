@@ -44,6 +44,16 @@ export const getProfileByUsername = async (username) => {
     }
 };
 
+export const getProfileById = async (id) => {
+    try {
+        const response = await apiClient.get(`/id/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error("❌ Lỗi khi lấy profile theo ID:", error);
+        return null;
+    }
+};
+
 export const getProfileByUserId = async (userId) => {
     try {
         const response = await apiClient.get(`/user/${userId}`);
@@ -87,7 +97,10 @@ export const getProfileByFullName = async (fullname) => {
 
 export const updateProfileByUsername = async (username, updatedProfile) => {
     try {
-        const response = await apiClient.put(`/username/${username}`, updatedProfile);
+        const response = await apiClient.put(
+            `/username/${username}`,
+            updatedProfile
+        );
         return response.data;
     } catch (error) {
         console.error("❌ Lỗi khi cập nhật profile:", error);

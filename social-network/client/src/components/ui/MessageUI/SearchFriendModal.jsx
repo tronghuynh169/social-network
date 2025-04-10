@@ -2,8 +2,18 @@ import React, { useState, useEffect } from "react";
 import { X, Search, Check } from "lucide-react";
 import unidecode from "unidecode";
 import { getFollowing } from "~/api/profile";
+import { useNavigate } from "react-router-dom";
+import { createConversation } from "~/api/chat";
+import { getUserConversations } from "~/api/chat";
 
-const SearchFriendModal = ({ open, onClose, profileId, onSelect }) => {
+const SearchFriendModal = ({
+    open,
+    onClose,
+    profileId,
+    onSelect,
+    onGroupCreated,
+}) => {
+    const navigate = useNavigate();
     const [searchValue, setSearchValue] = useState("");
     const [allFriends, setAllFriends] = useState([]);
     const [results, setResults] = useState([]);
@@ -33,7 +43,6 @@ const SearchFriendModal = ({ open, onClose, profileId, onSelect }) => {
     const handleSearchChange = (e) => {
         const value = e.target.value;
         setSearchValue(value);
-
         const keyword = unidecode(value.trim().toLowerCase());
         const filtered = allFriends.filter((user) =>
             unidecode(user.fullName || "")
@@ -137,12 +146,11 @@ const SearchFriendModal = ({ open, onClose, profileId, onSelect }) => {
 
                                     {/* Nút tích kiểu Instagram */}
                                     <div
-                                        className={`w-5 h-5 rounded-full border-[1.5px] flex items-center justify-center transition-all duration-200 
-                        ${
-                            isChecked
-                                ? "bg-[var(--text-primary-color)] border-[var(--text-primary-color)]"
-                                : "border-gray-400"
-                        }`}
+                                        className={`w-5 h-5 rounded-full border-[1.5px] flex items-center justify-center transition-all duration-200 ${
+                                            isChecked
+                                                ? "bg-[var(--text-primary-color)] border-[var(--text-primary-color)]"
+                                                : "border-gray-400"
+                                        }`}
                                     >
                                         {isChecked && (
                                             <Check className="w-4 h-4 text-[var(--primary-color)]" />
@@ -162,15 +170,64 @@ const SearchFriendModal = ({ open, onClose, profileId, onSelect }) => {
                 <div className="pt-4">
                     <button
                         disabled={selectedUsers.length === 0}
-                        className={`w-full h-11 rounded-lg text-sm font-semibold shadow-md transition 
-                        ${
+                        className={`w-full h-11 rounded-lg text-sm font-semibold cursor-pointer shadow-md transition ${
                             selectedUsers.length === 0
                                 ? "bg-[var(--button-disable-chat-color)] cursor-not-allowed"
                                 : "bg-[var(--button-enable-color)] hover:bg-opacity-90 active:scale-95"
                         }`}
-                        onClick={() => {
-                            onSelect?.(selectedUsers);
-                            onClose();
+                        onClick={async () => {
+                            try {
+                                // Lấy mảng các _id của người được chọn, sau đó thêm _id của chính bạn (profileId)
+                                const members = selectedUsers.map((u) => u._id);
+                                members.push(profileId);
+
+                                // Nếu số thành viên >= 3 thì là nhóm chat, ngược lại là 1-1
+                                const isGroup = members.length >= 3;
+
+                                if (!isGroup) {
+                                    // Trường hợp 1-1: Kiểm tra xem đã có cuộc trò chuyện 1-1 chưa
+                                    const convs = await getUserConversations(
+                                        profileId
+                                    );
+                                    const existing = convs.find((conv) => {
+                                        return (
+                                            !conv.isGroup &&
+                                            conv.members.length === 2 &&
+                                            conv.members.includes(profileId) &&
+                                            conv.members.includes(
+                                                members.find(
+                                                    (id) => id !== profileId
+                                                )
+                                            )
+                                        );
+                                    });
+
+                                    if (existing) {
+                                        onClose();
+                                        navigate(`/message/${existing._id}`);
+                                        return;
+                                    }
+                                }
+
+                                // Nếu là nhóm hoặc chưa có cuộc trò chuyện 1-1, tạo cuộc trò chuyện mới
+                                const newConv = await createConversation({
+                                    members,
+                                    isGroup,
+                                    admin: isGroup ? profileId : undefined,
+                                    name: null,
+                                    avatar: null,
+                                });
+
+                                // Gọi callback nếu có
+                                if (typeof onGroupCreated === "function") {
+                                    onGroupCreated();
+                                }
+
+                                onClose();
+                                navigate(`/message/${newConv._id}`);
+                            } catch (err) {
+                                console.error("Lỗi tạo cuộc trò chuyện:", err);
+                            }
                         }}
                     >
                         Chat

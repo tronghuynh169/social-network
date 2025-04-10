@@ -93,6 +93,23 @@ exports.getProfileByFullName = async (req, res) => {
     }
 };
 
+exports.getProfileById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const profile = await Profile.findById(id);
+
+        if (!profile) {
+            return res.status(404).json({ message: "Không tìm thấy profile" });
+        }
+
+        res.status(200).json(profile);
+    } catch (err) {
+        console.error("🔥 Lỗi khi lấy profile theo ID:", err);
+        res.status(500).json({ message: "Lỗi server, vui lòng thử lại sau." });
+    }
+};
+
 exports.getProfileByUserId = async (req, res) => {
     try {
         const profile = await Profile.findOne({ userId: req.params.userId });
