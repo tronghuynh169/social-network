@@ -4,10 +4,11 @@ import { useUser } from "~/context/UserContext";
 import { getUserConversations } from "~/api/chat";
 import { getProfileById } from "~/api/profile";
 import { useNavigate } from "react-router-dom";
+import SearchFriendModal from "~/components/ui/MessageUI/SearchFriendModal";
 
 const Sidebar = ({ onSelectUser }) => {
     const { profile } = useUser();
-    const [conversations, setConversations] = useState([]);
+    const [showModal, setShowModal] = useState(false);
     const [usersInfo, setUsersInfo] = useState([]);
     const navigate = useNavigate();
 
@@ -74,7 +75,10 @@ const Sidebar = ({ onSelectUser }) => {
         <div className="w-[25%] border-r border-[var(--secondary-color)] flex flex-col">
             <div className="pt-9 pb-3 px-6 font-bold text-[20px] flex items-center justify-between">
                 <p>{profile.fullName}</p>
-                <SquarePen className="w-5 h-5 cursor-pointer" />
+                <SquarePen
+                    className="w-5 h-5 cursor-pointer"
+                    onClick={() => setShowModal(true)}
+                />
             </div>
             <div className="px-6 pt-3.5 pb-2.5 text-[16px] font-bold">
                 Tin nhắn
@@ -114,6 +118,17 @@ const Sidebar = ({ onSelectUser }) => {
                     })
                 )}
             </div>
+            {/* Modal tìm kiếm bạn bè */}
+            {showModal && profile && (
+                <SearchFriendModal
+                    open={showModal}
+                    onClose={() => setShowModal(false)}
+                    profileId={profile._id}
+                    onSelect={(user) => {
+                        setSelectedUser(user.fullname);
+                    }}
+                />
+            )}
         </div>
     );
 };

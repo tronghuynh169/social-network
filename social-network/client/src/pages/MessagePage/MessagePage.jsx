@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Phone, Video, Info, Smile, Mic, ImageIcon, Heart } from "lucide-react";
 import SearchFriendModal from "~/components/ui/MessageUI/SearchFriendModal";
 import { useUser } from "~/context/UserContext";
 import Sidebar from "~/components/ui/MessageUI/Sidebar";
