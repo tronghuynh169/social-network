@@ -33,18 +33,18 @@ export const createConversation = async (conversationData) => {
 };
 
 // Gửi tin nhắn
-export const sendMessage = async ({ conversationId, sender, text }) => {
-    try {
-        const response = await apiClient.post("/message", {
-            conversationId,
-            sender,
-            text,
-        });
-        return response.data;
-    } catch (error) {
-        console.error("❌ Lỗi gửi tin nhắn:", error);
-        throw error;
-    }
+export const sendMessage = async ({ conversationId, sender, text, image }) => {
+    const formData = new FormData();
+    formData.append("conversationId", conversationId);
+    formData.append("sender", sender);
+    formData.append("text", text);
+    if (image) formData.append("image", image);
+
+    const response = await apiClient.post("/message", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    return response.data;
 };
 
 // Lấy tất cả tin nhắn của 1 cuộc trò chuyện
@@ -66,5 +66,18 @@ export const getUserConversations = async (userId) => {
     } catch (error) {
         console.error("❌ Lỗi lấy danh sách cuộc trò chuyện:", error);
         return [];
+    }
+};
+
+// Lấy 1 cuộc trò chuyện theo ID
+export const getConversationById = async (conversationId) => {
+    try {
+        const response = await apiClient.get(
+            `/conversation/id/${conversationId}`
+        );
+        return response.data;
+    } catch (error) {
+        console.error("❌ Lỗi lấy cuộc trò chuyện theo ID:", error);
+        return null;
     }
 };

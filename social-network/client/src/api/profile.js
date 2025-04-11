@@ -26,7 +26,7 @@ export const getProfileBySlug = async (slug) => {
         const response = await apiClient.get(`/${slug}`);
         return response.data;
     } catch (error) {
-        console.error("Lỗi khi lấy profile:", error);
+        console.error("Lỗi khi lấy profile theo slug:", error);
         throw error;
     }
 };

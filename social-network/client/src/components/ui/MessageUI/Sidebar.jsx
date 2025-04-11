@@ -5,12 +5,14 @@ import { getUserConversations } from "~/api/chat";
 import { getProfileById } from "~/api/profile";
 import { useNavigate } from "react-router-dom";
 import SearchFriendModal from "~/components/ui/MessageUI/SearchFriendModal";
+import { useParams } from "react-router-dom";
 
-const Sidebar = ({ onSelectUser }) => {
+const Sidebar = ({ setNameGroupChat }) => {
+    const { conversationId } = useParams();
     const { profile } = useUser();
-    const [showModal, setShowModal] = useState(false);
     const [usersInfo, setUsersInfo] = useState([]);
     const navigate = useNavigate();
+    const [showModal, setShowModal] = useState(false);
 
     useEffect(() => {
         const fetchConversations = async () => {
@@ -93,14 +95,18 @@ const Sidebar = ({ onSelectUser }) => {
                         const name =
                             info.name ||
                             info.members.map((u) => u?.fullName).join(", ");
-
                         return (
                             <div
                                 key={info.conversationId || idx}
-                                onClick={() =>
-                                    navigate(`/message/${info.conversationId}`)
-                                }
-                                className="hover:bg-[var(--secondary-color)] cursor-pointer flex items-center gap-3 px-6 py-2"
+                                onClick={() => {
+                                    setNameGroupChat(name); // Chỉ gọi khi click
+                                    navigate(`/message/${info.conversationId}`);
+                                }}
+                                className={`cursor-pointer flex items-center gap-3 px-6 py-2 ${
+                                    info.conversationId === conversationId
+                                        ? "bg-[var(--secondary-color)]"
+                                        : "hover:bg-[var(--secondary-color)]"
+                                }`}
                             >
                                 <img
                                     src={
@@ -118,15 +124,11 @@ const Sidebar = ({ onSelectUser }) => {
                     })
                 )}
             </div>
-            {/* Modal tìm kiếm bạn bè */}
             {showModal && profile && (
                 <SearchFriendModal
                     open={showModal}
                     onClose={() => setShowModal(false)}
                     profileId={profile._id}
-                    onSelect={(user) => {
-                        setSelectedUser(user.fullname);
-                    }}
                 />
             )}
         </div>

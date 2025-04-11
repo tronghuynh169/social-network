@@ -1,27 +1,110 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SearchFriendModal from "~/components/ui/MessageUI/SearchFriendModal";
 import { useUser } from "~/context/UserContext";
 import Sidebar from "~/components/ui/MessageUI/Sidebar";
 import ChatBox from "~/components/ui/MessageUI/ChatBox";
+import { useParams } from "react-router-dom";
+import { getMessages, getConversationById } from "~/api/chat";
+import { getProfileById } from "~/api/profile";
+import { sendMessage } from "~/api/chat";
 
 const MessagePage = () => {
     const { profile } = useUser();
-    const [selectedUser, setSelectedUser] = useState(null);
+    const { conversationId } = useParams();
     const [message, setMessage] = useState("");
+    const [messages, setMessages] = useState([]);
+    const [conversation, setConversation] = useState([]);
+    const [nameGroupChat, setNameGroupChat] = useState("");
+    const [admin, setAdmin] = useState({});
     const [showModal, setShowModal] = useState(false);
+    const [imageFile, setImageFile] = useState(null);
+
+    useEffect(() => {
+        const fetchMessages = async () => {
+            const data = await getMessages(conversationId);
+            setMessages(data);
+        };
+        if (conversationId) {
+            fetchMessages();
+        }
+    }, [conversationId]);
+
+    useEffect(() => {
+        const fetchConversation = async () => {
+            const data = await getConversationById(conversationId);
+            if (!data) return;
+
+            // Lấy profile từng user
+            const fullMembers = await Promise.all(
+                data.members.map(async (id) => {
+                    const profile = await getProfileById(id);
+                    return profile || { _id: id, fullName: "Không rõ" };
+                })
+            );
+
+            // Gắn lại vào conversation
+            data.members = fullMembers;
+            setConversation(data);
+
+            // 👇 Lấy thông tin admin
+            if (data.admin) {
+                const adminProfile = await getProfileById(data.admin);
+                // Bạn có thể lưu vào state nếu muốn dùng trong ChatBox
+                setAdmin(adminProfile); // cần tạo thêm useState admin
+            }
+        };
+
+        if (conversationId) {
+            fetchConversation();
+        }
+    }, [conversationId]);
+
+    const handleSendMessage = async () => {
+        if (!message.trim() && !imageFile) return;
+
+        try {
+            const newMsg = await sendMessage({
+                conversationId,
+                sender: profile._id,
+                text: message,
+                image: imageFile,
+            });
+            console.log(newMsg);
+            setMessages((prev) => [
+                ...prev,
+                {
+                    ...newMsg.data, // 👈 đảm bảo lấy data thật từ response
+                    sender: profile._id,
+                    senderName: profile.fullName,
+                },
+            ]);
+
+            setMessage("");
+            setImageFile(null);
+        } catch (err) {
+            console.error("❌ Gửi tin nhắn lỗi:", err);
+        }
+    };
 
     return (
         <div className="flex h-screen w-full">
             {/* Sidebar trái */}
-            <Sidebar onSelectUser={setSelectedUser} />
+            <Sidebar setNameGroupChat={setNameGroupChat} />
 
             {/* Nội dung tin nhắn */}
-            {selectedUser ? (
+            {conversationId ? (
                 // Nếu đã chọn người, hiển thị ChatBox
                 <ChatBox
-                    selectedUser={selectedUser}
                     message={message}
                     setMessage={setMessage}
+                    messages={messages}
+                    isGroup={conversation?.isGroup}
+                    nameGroupChat={nameGroupChat}
+                    admin={admin}
+                    onSend={handleSendMessage}
+                    setImageFile={setImageFile}
+                    imageFile={imageFile}
+                    currentUserId={profile._id}
                 />
             ) : (
                 // Nếu chưa chọn ai, hiển thị trang chờ
@@ -56,9 +139,6 @@ const MessagePage = () => {
                     open={showModal}
                     onClose={() => setShowModal(false)}
                     profileId={profile._id}
-                    onSelect={(user) => {
-                        setSelectedUser(user.fullname);
-                    }}
                 />
             )}
         </div>

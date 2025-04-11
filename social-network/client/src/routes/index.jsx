@@ -47,7 +47,7 @@ export const routes = [
                 element: <MessagePage />,
             },
             {
-                path: "message/:slug",
+                path: "message/:conversationId",
                 element: <MessagePage />,
             },
             {
