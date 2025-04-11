@@ -44,7 +44,7 @@ export const sendMessage = async ({ conversationId, sender, text, image }) => {
         headers: { "Content-Type": "multipart/form-data" },
     });
 
-    return response.data;
+    return res.data;
 };
 
 // Lấy tất cả tin nhắn của 1 cuộc trò chuyện

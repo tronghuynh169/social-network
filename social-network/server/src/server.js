@@ -1,26 +1,93 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const path = require("path");
+const http = require("http");
+const { Server } = require("socket.io");
 const connectDB = require("./database/connection");
 const route = require("./routes");
-const path = require("path");
+const Message = require("./models/Message");
 
+// Load environment variables
 dotenv.config();
-connectDB();
 
+// Initialize Express
 const app = express();
+
+// Middleware
 app.use(express.json());
 app.use(
     cors({
-        origin: "http://localhost:5173", // 🔥 Chỉ định frontend
-        credentials: true, // 🔥 Cho phép gửi cookie & token
+        origin: "http://localhost:5173", // Frontend URL
+        credentials: true, // Allow cookies and tokens
     })
 );
 
+// Static file serving
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/messages", express.static(path.join(__dirname, "messages")));
 app.use(express.static(path.join(__dirname, "public")));
 
+// Initialize routes
 route(app);
-console.log("JWT_SECRET:", process.env.JWT_SECRET);
-app.listen(5000, () => console.log("🚀 Server running on port 5000"));
+
+// Fallback route for unknown endpoints
+app.use((req, res) => {
+    res.status(404).json({ message: "API endpoint not found" });
+});
+
+// Connect to the database
+connectDB();
+
+// Create HTTP server
+const server = http.createServer(app);
+
+// Configure Socket.IO
+const io = new Server(server, {
+    cors: {
+        origin: "http://localhost:5173", // Frontend URL
+        credentials: true,
+    },
+});
+
+// Socket.IO logic
+io.on("connection", (socket) => {
+    console.log("🔥 New client connected:", socket.id);
+
+    // Listen for 'sendMessage' event
+    socket.on("sendMessage", async (data) => {
+        try {
+            // Save message to the database
+            const newMessage = new Message({
+                sender: data.sender,
+                conversation: data.conversationId,
+                text: data.text,
+                image: data.image,
+            });
+            console.log("🖼️ image URL nhận được từ client:", data.image);
+            const savedMessage = await newMessage.save();
+
+            // Broadcast the saved message to clients in the same conversation
+            io.to(data.conversationId).emit("receiveMessage", savedMessage);
+        } catch (error) {
+            console.error("❌ Error saving message:", error);
+        }
+    });
+
+    // Join a conversation room
+    socket.on("joinConversation", (conversationId) => {
+        socket.join(conversationId);
+        console.log(`🔗 User joined conversation: ${conversationId}`);
+    });
+
+    // Handle client disconnect
+    socket.on("disconnect", () => {
+        console.log("❌ Client disconnected:", socket.id);
+    });
+});
+
+// Start the server
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+});

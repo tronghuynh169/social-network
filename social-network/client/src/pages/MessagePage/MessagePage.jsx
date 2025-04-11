@@ -6,7 +6,11 @@ import ChatBox from "~/components/ui/MessageUI/ChatBox";
 import { useParams } from "react-router-dom";
 import { getMessages, getConversationById } from "~/api/chat";
 import { getProfileById } from "~/api/profile";
-import { sendMessage } from "~/api/chat";
+import { io } from "socket.io-client";
+import { uploadImage } from "~/api/upload"; // tạo file upload.js
+
+// Initialize the Socket.IO client
+const socket = io(import.meta.env.VITE_API_URL || "http://localhost:5000");
 
 const MessagePage = () => {
     const { profile } = useUser();
@@ -34,7 +38,7 @@ const MessagePage = () => {
             const data = await getConversationById(conversationId);
             if (!data) return;
 
-            // Lấy profile từng user
+            // Fetch profiles of each member in the conversation
             const fullMembers = await Promise.all(
                 data.members.map(async (id) => {
                     const profile = await getProfileById(id);
@@ -42,15 +46,14 @@ const MessagePage = () => {
                 })
             );
 
-            // Gắn lại vào conversation
+            // Update the conversation members
             data.members = fullMembers;
             setConversation(data);
 
-            // 👇 Lấy thông tin admin
+            // Fetch admin profile if available
             if (data.admin) {
                 const adminProfile = await getProfileById(data.admin);
-                // Bạn có thể lưu vào state nếu muốn dùng trong ChatBox
-                setAdmin(adminProfile); // cần tạo thêm useState admin
+                setAdmin(adminProfile);
             }
         };
 
@@ -59,41 +62,69 @@ const MessagePage = () => {
         }
     }, [conversationId]);
 
+    useEffect(() => {
+        if (conversationId) {
+            // Join the conversation room
+            socket.emit("joinConversation", conversationId);
+
+            // Listen for incoming messages
+            socket.on("receiveMessage", (newMessage) => {
+                setMessages((prev) => [...prev, newMessage]);
+            });
+        }
+
+        return () => {
+            // Cleanup listeners when the component unmounts or conversation changes
+            socket.off("receiveMessage");
+        };
+    }, [conversationId]);
+
+    
+
     const handleSendMessage = async () => {
         if (!message.trim() && !imageFile) return;
-
-        try {
-            const newMsg = await sendMessage({
-                conversationId,
-                sender: profile._id,
-                text: message,
-                image: imageFile,
-            });
-            console.log(newMsg);
-            setMessages((prev) => [
-                ...prev,
-                {
-                    ...newMsg.data, // 👈 đảm bảo lấy data thật từ response
-                    sender: profile._id,
-                    senderName: profile.fullName,
-                },
-            ]);
-
-            setMessage("");
-            setImageFile(null);
-        } catch (err) {
-            console.error("❌ Gửi tin nhắn lỗi:", err);
+    
+        let imageUrl = null;
+    
+        // 1. Upload ảnh nếu có
+        if (imageFile) {
+            const formData = new FormData();
+            formData.append("image", imageFile);
+    
+            try {
+                const res = await uploadImage(formData); // đảm bảo `await` ở đây
+                console.log("✅ Ảnh upload thành công:", res); // <-- log này
+                imageUrl = res.url;
+            } catch (err) {
+                console.error("❌ Upload ảnh thất bại:", err);
+                return;
+            }
         }
+    
+        // 2. Emit tin nhắn sau khi upload thành công
+        const newMessage = {
+            conversationId,
+            sender: profile._id,
+            text: message,
+            image: imageUrl,
+        };
+    
+        socket.emit("sendMessage", newMessage); // Gửi qua socket
+    
+        // 3. Reset trạng thái
+        setMessage("");
+        setImageFile(null);
     };
+    
+    
 
     return (
         <div className="flex h-screen w-full">
-            {/* Sidebar trái */}
+            {/* Sidebar */}
             <Sidebar setNameGroupChat={setNameGroupChat} />
 
-            {/* Nội dung tin nhắn */}
+            {/* Chat Content */}
             {conversationId ? (
-                // Nếu đã chọn người, hiển thị ChatBox
                 <ChatBox
                     message={message}
                     setMessage={setMessage}
@@ -107,7 +138,7 @@ const MessagePage = () => {
                     currentUserId={profile._id}
                 />
             ) : (
-                // Nếu chưa chọn ai, hiển thị trang chờ
+                // Placeholder when no conversation is selected
                 <div className="flex flex-col justify-center items-center flex-1">
                     <div className="bg-[var(--secondary-color)] p-5 rounded-full mb-4">
                         <svg
@@ -133,7 +164,7 @@ const MessagePage = () => {
                     </button>
                 </div>
             )}
-            {/* Modal tìm kiếm bạn bè */}
+            {/* Search Friend Modal */}
             {showModal && profile && (
                 <SearchFriendModal
                     open={showModal}
