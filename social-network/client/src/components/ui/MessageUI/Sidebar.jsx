@@ -6,6 +6,7 @@ import { getProfileById } from "~/api/profile";
 import { useNavigate } from "react-router-dom";
 import SearchFriendModal from "~/components/ui/MessageUI/SearchFriendModal";
 import { useParams } from "react-router-dom";
+import socket from "~/socket";
 
 const Sidebar = ({ setNameGroupChat }) => {
     const { conversationId } = useParams();
@@ -15,28 +16,35 @@ const Sidebar = ({ setNameGroupChat }) => {
     const [showModal, setShowModal] = useState(false);
 
     useEffect(() => {
-        const fetchConversations = async () => {
-            if (!profile?._id) return;
+        if (!profile?._id) return;
 
+        const fetchConversations = async () => {
             const convs = await getUserConversations(profile._id);
+            updateConversations(convs);
+        };
+
+        // Hàm cập nhật danh sách cuộc trò chuyện
+        const updateConversations = (convs) => {
+            const sortedConvs = convs.sort((a, b) => {
+                const dateA = new Date(a.lastMessage?.createdAt || a.createdAt);
+                const dateB = new Date(b.lastMessage?.createdAt || b.createdAt);
+                return dateB - dateA;
+            });
 
             const filteredConvs = [];
 
-            for (const conv of convs) {
-                if (conv.isGroup) {
-                    filteredConvs.push(conv); // luôn hiển thị nhóm
-                } else {
-                    // Kiểm tra có tin nhắn nào không
-                    const hasMessage =
-                        conv.lastMessage || conv.messages?.length > 0;
+            for (const conv of sortedConvs) {
+                const hasMessage =
+                    conv.lastMessage || conv.messages?.length > 0;
 
-                    if (hasMessage) {
-                        filteredConvs.push(conv); // chỉ thêm nếu có tin nhắn
-                    }
+                if (conv.isGroup) {
+                    filteredConvs.push(conv); // Luôn hiển thị nhóm
+                } else if (!conv.isGroup && hasMessage) {
+                    filteredConvs.push(conv); // Chỉ hiển thị chat 1-1 nếu có tin nhắn
                 }
             }
 
-            // Sau đó xử lý như bình thường
+            // Lấy thông tin người dùng
             const userIdSet = new Set();
             filteredConvs.forEach((conv) => {
                 conv.members.forEach((id) => {
@@ -45,32 +53,53 @@ const Sidebar = ({ setNameGroupChat }) => {
             });
 
             const uniqueUserIds = Array.from(userIdSet);
-            const users = await Promise.all(
-                uniqueUserIds.map((id) => getProfileById(id))
-            );
+            const fetchUsers = async () => {
+                const users = await Promise.all(
+                    uniqueUserIds.map((id) => getProfileById(id))
+                );
 
-            const userMap = {};
-            users.forEach((user) => {
-                userMap[user._id] = user;
-            });
+                const userMap = {};
+                users.forEach((user) => {
+                    userMap[user._id] = user;
+                });
 
-            const merged = filteredConvs.map((conv) => {
-                const otherUsers = conv.members
-                    .filter((id) => id !== profile._id)
-                    .map((id) => userMap[id])
-                    .filter(Boolean);
+                const merged = filteredConvs.map((conv) => {
+                    const otherUsers = conv.members
+                        .filter((id) => id !== profile._id)
+                        .map((id) => userMap[id])
+                        .filter(Boolean);
 
-                return {
-                    conversationId: conv._id,
-                    name: conv.name,
-                    members: otherUsers,
-                };
-            });
+                    return {
+                        conversationId: conv._id,
+                        name: conv.name,
+                        avatar: conv.avatar,
+                        members: otherUsers,
+                    };
+                });
 
-            setUsersInfo(merged);
+                setUsersInfo(merged);
+            };
+
+            fetchUsers();
         };
 
+        // Gọi ngay khi component mount
         fetchConversations();
+
+        // Lắng nghe tin nhắn mới qua socket
+        socket.on("receiveMessage", () => {
+            fetchConversations();
+        });
+
+        // Lắng nghe sự kiện tạo nhóm mới
+        socket.on("newGroupCreated", () => {
+            fetchConversations();
+        });
+
+        return () => {
+            socket.off("receiveMessage");
+            socket.off("newGroupCreated");
+        };
     }, [profile]);
 
     return (

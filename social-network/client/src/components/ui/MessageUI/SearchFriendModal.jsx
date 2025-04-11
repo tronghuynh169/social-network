@@ -5,6 +5,7 @@ import { getFollowing } from "~/api/profile";
 import { useNavigate } from "react-router-dom";
 import { createConversation } from "~/api/chat";
 import { getUserConversations } from "~/api/chat";
+import socket from "~/socket";
 
 const SearchFriendModal = ({
     open,
@@ -209,14 +210,27 @@ const SearchFriendModal = ({
                                     }
                                 }
 
-                                // Nếu là nhóm hoặc chưa có cuộc trò chuyện 1-1, tạo cuộc trò chuyện mới
-                                const newConv = await createConversation({
-                                    members,
-                                    isGroup,
-                                    admin: isGroup ? profileId : undefined,
-                                    name: null,
-                                    avatar: null,
-                                });
+                                let newConv; // 👈 Khai báo trước
+
+                                if (isGroup) {
+                                    newConv = await createConversation({
+                                        members,
+                                        isGroup,
+                                        admin: profileId,
+                                        name: selectedUsers
+                                            .map((u) => u.fullName)
+                                            .join(", "),
+                                        avatar: null,
+                                    });
+
+                                    socket.emit("newGroupCreated", newConv);
+                                } else {
+                                    // Nếu là 1-1 thì đã kiểm tra `existing`, nếu không có thì tạo mới
+                                    newConv = await createConversation({
+                                        members,
+                                        isGroup,
+                                    });
+                                }
 
                                 // Gọi callback nếu có
                                 if (typeof onGroupCreated === "function") {

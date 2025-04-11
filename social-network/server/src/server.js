@@ -54,6 +54,25 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
     console.log("🔥 New client connected:", socket.id);
 
+    // Xử lý sự kiện "newGroupCreated"
+    socket.on("newGroupCreated", async (newGroup) => {
+        try {
+            // Nếu nhóm chưa có tên, tạo tên mặc định từ danh sách thành viên
+            if (!newGroup.name) {
+                const members = await User.find({
+                    _id: { $in: newGroup.members },
+                });
+                newGroup.name = members
+                    .map((member) => member.fullName)
+                    .join(", ");
+            }
+
+            io.emit("newGroupCreated", newGroup); // Phát sự kiện đến tất cả client
+            console.log("✅ Group created:", newGroup);
+        } catch (error) {
+            console.error("❌ Error handling new group creation:", error);
+        }
+    });
     // Listen for 'sendMessage' event
     socket.on("sendMessage", async (data) => {
         try {
@@ -64,11 +83,16 @@ io.on("connection", (socket) => {
                 text: data.text,
                 image: data.image,
             });
-            console.log("🖼️ image URL nhận được từ client:", data.image);
             const savedMessage = await newMessage.save();
-
+    
             // Broadcast the saved message to clients in the same conversation
             io.to(data.conversationId).emit("receiveMessage", savedMessage);
+    
+            // Fetch updated conversation
+            const conversation = await Conversation.findById(data.conversationId).populate("members", "fullName");
+            if (conversation) {
+                io.emit("conversationUpdated", conversation);
+            }
         } catch (error) {
             console.error("❌ Error saving message:", error);
         }

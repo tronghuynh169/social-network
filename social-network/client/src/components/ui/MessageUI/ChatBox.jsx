@@ -12,9 +12,11 @@ import {
     X,
 } from "lucide-react";
 import dayjs from "dayjs";
+import socket from "~/socket"; // 🔥 import socket
 
 const ChatBox = ({
     messages,
+    setMessages, // 🔥 cần thêm prop này để update messages khi nhận tin nhắn realtime
     setMessage,
     message,
     isGroup,
@@ -24,18 +26,38 @@ const ChatBox = ({
     setImageFile,
     currentUserId,
     imageFile,
+    conversationId, // 🔥 thêm để join room
+    avatar,
 }) => {
     const bottomRef = useRef(null);
 
     useEffect(() => {
-        const timeout = setTimeout(() => {
-            if (bottomRef.current) {
-                bottomRef.current.scrollIntoView({ behavior: "smooth" });
+        if (!conversationId) {
+            console.warn("⚠️ conversationId is undefined or null.");
+            return; // Ngăn việc đăng ký sự kiện nếu conversationId không tồn tại
+        }
+        const handleReceiveMessage = (msg) => {
+            // Kiểm tra conversationId phù hợp
+            if (msg.conversation === conversationId) {
+                setMessages((prev) => [...prev, msg]);
             }
-        }, 100); // delay một chút cho ảnh kịp render
+        };
+        console.log(conversationId);
+        socket.on("newMessage", handleReceiveMessage);
 
-        return () => clearTimeout(timeout);
-    }, [messages]);
+        return () => {
+            socket.off("newMessage", handleReceiveMessage);
+        };
+    }, [conversationId, setMessages]);
+
+    console.log("📡 Emitting joinRoom:", conversationId);
+    // ✅ Join room mỗi khi conversationId thay đổi
+    useEffect(() => {
+        if (conversationId) {
+            console.log("📡 Emitting joinRoom:", conversationId);
+            socket.emit("joinRoom", conversationId);
+        }
+    }, [conversationId]);
 
     const handleKeyDown = (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
@@ -70,7 +92,7 @@ const ChatBox = ({
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--secondary-color)]">
                 <div className="flex items-center gap-3">
                     <img
-                        src="https://i.imgur.com/1ZQZ1Z1.png"
+                        src={avatar}
                         alt="avatar"
                         className="w-11 h-11 rounded-full object-cover"
                     />
@@ -87,7 +109,7 @@ const ChatBox = ({
             <ScrollArea className="flex-1 overflow-auto px-6 py-4 text-sm space-y-2">
                 <div className="flex flex-col items-center py-10 gap-1">
                     <img
-                        src="https://i.imgur.com/1ZQZ1Z1.png"
+                        src={avatar}
                         alt="avatar"
                         className="w-24 h-24 rounded-full object-cover"
                     />
@@ -99,9 +121,11 @@ const ChatBox = ({
                             Xem trang cá nhân
                         </button>
                     )}
-                    <p className="text-[var(--text-secondary-color)] text-[14px]">
-                        {admin.fullName} đã tạo nhóm này
-                    </p>
+                    {isGroup && (
+                        <p className="text-[var(--text-secondary-color)] text-[14px]">
+                            {admin.fullName} đã tạo nhóm này
+                        </p>
+                    )}
                 </div>
 
                 {messages.map((msg, index) => {

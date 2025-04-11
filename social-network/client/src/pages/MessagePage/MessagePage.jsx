@@ -22,6 +22,7 @@ const MessagePage = () => {
     const [admin, setAdmin] = useState({});
     const [showModal, setShowModal] = useState(false);
     const [imageFile, setImageFile] = useState(null);
+    const [avatar, setAvatar] = useState("");
 
     useEffect(() => {
         const fetchMessages = async () => {
@@ -38,7 +39,6 @@ const MessagePage = () => {
             const data = await getConversationById(conversationId);
             if (!data) return;
 
-            // Fetch profiles of each member in the conversation
             const fullMembers = await Promise.all(
                 data.members.map(async (id) => {
                     const profile = await getProfileById(id);
@@ -46,11 +46,24 @@ const MessagePage = () => {
                 })
             );
 
-            // Update the conversation members
             data.members = fullMembers;
             setConversation(data);
 
-            // Fetch admin profile if available
+            // 👉 Thêm đoạn này để hiển thị tên cuộc trò chuyện
+            setNameGroupChat(
+                data.isGroup
+                    ? data.name
+                    : fullMembers.find((m) => m._id !== profile._id)
+                          ?.fullName || "Cuộc trò chuyện"
+            );
+
+            setAvatar(
+                data.isGroup
+                    ? data.image || "https://i.imgur.com/1ZQZ1Z1.png"
+                    : fullMembers.find((m) => m._id !== profile._id)?.avatar ||
+                          "https://i.imgur.com/1ZQZ1Z1.png"
+            );
+
             if (data.admin) {
                 const adminProfile = await getProfileById(data.admin);
                 setAdmin(adminProfile);
@@ -60,7 +73,7 @@ const MessagePage = () => {
         if (conversationId) {
             fetchConversation();
         }
-    }, [conversationId]);
+    }, [conversationId, profile._id]);
 
     useEffect(() => {
         if (conversationId) {
@@ -79,18 +92,16 @@ const MessagePage = () => {
         };
     }, [conversationId]);
 
-    
-
     const handleSendMessage = async () => {
         if (!message.trim() && !imageFile) return;
-    
+
         let imageUrl = null;
-    
+
         // 1. Upload ảnh nếu có
         if (imageFile) {
             const formData = new FormData();
             formData.append("image", imageFile);
-    
+
             try {
                 const res = await uploadImage(formData); // đảm bảo `await` ở đây
                 console.log("✅ Ảnh upload thành công:", res); // <-- log này
@@ -100,7 +111,7 @@ const MessagePage = () => {
                 return;
             }
         }
-    
+
         // 2. Emit tin nhắn sau khi upload thành công
         const newMessage = {
             conversationId,
@@ -108,15 +119,13 @@ const MessagePage = () => {
             text: message,
             image: imageUrl,
         };
-    
+
         socket.emit("sendMessage", newMessage); // Gửi qua socket
-    
+
         // 3. Reset trạng thái
         setMessage("");
         setImageFile(null);
     };
-    
-    
 
     return (
         <div className="flex h-screen w-full">
@@ -136,6 +145,7 @@ const MessagePage = () => {
                     setImageFile={setImageFile}
                     imageFile={imageFile}
                     currentUserId={profile._id}
+                    avatar={avatar}
                 />
             ) : (
                 // Placeholder when no conversation is selected
