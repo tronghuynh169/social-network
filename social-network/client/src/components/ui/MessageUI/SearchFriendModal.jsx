@@ -220,7 +220,7 @@ const SearchFriendModal = ({
                                         name: selectedUsers
                                             .map((u) => u.fullName)
                                             .join(", "),
-                                        avatar: null,
+                                        avatar: "http://localhost:5173/images/avatar-default-group.png",
                                     });
 
                                     socket.emit("newGroupCreated", newConv);

@@ -50,7 +50,6 @@ const ChatBox = ({
         };
     }, [conversationId, setMessages]);
 
-    console.log("📡 Emitting joinRoom:", conversationId);
     // ✅ Join room mỗi khi conversationId thay đổi
     useEffect(() => {
         if (conversationId) {

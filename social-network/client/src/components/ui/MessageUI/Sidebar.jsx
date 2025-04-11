@@ -8,7 +8,7 @@ import SearchFriendModal from "~/components/ui/MessageUI/SearchFriendModal";
 import { useParams } from "react-router-dom";
 import socket from "~/socket";
 
-const Sidebar = ({ setNameGroupChat }) => {
+const Sidebar = ({ setNameGroupChat, messages, avatar }) => {
     const { conversationId } = useParams();
     const { profile } = useUser();
     const [usersInfo, setUsersInfo] = useState([]);
@@ -35,7 +35,7 @@ const Sidebar = ({ setNameGroupChat }) => {
 
             for (const conv of sortedConvs) {
                 const hasMessage =
-                    conv.lastMessage || conv.messages?.length > 0;
+                    conv.lastMessage || messages[0]?.text.length > 0;
 
                 if (conv.isGroup) {
                     filteredConvs.push(conv); // Luôn hiển thị nhóm
@@ -72,7 +72,9 @@ const Sidebar = ({ setNameGroupChat }) => {
                     return {
                         conversationId: conv._id,
                         name: conv.name,
-                        avatar: conv.avatar,
+                        avatar: conv.isGroup
+                            ? conv.avatar
+                            : otherUsers[0]?.avatar || "", // ✅ avatar đúng của người còn lại
                         members: otherUsers,
                     };
                 });
@@ -139,8 +141,9 @@ const Sidebar = ({ setNameGroupChat }) => {
                             >
                                 <img
                                     src={
-                                        info.avatar ||
-                                        "http://localhost:5173/images/avatar-default-group.png"
+                                        info.avatar && info.avatar.trim() !== ""
+                                            ? info.avatar
+                                            : "http://localhost:5173/images/avatar-default-user.png"
                                     }
                                     alt="avatar"
                                     className="w-14 h-14 rounded-full object-cover"
@@ -158,6 +161,7 @@ const Sidebar = ({ setNameGroupChat }) => {
                     open={showModal}
                     onClose={() => setShowModal(false)}
                     profileId={profile._id}
+                    avatar={avatar}
                 />
             )}
         </div>

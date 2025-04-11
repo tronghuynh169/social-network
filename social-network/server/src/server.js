@@ -75,6 +75,7 @@ io.on("connection", (socket) => {
     });
     // Listen for 'sendMessage' event
     socket.on("sendMessage", async (data) => {
+        console.log("data: " +data)
         try {
             // Save message to the database
             const newMessage = new Message({

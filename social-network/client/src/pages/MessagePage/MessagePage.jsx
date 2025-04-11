@@ -23,7 +23,6 @@ const MessagePage = () => {
     const [showModal, setShowModal] = useState(false);
     const [imageFile, setImageFile] = useState(null);
     const [avatar, setAvatar] = useState("");
-
     useEffect(() => {
         const fetchMessages = async () => {
             const data = await getMessages(conversationId);
@@ -130,7 +129,11 @@ const MessagePage = () => {
     return (
         <div className="flex h-screen w-full">
             {/* Sidebar */}
-            <Sidebar setNameGroupChat={setNameGroupChat} />
+            <Sidebar
+                setNameGroupChat={setNameGroupChat}
+                messages={messages}
+                avatar={avatar}
+            />
 
             {/* Chat Content */}
             {conversationId ? (
