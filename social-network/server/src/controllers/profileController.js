@@ -1,7 +1,7 @@
-const mongoose = require("mongoose"); // Thêm dòng này
-const Profile = require("../models/Profile");
-const User = require("../models/User");
-const removeAccents = require("remove-accents");
+const mongoose = require('mongoose'); // Thêm dòng này
+const Profile = require('../models/Profile');
+const User = require('../models/User');
+const removeAccents = require('remove-accents');
 
 // Lấy profile theo username
 exports.getProfileBySlug = async (req, res) => {
@@ -10,13 +10,13 @@ exports.getProfileBySlug = async (req, res) => {
         const profile = await Profile.findOne({ slug });
 
         if (!profile) {
-            return res.status(404).json({ message: "Không tìm thấy profile" });
+            return res.status(404).json({ message: 'Không tìm thấy profile' });
         }
 
         res.status(200).json(profile);
     } catch (err) {
-        console.error("🔥 Lỗi khi lấy profile:", err);
-        res.status(500).json({ message: "Lỗi server, vui lòng thử lại sau." });
+        console.error('🔥 Lỗi khi lấy profile:', err);
+        res.status(500).json({ message: 'Lỗi server, vui lòng thử lại sau.' });
     }
 };
 
@@ -33,10 +33,10 @@ exports.updateProfileByUsername = async (req, res) => {
         );
 
         if (!profile)
-            return res.status(404).json({ message: "Profile không tồn tại!" });
+            return res.status(404).json({ message: 'Profile không tồn tại!' });
         res.json(profile);
     } catch (error) {
-        res.status(500).json({ message: "Lỗi hệ thống", error: error.message });
+        res.status(500).json({ message: 'Lỗi hệ thống', error: error.message });
     }
 };
 
@@ -46,13 +46,13 @@ exports.getProfileByUsername = async (req, res) => {
         const profile = await Profile.findOne({ username });
 
         if (!profile) {
-            return res.status(404).json({ message: "Không tìm thấy profile" });
+            return res.status(404).json({ message: 'Không tìm thấy profile' });
         }
 
         res.status(200).json(profile);
     } catch (err) {
-        console.error("🔥 Lỗi khi lấy profile:", err);
-        res.status(500).json({ message: "Lỗi server, vui lòng thử lại sau." });
+        console.error('🔥 Lỗi khi lấy profile:', err);
+        res.status(500).json({ message: 'Lỗi server, vui lòng thử lại sau.' });
     }
 };
 
@@ -61,19 +61,19 @@ exports.getProfileByFullName = async (req, res) => {
         let { fullname } = req.params;
 
         // Kiểm tra nếu fullname không có giá trị hoặc là chuỗi rỗng
-        if (!fullname || fullname.trim() === "") {
+        if (!fullname || fullname.trim() === '') {
             return res.json([]); // Trả về mảng rỗng nếu không có fullname
         }
 
         // Bỏ dấu + chuẩn hóa từ khóa tìm kiếm
         const keyword = removeAccents(
-            fullname.toLowerCase().trim().replace(/\s+/g, " ")
+            fullname.toLowerCase().trim().replace(/\s+/g, ' ')
         );
 
         // Tìm kiếm với regex an toàn hơn (tránh injection)
         const regex = new RegExp(
-            keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-            "i"
+            keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+            'i'
         );
 
         const profiles = await Profile.find({
@@ -88,7 +88,7 @@ exports.getProfileByFullName = async (req, res) => {
         res.json(profiles);
     } catch (err) {
         // Tránh lỗi 500, và trả về mảng rỗng nếu có lỗi server
-        console.error("Lỗi:", err);
+        console.error('Lỗi:', err);
         return res.json([]); // Trả về mảng rỗng thay vì lỗi
     }
 };
@@ -100,13 +100,13 @@ exports.getProfileById = async (req, res) => {
         const profile = await Profile.findById(id);
 
         if (!profile) {
-            return res.status(404).json({ message: "Không tìm thấy profile" });
+            return res.status(404).json({ message: 'Không tìm thấy profile' });
         }
 
         res.status(200).json(profile);
     } catch (err) {
-        console.error("🔥 Lỗi khi lấy profile theo ID:", err);
-        res.status(500).json({ message: "Lỗi server, vui lòng thử lại sau." });
+        console.error('🔥 Lỗi khi lấy profile theo ID:', err);
+        res.status(500).json({ message: 'Lỗi server, vui lòng thử lại sau.' });
     }
 };
 
@@ -114,11 +114,11 @@ exports.getProfileByUserId = async (req, res) => {
     try {
         const profile = await Profile.findOne({ userId: req.params.userId });
         if (!profile)
-            return res.status(404).json({ message: "Không tìm thấy profile" });
+            return res.status(404).json({ message: 'Không tìm thấy profile' });
         res.json(profile);
     } catch (error) {
-        console.error("Lỗi khi lấy profile:", error);
-        res.status(500).json({ message: "Lỗi server" });
+        console.error('Lỗi khi lấy profile:', error);
+        res.status(500).json({ message: 'Lỗi server' });
     }
 };
 
@@ -130,22 +130,22 @@ exports.checkFollowingStatus = async (req, res) => {
         if (!user || !profileId) {
             return res
                 .status(400)
-                .json({ message: "Thiếu user hoặc profileId!" });
+                .json({ message: 'Thiếu user hoặc profileId!' });
         }
 
         const profile = await Profile.findById(user);
         if (!profile) {
             return res
                 .status(404)
-                .json({ message: "User không tồn tại", isFollowing: false });
+                .json({ message: 'User không tồn tại', isFollowing: false });
         }
 
         const isFollowing = profile.following.includes(profileId);
 
         res.json({ isFollowing });
     } catch (err) {
-        console.error("❌ Lỗi server:", err);
-        res.status(500).json({ message: "Lỗi server", error: err.message });
+        console.error('❌ Lỗi server:', err);
+        res.status(500).json({ message: 'Lỗi server', error: err.message });
     }
 };
 
@@ -155,11 +155,11 @@ exports.followUser = async (req, res) => {
         const profileToFollow = await Profile.findById(req.params.profileId); // abc123
         const currentUserProfile = await Profile.findById(userProfileId); // BFNGOC
         if (!profileToFollow || !currentUserProfile) {
-            console.error("❌ Không tìm thấy profile:", {
+            console.error('❌ Không tìm thấy profile:', {
                 userProfileId,
                 profileId: req.params.profileId,
             });
-            return res.status(404).json({ message: "Profile không tồn tại" });
+            return res.status(404).json({ message: 'Profile không tồn tại' });
         }
 
         // Kiểm tra nếu chưa follow thì mới thêm
@@ -175,12 +175,12 @@ exports.followUser = async (req, res) => {
         }
 
         res.status(200).json({
-            message: "Đã theo dõi",
+            message: 'Đã theo dõi',
             following: currentUserProfile.following,
         });
     } catch (err) {
-        console.error("🔥 Lỗi khi theo dõi:", err);
-        res.status(500).json({ message: "Lỗi server", error: err.message });
+        console.error('🔥 Lỗi khi theo dõi:', err);
+        res.status(500).json({ message: 'Lỗi server', error: err.message });
     }
 };
 
@@ -192,11 +192,11 @@ exports.unfollowUser = async (req, res) => {
         const currentUserProfile = await Profile.findById(currentUserId);
 
         if (!profileToUnfollow || !currentUserProfile) {
-            console.error("❌ Unfollow Error - Profile not found:", {
+            console.error('❌ Unfollow Error - Profile not found:', {
                 profileToUnfollow: req.params.profileId,
                 currentUserProfile: currentUserId,
             });
-            return res.status(404).json({ message: "Profile không tồn tại" });
+            return res.status(404).json({ message: 'Profile không tồn tại' });
         }
 
         await Profile.findByIdAndUpdate(
@@ -212,18 +212,18 @@ exports.unfollowUser = async (req, res) => {
         );
 
         res.status(200).json({
-            message: "Đã hủy theo dõi",
+            message: 'Đã hủy theo dõi',
             following: currentUserProfile.following,
         });
     } catch (err) {
-        console.error("🔥 Lỗi server khi hủy theo dõi:", {
+        console.error('🔥 Lỗi server khi hủy theo dõi:', {
             error: err.message,
             stack: err.stack,
             params: req.params,
             body: req.body,
         });
         res.status(500).json({
-            message: "Lỗi server",
+            message: 'Lỗi server',
             error: err.message,
             details: err.stack,
         });
@@ -234,15 +234,15 @@ exports.unfollowUser = async (req, res) => {
 exports.getFollowers = async (req, res) => {
     try {
         const profile = await Profile.findById(req.params.profileId).populate(
-            "followers",
-            "username fullName avatar slug"
+            'followers',
+            'username fullName avatar slug'
         );
         if (!profile)
-            return res.status(404).json({ message: "Profile không tồn tại" });
+            return res.status(404).json({ message: 'Profile không tồn tại' });
 
         res.status(200).json({ followers: profile.followers });
     } catch (err) {
-        res.status(500).json({ message: "Lỗi server", error: err.message });
+        res.status(500).json({ message: 'Lỗi server', error: err.message });
     }
 };
 
@@ -250,14 +250,14 @@ exports.getFollowers = async (req, res) => {
 exports.getFollowing = async (req, res) => {
     try {
         const profile = await Profile.findById(req.params.profileId).populate(
-            "following",
-            "username fullName avatar slug _id"
+            'following',
+            'username fullName avatar userId slug _id'
         );
         if (!profile)
-            return res.status(404).json({ message: "Profile không tồn tại" });
+            return res.status(404).json({ message: 'Profile không tồn tại' });
 
         res.status(200).json({ following: profile.following });
     } catch (err) {
-        res.status(500).json({ message: "Lỗi server", error: err.message });
+        res.status(500).json({ message: 'Lỗi server', error: err.message });
     }
 };

@@ -4,31 +4,41 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/pagination';
-import { getProfileByUserId } from "~/api/profile"
+import { getProfileByUserId } from "~/api/profile";
 import {
   toggleLike,
   addComment,
 } from "~/api/post";
-import {formatPostTime} from "~/components/utils/formatPostTime"
+import {formatPostTime} from "~/components/utils/formatPostTime";
+import { motion } from 'framer-motion';
+import LikesModal from "./LikesModal";
+import { useUser } from "~/context/UserContext";
 
 export default function PostCard({ post }) {
+    const { user } = useUser();
     const [showFullCaption, setShowFullCaption] = useState(false);
     const [liked, setLiked] = useState(post.isLiked || false);
+    const [likeAnimationTrigger, setLikeAnimationTrigger] = useState(false);
     const [info, setInfo] = useState();
     const [likesCount, setLikesCount] = useState(post.likes?.length || 0);
     const [comment, setComment] = useState("");
     const [swiperInstance, setSwiperInstance] = useState(null);
     const [atStart, setAtStart] = useState(true);
     const [atEnd, setAtEnd] = useState(false);
+    const [showLikesModal, setShowLikesModal] = useState(false);
 
     const handleLike = async () => {
-        try {
-        await toggleLike(post._id);
-        setLiked(!liked);
-        setLikesCount((prev) => (liked ? prev - 1 : prev + 1));
-        } catch (err) {
+      try {
+        const res = await toggleLike(post._id);
+        setLiked(res.isLiked);
+        
+        // Trigger animation
+        setLikeAnimationTrigger(true);
+        setTimeout(() => setLikeAnimationTrigger(false), 300); // Reset sau khi xong
+        setLikesCount(res.likesCount);
+      } catch (err) {
         console.error("Lỗi khi like:", err);
-        }
+      }
     };
 
     const handleAddComment = async () => {
@@ -61,7 +71,7 @@ export default function PostCard({ post }) {
 
 
   return (
-    <div className="max-w-md mx-auto bg-black text-[var(--text-primary-color)] border border-gray-700 rounded-xl p-4 space-y-4">
+    <div className="max-w-md mx-auto bg-black text-[var(--text-primary-color)] border-b border-[var(--border-color)] p-4 space-y-4">
       {/* Header */}
       <div className="flex items-center space-x-3">
         <img
@@ -78,6 +88,7 @@ export default function PostCard({ post }) {
       </div>
 
       {/* Media */}
+      {post.media?.length > 0 && (
       <div className="w-full rounded-xl relative">
         <Swiper
           modules={[Pagination]}
@@ -89,7 +100,7 @@ export default function PostCard({ post }) {
           onSwiper={setSwiperInstance}
           onSlideChange={handleSlideChange}
         >
-          {post.media?.map((media, index) => (
+          {post.media.map((media, index) => (
             <SwiperSlide key={media._id || index}>
               {media.type === 'image' ? (
                 <img
@@ -110,8 +121,7 @@ export default function PostCard({ post }) {
           ))}
         </Swiper>
 
-        {/* Custom Arrows */}
-        {!atStart && (
+        {post.media.length > 1 && !atStart && (
           <button
             onClick={() => swiperInstance.slidePrev()}
             className="absolute top-1/2 left-2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 p-2 rounded-full z-10"
@@ -119,7 +129,7 @@ export default function PostCard({ post }) {
             <ChevronLeft className="w-6 h-6 text-white" />
           </button>
         )}
-        {!atEnd && (
+        {post.media.length > 1 && !atEnd && (
           <button
             onClick={() => swiperInstance.slideNext()}
             className="absolute top-1/2 right-2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 p-2 rounded-full z-10"
@@ -128,43 +138,60 @@ export default function PostCard({ post }) {
           </button>
         )}
       </div>
+    )}
 
       {/* Actions */}
       <div className="flex justify-between items-center">
         <div className="flex space-x-4">
-          <Heart
-            className={`w-6 h-6 cursor-pointer ${liked ? "text-red-500" : ""}`}
-            onClick={handleLike}
-          />
-          <MessageCircle className="w-6 h-6 hover:text-blue-400 cursor-pointer" />
-          <Send className="w-6 h-6 hover:text-green-400 cursor-pointer" />
+        <motion.div
+          onClick={handleLike}
+          initial={false}
+          animate={likeAnimationTrigger ? { scale: [1, 1.4, 1] } : { scale: 1 }}
+          transition={{ duration: 0.3 }}
+          className="w-6 h-6 cursor-pointer hover:opacity-70"
+        >
+          <Heart className={`w-6 h-6 ${liked ? "fill-current text-red-500" : ""}`} />
+        </motion.div>
+          <MessageCircle className="w-6 h-6 hover:opacity-70 cursor-pointer" />
         </div>
-        <Bookmark className="w-6 h-6 hover:text-yellow-400 cursor-pointer" />
+          <Send className="w-6 h-6 hover:opacity-70 cursor-pointer" />
       </div>
 
       {/* Likes */}
-      <p className="text-sm font-semibold">{likesCount} lượt thích</p>
+      <p
+        className="text-sm font-semibold cursor-pointer hover:underline"
+        onClick={() => setShowLikesModal(true)}
+      >
+        {likesCount} lượt thích
+      </p>
+
+      {showLikesModal && (
+        <LikesModal
+          postId={post._id}
+          currentUserId={user.id}
+          onClose={() => setShowLikesModal(false)}
+        />
+      )}
 
       {/* Caption */}
       <div className="text-sm">
         <span className="font-semibold">{post.user?.username} </span>
-        {showFullCaption ? (
-          <>{post.caption}</>
-        ) : (
+        {post.caption?.length > 100 ? (
           <>
-            {post.caption?.slice(0, 100)}...
+            {showFullCaption ? post.caption : `${post.caption.slice(0, 100)}...`}
             <button
-              onClick={() => setShowFullCaption(true)}
-              className="text-gray-400 ml-2"
+              onClick={() => setShowFullCaption(!showFullCaption)}
+              className="text-gray-400 ml-2 cursor-pointer hover:underline"
             >
-              xem thêm
+              {showFullCaption ? 'thu gọn' : 'xem thêm'}
             </button>
           </>
+        ) : (
+          <>{post.caption}</>
         )}
       </div>
-
       {/* Bình luận */}
-      <div className="flex items-center space-x-2 border-t border-gray-700 pt-2">
+      <div className="flex items-center space-x-2 pt-2">
         <input
           type="text"
           placeholder="Bình luận..."
@@ -172,12 +199,12 @@ export default function PostCard({ post }) {
           onChange={(e) => setComment(e.target.value)}
           className="flex-1 bg-black text-white text-sm outline-none"
         />
-        <button
+        {comment && <button
           className="text-blue-500 text-sm font-medium"
           onClick={handleAddComment}
         >
           Đăng
-        </button>
+        </button>}
       </div>
     </div>
   );

@@ -34,6 +34,6 @@ router.post('/:postId/like', auth, toggleLike);
 router.post('/:postId/comments', auth, addComment);
 router.post('/:postId/comments/:commentId/replies', auth, addReply);
 router.post('/:postId/comments/:commentId/like', auth, toggleCommentLike);
-router.get('/:postId/details', getPostDetails);
+router.get('/:postId/details', auth, getPostDetails);
 
 module.exports = router;

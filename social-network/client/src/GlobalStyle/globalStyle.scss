@@ -55,3 +55,12 @@ body {
     color: #888;
 }
 
+.swiper-pagination-bullet {
+    background-color: var(--text-secondary-color);
+    opacity: 1;
+}
+  
+.swiper-pagination-bullet-active {
+    background-color: var(--text-primary-color);
+}
+

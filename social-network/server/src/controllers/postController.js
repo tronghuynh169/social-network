@@ -2,7 +2,7 @@ const Post = require('../models/Post');
 const Comment = require('../models/Comment');
 const Profile = require('../models/Profile');
 const User = require('../models/User');
-
+const mongoose = require('mongoose');
 // Đăng bài viết (Sửa để upload nhiều ảnh)
 exports.createPost = async (req, res) => {
     try {
@@ -67,7 +67,15 @@ exports.getUserPosts = async (req, res) => {
             const posts = await Post.find({ userId })
                 .populate('userId', 'username profilePicture')
                 .sort({ createdAt: -1 });
-            return res.json(posts);
+            const modifiedPosts = posts.map((post) => {
+                const isLiked = post.likes.includes(currentUserId);
+                return {
+                    ...post.toObject(),
+                    isLiked,
+                };
+            });
+
+            return res.json(modifiedPosts);
         }
 
         // Kiểm tra xem có đang follow user đó không
@@ -91,7 +99,15 @@ exports.getUserPosts = async (req, res) => {
             .populate('userId', 'username profilePicture')
             .sort({ createdAt: -1 });
 
-        res.json(posts);
+        const modifiedPosts = posts.map((post) => {
+            const isLiked = post.likes.includes(currentUserId);
+            return {
+                ...post.toObject(),
+                isLiked,
+            };
+        });
+
+        return res.json(modifiedPosts);
     } catch (err) {
         console.error('Error in getUserPosts:', err);
         res.status(500).json({ message: err.message });
@@ -141,7 +157,16 @@ exports.getAllPosts = async (req, res) => {
             .sort({ createdAt: -1 })
             .populate('userId', 'username avatar');
 
-        res.json(posts);
+        const userId = req.user.id;
+        const modifiedPosts = posts.map((post) => {
+            const isLiked = post.likes.includes(userId);
+            return {
+                ...post.toObject(),
+                isLiked,
+            };
+        });
+
+        res.json(modifiedPosts);
     } catch (err) {
         console.error('Error in getAllPosts:', err);
         res.status(500).json({ message: err.message });
@@ -171,17 +196,26 @@ exports.toggleLike = async (req, res) => {
         const post = await Post.findById(req.params.postId);
         if (!post)
             return res.status(404).json({ message: 'Bài viết không tồn tại' });
+
         const userId = req.user.id;
         const likeIndex = post.likes.indexOf(userId);
+        let isLiked;
 
         if (likeIndex === -1) {
             post.likes.push(userId);
+            isLiked = true;
         } else {
             post.likes.splice(likeIndex, 1);
+            isLiked = false;
         }
 
         await post.save();
-        res.status(200).json({ message: 'Thành công!', post });
+
+        res.status(200).json({
+            message: 'Thành công!',
+            isLiked,
+            likesCount: post.likes.length,
+        });
     } catch (error) {
         res.status(500).json({ message: 'Lỗi khi like bài viết', error });
     }
@@ -253,6 +287,11 @@ exports.getPostDetails = async (req, res) => {
     try {
         const postId = req.params.postId;
 
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            return res
+                .status(400)
+                .json({ message: 'ID bài viết không hợp lệ' });
+        }
         // Tìm bài viết theo postId và populate thông tin người đăng
         const post = await Post.findById(postId)
             .populate('userId', 'username profilePicture')
@@ -278,15 +317,18 @@ exports.getPostDetails = async (req, res) => {
 
         // Với mỗi bình luận gốc, lấy nested replies (đệ quy)
         for (let comment of comments) {
-            comment.replies = await getReplies(comment.id);
+            comment.replies = await getReplies(comment._id);
         }
-
+        const userId = req.user?.id;
+        const isLiked = post.likes.includes(req.user.id);
+        post.isLiked = isLiked;
         res.status(200).json({
             post,
             likes: likeUsers,
             comments,
         });
     } catch (error) {
+        console.error('🔥 Lỗi chi tiết:', error); // log toàn bộ object lỗi
         res.status(500).json({
             message: 'Lỗi khi lấy chi tiết bài viết!',
             error,

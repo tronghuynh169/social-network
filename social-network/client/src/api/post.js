@@ -41,7 +41,8 @@ export const deletePost = async (postId) => {
 
 // Like hoặc Unlike bài viết
 export const toggleLike = async (postId) => {
-    return await api.post(`/${postId}/like`);
+    const res = await api.post(`/${postId}/like`);
+    return res.data; // Lấy dữ liệu từ server trả về: { isLiked, likesCount }
 };
 
 // Thêm comment vào bài viết
