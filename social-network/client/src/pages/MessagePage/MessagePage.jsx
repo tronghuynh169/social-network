@@ -56,12 +56,7 @@ const MessagePage = () => {
                           ?.fullName || "Cuộc trò chuyện"
             );
 
-            setAvatar(
-                data.isGroup
-                    ? data.image || "https://i.imgur.com/1ZQZ1Z1.png"
-                    : fullMembers.find((m) => m._id !== profile._id)?.avatar ||
-                          "https://i.imgur.com/1ZQZ1Z1.png"
-            );
+            setAvatar(data.avatar);
 
             if (data.admin) {
                 const adminProfile = await getProfileById(data.admin);
@@ -149,6 +144,7 @@ const MessagePage = () => {
                     imageFile={imageFile}
                     currentUserId={profile._id}
                     avatar={avatar}
+                    conversationId={conversationId}
                 />
             ) : (
                 // Placeholder when no conversation is selected

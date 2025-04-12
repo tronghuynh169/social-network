@@ -229,6 +229,8 @@ const SearchFriendModal = ({
                                     newConv = await createConversation({
                                         members,
                                         isGroup,
+                                        name: selectedUsers[0].fullName,
+                                        avatar: selectedUsers[0].avatar,
                                     });
                                 }
 

@@ -42,7 +42,6 @@ const ChatBox = ({
                 setMessages((prev) => [...prev, msg]);
             }
         };
-        console.log(conversationId);
         socket.on("newMessage", handleReceiveMessage);
 
         return () => {
@@ -53,17 +52,22 @@ const ChatBox = ({
     // ✅ Join room mỗi khi conversationId thay đổi
     useEffect(() => {
         if (conversationId) {
-            console.log("📡 Emitting joinRoom:", conversationId);
             socket.emit("joinRoom", conversationId);
         }
     }, [conversationId]);
 
+    const handleSendMessage = () => {
+        if (message.trim() || imageFile) {
+            onSend();
+            // Cuộn xuống cuối sau khi gửi tin nhắn
+            bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+        }
+    };
+
     const handleKeyDown = (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            if (message.trim() || imageFile) {
-                onSend();
-            }
+            handleSendMessage(); // Gọi lại hàm gửi tin nhắn
         }
     };
 
@@ -85,16 +89,28 @@ const ChatBox = ({
         return curr.diff(prev, "minute") >= 15;
     };
 
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            bottomRef.current?.scrollIntoView({ behavior: "auto" }); // dùng "auto" để tránh hiệu ứng trễ
+        }, 0); // gọi ngay sau render
+
+        return () => clearTimeout(timeout);
+    }, [messages]);
+
     return (
         <div className="flex-1 relative flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--secondary-color)]">
                 <div className="flex items-center gap-3">
-                    <img
-                        src={avatar}
-                        alt="avatar"
-                        className="w-11 h-11 rounded-full object-cover"
-                    />
+                    {avatar ? (
+                        <img
+                            src={avatar}
+                            alt="avatar"
+                            className="w-11 h-11 rounded-full object-cover"
+                        />
+                    ) : (
+                        <div className="w-11 h-11 rounded-full bg-gray-400" />
+                    )}
                     <div className="font-semibold">{nameGroupChat}</div>
                 </div>
                 <div className="flex gap-4">
@@ -107,11 +123,15 @@ const ChatBox = ({
             {/* Scroll */}
             <ScrollArea className="flex-1 overflow-auto px-6 py-4 text-sm space-y-2">
                 <div className="flex flex-col items-center py-10 gap-1">
-                    <img
-                        src={avatar}
-                        alt="avatar"
-                        className="w-24 h-24 rounded-full object-cover"
-                    />
+                    {avatar ? (
+                        <img
+                            src={avatar}
+                            alt="avatar"
+                            className="w-24 h-24 rounded-full object-cover"
+                        />
+                    ) : (
+                        <div className="w-24 h-24 rounded-full bg-gray-400" />
+                    )}
                     <div className="font-semibold text-[20px]">
                         {nameGroupChat}
                     </div>
@@ -209,7 +229,7 @@ const ChatBox = ({
                     {message.trim() || imageFile ? (
                         <button
                             className="text-[var(--button-enable-color)] cursor-pointer hover:text-[var(--text-primary-color)]"
-                            onClick={onSend}
+                            onClick={handleSendMessage}
                         >
                             Send
                         </button>
