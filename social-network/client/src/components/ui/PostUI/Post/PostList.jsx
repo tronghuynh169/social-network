@@ -17,8 +17,6 @@ export default function PostList() {
     fetchPosts();
   }, []);
 
-  
-
   return (
     <div className="space-y-8">
       {posts.map((post) => 

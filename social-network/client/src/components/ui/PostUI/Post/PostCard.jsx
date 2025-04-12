@@ -8,6 +8,7 @@ import { getProfileByUserId } from "~/api/profile";
 import {
   toggleLike,
   addComment,
+  getPostDetails
 } from "~/api/post";
 import {formatPostTime} from "~/components/utils/formatPostTime";
 import { motion } from 'framer-motion';
@@ -26,6 +27,7 @@ export default function PostCard({ post }) {
     const [atStart, setAtStart] = useState(true);
     const [atEnd, setAtEnd] = useState(false);
     const [showLikesModal, setShowLikesModal] = useState(false);
+    const [comments, setComments] = useState([]);
 
     const handleLike = async () => {
       try {
@@ -42,14 +44,30 @@ export default function PostCard({ post }) {
     };
 
     const handleAddComment = async () => {
-        if (!comment.trim()) return;
-        try {
-        await addComment(post._id, comment);
+      if (!comment.trim()) return;
+      try {
+        const newComment = await addComment(post._id, comment);
+        
+        // Lấy fullName
+        const profile = await getProfileByUserId(user.id);
+    
+        const fullComment = {
+          ...newComment,
+          content: comment,
+          userId: {
+            _id: user.id,
+            username: user.username,
+            fullName: profile.fullName, // thêm fullName
+          },
+        };
+    
+        setComments((prev) => [...prev, fullComment]);
         setComment("");
-        } catch (err) {
+      } catch (err) {
         console.error("Lỗi khi bình luận:", err);
-        }
+      }
     };
+
 
     const handleSlideChange = (swiper) => {
         setAtStart(swiper.isBeginning);
@@ -61,7 +79,6 @@ export default function PostCard({ post }) {
           try {
             const res = await getProfileByUserId(post.userId._id);
             setInfo(res);
-            console.log(res)
           } catch (err) {
             console.error('Lỗi khi load bài viết:', err);
           }
@@ -69,6 +86,40 @@ export default function PostCard({ post }) {
         fetchInfo();
       }, []);
 
+      useEffect(() => {
+        const fetchPost = async () => {
+          try {
+            const res = await getPostDetails(post._id);
+            const rawComments = res.data.comments;
+      
+            // Map qua từng comment và thêm fullName từ profile
+            const commentsWithFullName = await Promise.all(
+              rawComments.map(async (c) => {
+                try {
+                  const profile = await getProfileByUserId(c.userId._id);
+                  return {
+                    ...c,
+                    userId: {
+                      ...c.userId,
+                      fullName: profile.fullName, // thêm fullName
+                    }
+                  };
+                } catch (err) {
+                  console.error("Lỗi khi lấy fullName:", err);
+                  return c;
+                }
+              })
+            );
+      
+            setComments(commentsWithFullName);
+          } catch (err) {
+            console.error("Lỗi khi tải comment:", err);
+          }
+        };
+      
+        fetchPost();
+      }, []);
+      
 
   return (
     <div className="max-w-md mx-auto bg-black text-[var(--text-primary-color)] border-b border-[var(--border-color)] p-4 space-y-4">
@@ -191,6 +242,32 @@ export default function PostCard({ post }) {
         )}
       </div>
       {/* Bình luận */}
+      {comments.length > 0 && (
+        <div className="text-sm space-y-1">
+          <button className="text-gray-400 text-sm hover:underline">
+            Xem tất cả {comments.length} bình luận
+          </button>
+
+          {comments
+              .filter((c) => c.userId._id === user.id) // Chỉ của bạn
+              .map((c, idx) => (
+                <div key={c._id || idx} className="flex justify-between items-center w-full">
+                  {/* Trái: fullName + 2 khoảng trắng + content */}
+                  <div className="flex items-center max-w-[90%] overflow-hidden">
+                    <span className="font-semibold whitespace-nowrap">
+                      {c.userId.fullName || c.userId.username}
+                    </span>
+                    <span className="truncate ml-2">
+                      {c.content}
+                    </span>
+                  </div>
+
+                  {/* Phải: icon */}
+                  <Heart className="w-4 h-4 shrink-0 ml-2" />
+                </div>
+            ))}
+        </div>
+      )}
       <div className="flex items-center space-x-2 pt-2">
         <input
           type="text"
