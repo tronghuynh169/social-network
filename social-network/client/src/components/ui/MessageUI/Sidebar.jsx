@@ -23,7 +23,6 @@ const Sidebar = ({ setNameGroupChat, messages, avatar }) => {
             updateConversations(convs);
         };
 
-        // Hàm cập nhật danh sách cuộc trò chuyện
         const updateConversations = (convs) => {
             const sortedConvs = convs.sort((a, b) => {
                 const dateA = new Date(a.lastMessage?.createdAt || a.createdAt);
@@ -31,22 +30,9 @@ const Sidebar = ({ setNameGroupChat, messages, avatar }) => {
                 return dateB - dateA;
             });
 
-            const filteredConvs = [];
-
-            for (const conv of sortedConvs) {
-                const hasMessage =
-                    conv.lastMessage || messages[0]?.text.length > 0;
-
-                if (conv.isGroup) {
-                    filteredConvs.push(conv); // Luôn hiển thị nhóm
-                } else if (!conv.isGroup && hasMessage) {
-                    filteredConvs.push(conv); // Chỉ hiển thị chat 1-1 nếu có tin nhắn
-                }
-            }
-
             // Lấy thông tin người dùng
             const userIdSet = new Set();
-            filteredConvs.forEach((conv) => {
+            sortedConvs.forEach((conv) => {
                 conv.members.forEach((id) => {
                     if (id !== profile._id) userIdSet.add(id);
                 });
@@ -63,7 +49,7 @@ const Sidebar = ({ setNameGroupChat, messages, avatar }) => {
                     userMap[user._id] = user;
                 });
 
-                const merged = filteredConvs.map((conv) => {
+                const merged = sortedConvs.map((conv) => {
                     const otherUsers = conv.members
                         .filter((id) => id !== profile._id)
                         .map((id) => userMap[id])
@@ -74,7 +60,7 @@ const Sidebar = ({ setNameGroupChat, messages, avatar }) => {
                         name: conv.name,
                         avatar: conv.isGroup
                             ? conv.avatar
-                            : otherUsers[0]?.avatar || "", // ✅ avatar đúng của người còn lại
+                            : otherUsers[0]?.avatar || "",
                         members: otherUsers,
                     };
                 });
