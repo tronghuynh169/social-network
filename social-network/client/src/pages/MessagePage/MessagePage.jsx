@@ -3,28 +3,27 @@ import SearchFriendModal from "~/components/ui/MessageUI/SearchFriendModal";
 import { useUser } from "~/context/UserContext";
 import Sidebar from "~/components/ui/MessageUI/Sidebar";
 import ChatBox from "~/components/ui/MessageUI/ChatBox";
-import { useParams } from "react-router-dom";
-import { getMessages, getConversationById } from "~/api/chat";
+import { useParams, useNavigate } from "react-router-dom";
+import { getMessages, getConversationById, uploadImage } from "~/api/chat";
 import { getProfileById } from "~/api/profile";
 import { io } from "socket.io-client";
-import { uploadImage } from "~/api/upload"; // tạo file upload.js
-import { useNavigate } from "react-router-dom";
 
-// Initialize the Socket.IO client
 const socket = io(import.meta.env.VITE_API_URL || "http://localhost:5000");
 
 const MessagePage = () => {
     const { profile } = useUser();
     const { conversationId } = useParams();
     const navigate = useNavigate();
+
     const [message, setMessage] = useState("");
     const [messages, setMessages] = useState([]);
     const [conversation, setConversation] = useState([]);
     const [nameGroupChat, setNameGroupChat] = useState("");
     const [admin, setAdmin] = useState({});
     const [showModal, setShowModal] = useState(false);
-    const [imageFile, setImageFile] = useState(null);
+    const [selectedFiles, setSelectedFiles] = useState([]);
     const [avatar, setAvatar] = useState("");
+
     useEffect(() => {
         const fetchMessages = async () => {
             const data = await getMessages(conversationId);
@@ -40,9 +39,8 @@ const MessagePage = () => {
             const data = await getConversationById(conversationId);
             if (!data) return;
 
-            // ⚠️ Kiểm tra thành viên
             if (!data.members.includes(profile._id)) {
-                return navigate("/"); // Không phải thành viên → quay về trang chủ
+                return navigate("/");
             }
 
             const fullMembers = await Promise.all(
@@ -55,7 +53,6 @@ const MessagePage = () => {
             data.members = fullMembers;
             setConversation(data);
 
-            // 👉 Thêm đoạn này để hiển thị tên cuộc trò chuyện
             setNameGroupChat(
                 data.isGroup
                     ? data.name
@@ -78,54 +75,46 @@ const MessagePage = () => {
 
     useEffect(() => {
         if (conversationId) {
-            // Join the conversation room
             socket.emit("joinConversation", conversationId);
 
-            // Listen for incoming messages
             socket.on("receiveMessage", (newMessage) => {
                 setMessages((prev) => [...prev, newMessage]);
             });
         }
 
         return () => {
-            // Cleanup listeners when the component unmounts or conversation changes
             socket.off("receiveMessage");
         };
     }, [conversationId]);
 
     const handleSendMessage = async () => {
-        if (!message.trim() && !imageFile) return;
+        if (!message.trim() && selectedFiles.length === 0) return;
 
-        let imageUrl = null;
-
-        // 1. Upload ảnh nếu có
-        if (imageFile) {
+        let uploadedFiles = [];
+        if (selectedFiles.length > 0) {
             const formData = new FormData();
-            formData.append("image", imageFile);
+            selectedFiles.forEach((file) => formData.append("messages", file));
 
             try {
-                const res = await uploadImage(formData); // đảm bảo `await` ở đây
-                console.log("✅ Ảnh upload thành công:", res); // <-- log này
-                imageUrl = res.url;
+                const res = await uploadImage(formData);
+                console.log("Upload response:", res);
+                uploadedFiles = res.files; // Giả sử server trả về {files: [...]}
             } catch (err) {
-                console.error("❌ Upload ảnh thất bại:", err);
+                console.error("❌ Upload file thất bại:", err);
                 return;
             }
         }
 
-        // 2. Emit tin nhắn sau khi upload thành công
         const newMessage = {
             conversationId,
             sender: profile._id,
             text: message,
-            image: imageUrl,
+            files: uploadedFiles, // Gửi tất cả file dưới dạng mảng
         };
-
-        socket.emit("sendMessage", newMessage); // Gửi qua socket
-
-        // 3. Reset trạng thái
+        console.log(uploadedFiles);
+        socket.emit("sendMessage", newMessage);
         setMessage("");
-        setImageFile(null);
+        setSelectedFiles([]);
     };
 
     return (
@@ -137,24 +126,24 @@ const MessagePage = () => {
                 avatar={avatar}
             />
 
-            {/* Chat Content */}
+            {/* Chat content */}
             {conversationId ? (
                 <ChatBox
                     message={message}
                     setMessage={setMessage}
                     messages={messages}
+                    setMessages={setMessages}
                     isGroup={conversation?.isGroup}
                     nameGroupChat={nameGroupChat}
                     admin={admin}
                     onSend={handleSendMessage}
-                    setImageFile={setImageFile}
-                    imageFile={imageFile}
+                    selectedFiles={selectedFiles}
+                    setSelectedFiles={setSelectedFiles}
                     currentUserId={profile._id}
                     avatar={avatar}
                     conversationId={conversationId}
                 />
             ) : (
-                // Placeholder when no conversation is selected
                 <div className="flex flex-col justify-center items-center flex-1">
                     <div className="bg-[var(--secondary-color)] p-5 rounded-full mb-4">
                         <svg
@@ -180,7 +169,8 @@ const MessagePage = () => {
                     </button>
                 </div>
             )}
-            {/* Search Friend Modal */}
+
+            {/* Modal */}
             {showModal && profile && (
                 <SearchFriendModal
                     open={showModal}

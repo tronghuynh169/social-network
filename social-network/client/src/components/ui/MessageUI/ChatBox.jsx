@@ -12,44 +12,36 @@ import {
     X,
 } from "lucide-react";
 import dayjs from "dayjs";
-import socket from "~/socket"; // 🔥 import socket
+import socket from "~/socket";
 
 const ChatBox = ({
     messages,
-    setMessages, // 🔥 cần thêm prop này để update messages khi nhận tin nhắn realtime
+    setMessages,
     setMessage,
     message,
     isGroup,
     nameGroupChat,
     admin,
     onSend,
-    setImageFile,
+    selectedFiles,
+    setSelectedFiles,
     currentUserId,
-    imageFile,
-    conversationId, // 🔥 thêm để join room
+    conversationId,
     avatar,
 }) => {
     const bottomRef = useRef(null);
 
     useEffect(() => {
-        if (!conversationId) {
-            console.warn("⚠️ conversationId is undefined or null.");
-            return; // Ngăn việc đăng ký sự kiện nếu conversationId không tồn tại
-        }
+        if (!conversationId) return;
         const handleReceiveMessage = (msg) => {
-            // Kiểm tra conversationId phù hợp
             if (msg.conversation === conversationId) {
                 setMessages((prev) => [...prev, msg]);
             }
         };
         socket.on("newMessage", handleReceiveMessage);
-
-        return () => {
-            socket.off("newMessage", handleReceiveMessage);
-        };
+        return () => socket.off("newMessage", handleReceiveMessage);
     }, [conversationId, setMessages]);
 
-    // ✅ Join room mỗi khi conversationId thay đổi
     useEffect(() => {
         if (conversationId) {
             socket.emit("joinRoom", conversationId);
@@ -57,9 +49,8 @@ const ChatBox = ({
     }, [conversationId]);
 
     const handleSendMessage = () => {
-        if (message.trim() || imageFile) {
+        if (message.trim() || selectedFiles.length > 0) {
             onSend();
-            // Cuộn xuống cuối sau khi gửi tin nhắn
             bottomRef.current?.scrollIntoView({ behavior: "smooth" });
         }
     };
@@ -67,19 +58,17 @@ const ChatBox = ({
     const handleKeyDown = (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            handleSendMessage(); // Gọi lại hàm gửi tin nhắn
+            handleSendMessage();
         }
     };
 
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setImageFile(file);
-        }
+    const handleFilesChange = (e) => {
+        const files = Array.from(e.target.files);
+        setSelectedFiles((prev) => [...prev, ...files]);
     };
 
-    const handleRemoveImage = () => {
-        setImageFile(null);
+    const handleRemoveFile = (index) => {
+        setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
     };
 
     const shouldShowTime = (msg, index, messages) => {
@@ -91,9 +80,8 @@ const ChatBox = ({
 
     useEffect(() => {
         const timeout = setTimeout(() => {
-            bottomRef.current?.scrollIntoView({ behavior: "auto" }); // dùng "auto" để tránh hiệu ứng trễ
-        }, 0); // gọi ngay sau render
-
+            bottomRef.current?.scrollIntoView({ behavior: "auto" });
+        }, 0);
         return () => clearTimeout(timeout);
     }, [messages]);
 
@@ -150,7 +138,6 @@ const ChatBox = ({
                 {messages.map((msg, index) => {
                     const isMe = msg.sender === currentUserId;
                     const showTime = shouldShowTime(msg, index, messages);
-
                     return (
                         <div key={index}>
                             {showTime && (
@@ -179,13 +166,34 @@ const ChatBox = ({
                                                 : "bg-[var(--text-otther-message-color)] text-white"
                                         }`}
                                     >
-                                        {msg.image && (
-                                            <img
-                                                src={msg.image}
-                                                alt="chat-img"
-                                                className="rounded-t-2xl max-w-[236px] object-cover"
-                                            />
-                                        )}
+                                        {msg.files &&
+                                            msg.files.map((file, idx) =>
+                                                file.type?.startsWith(
+                                                    "image/"
+                                                ) ? (
+                                                    <img
+                                                        key={idx}
+                                                        src={file.url}
+                                                        alt={`chat-img-${idx}`}
+                                                        className="rounded-t-2xl max-w-[236px] object-cover mb-1"
+                                                    />
+                                                ) : (
+                                                    <div
+                                                        key={idx}
+                                                        className="bg-white text-black px-3 py-2 rounded-lg mb-1"
+                                                    >
+                                                        <a
+                                                            href={file.url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="underline"
+                                                        >
+                                                            {file.name}
+                                                        </a>
+                                                    </div>
+                                                )
+                                            )}
+
                                         {msg.text && (
                                             <div className="px-3 py-2 whitespace-pre-wrap">
                                                 {msg.text}
@@ -200,21 +208,31 @@ const ChatBox = ({
                 <div ref={bottomRef} />
             </ScrollArea>
 
-            {/* Input + Ảnh preview */}
+            {/* Input + File Preview */}
             <div className="pl-4 pr-6 py-3 w-[96.5%] mx-auto mb-5 border rounded-2xl border-[var(--secondary-color)] flex flex-col gap-2">
-                {imageFile && (
-                    <div className="relative w-fit">
-                        <img
-                            src={URL.createObjectURL(imageFile)}
-                            alt="preview"
-                            className="w-16 h-16 object-cover rounded-lg"
-                        />
-                        <button
-                            onClick={handleRemoveImage}
-                            className="absolute -top-2 -right-2 bg-black bg-opacity-50 p-1 rounded-full text-white cursor-pointer"
-                        >
-                            <X size={12} />
-                        </button>
+                {selectedFiles.length > 0 && (
+                    <div className="flex gap-2 flex-wrap">
+                        {selectedFiles.map((file, idx) => (
+                            <div key={idx} className="relative w-fit">
+                                {file.type.startsWith("image/") ? (
+                                    <img
+                                        src={URL.createObjectURL(file)}
+                                        alt="preview"
+                                        className="w-16 h-16 object-cover rounded-lg"
+                                    />
+                                ) : (
+                                    <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center text-xs">
+                                        {file.name}
+                                    </div>
+                                )}
+                                <button
+                                    onClick={() => handleRemoveFile(idx)}
+                                    className="absolute -top-2 -right-2 bg-black bg-opacity-50 p-1 rounded-full text-white cursor-pointer"
+                                >
+                                    <X size={12} />
+                                </button>
+                            </div>
+                        ))}
                     </div>
                 )}
                 <div className="flex items-center gap-3">
@@ -226,7 +244,7 @@ const ChatBox = ({
                         onKeyDown={handleKeyDown}
                         className=" border-none focus-visible:ring-0 focus-visible:ring-offset-0"
                     />
-                    {message.trim() || imageFile ? (
+                    {message.trim() || selectedFiles.length > 0 ? (
                         <button
                             className="text-[var(--button-enable-color)] cursor-pointer hover:text-[var(--text-primary-color)]"
                             onClick={handleSendMessage}
@@ -238,12 +256,13 @@ const ChatBox = ({
                             <Mic className="cursor-pointer" />
                             <input
                                 type="file"
-                                accept="image/*"
+                                accept="*/*"
+                                multiple
                                 hidden
-                                id="upload-image"
-                                onChange={handleImageChange}
+                                id="upload-file"
+                                onChange={handleFilesChange}
                             />
-                            <label htmlFor="upload-image">
+                            <label htmlFor="upload-file">
                                 <ImageIcon className="cursor-pointer" />
                             </label>
                             <Heart className="cursor-pointer" />

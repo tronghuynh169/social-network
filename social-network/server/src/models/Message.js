@@ -13,7 +13,13 @@ const messageSchema = new mongoose.Schema(
             required: true,
         },
         text: { type: String },
-        image: { type: String, default: null }, // Nếu có gửi ảnh
+        files: [
+            {
+                name: { type: String },
+                url: { type: String },
+                type: { type: String },
+            },
+        ],
         readBy: [
             {
                 type: mongoose.Schema.Types.ObjectId,

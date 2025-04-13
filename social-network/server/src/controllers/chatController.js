@@ -52,32 +52,37 @@ const messageStorage = multer.diskStorage({
     },
 });
 
-const uploadMessageImage = multer({ storage: messageStorage }).single("image");
-
-// Gửi tin nhắn kèm hình ảnh (nếu có)
+// Gửi tin nhắn kèm nhiều file
 exports.sendMessage = (req, res) => {
-    uploadMessageImage(req, res, async (err) => {
+    uploadMessageFiles(req, res, async (err) => {
         if (err) {
             return res.status(500).json({
                 success: false,
-                message: "Lỗi khi upload ảnh",
-                error: err,
+                message: "Lỗi khi upload file",
+                error: err.message,
             });
         }
 
         const { conversationId, sender, text } = req.body;
-        let imageUrl = null;
+        let fileUrls = [];
 
-        if (req.file) {
-            imageUrl = `http://localhost:5000/uploads/messages/${req.file.filename}`;
+        // Kiểm tra nếu có file được upload
+        if (req.files && req.files.length > 0) {
+            fileUrls = req.files.map((file) => ({
+                name: file.originalname,
+                url: `http://localhost:5000/uploads/messages/${file.filename}`,
+                type: file.mimetype,
+            }));
         }
+        console.log(fileUrls)
 
         try {
+            // Tạo tin nhắn mới
             const message = await Message.create({
                 conversation: conversationId,
                 sender,
                 text,
-                image: imageUrl,
+                files: fileUrls, // Lưu các URL file hình ảnh/video
             });
 
             res.status(201).json({
@@ -142,4 +147,18 @@ exports.getConversationById = async (req, res) => {
         console.error("❌ Lỗi khi lấy cuộc trò chuyện theo ID:", err);
         res.status(500).json({ error: "Lỗi server khi lấy cuộc trò chuyện." });
     }
+};
+
+exports.uploadFiles = (req, res) => {
+    if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ error: "Không có file được tải lên" });
+    }
+
+    const fileUrls = req.files.map((file) => ({
+        name: file.originalname,
+        url: `http://localhost:5000/uploads/messages/${file.filename}`,
+        type: file.mimetype,
+    }));
+
+    res.status(200).json({ files: fileUrls });
 };

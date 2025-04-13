@@ -4,6 +4,6 @@ const { uploadImage } = require("../controllers/uploadController");
 const uploadMessageImage = require("../config/multerMessage");
 
 // Route upload ảnh
-router.post("/", uploadMessageImage, uploadImage);
+router.post("/", uploadMessageImage, );
 
 module.exports = router;

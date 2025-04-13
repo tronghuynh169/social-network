@@ -7,6 +7,7 @@ const { Server } = require("socket.io");
 const connectDB = require("./database/connection");
 const route = require("./routes");
 const Message = require("./models/Message");
+const Conversation = require("./models/Conversation");
 
 // Load environment variables
 dotenv.config();
@@ -72,28 +73,34 @@ io.on("connection", (socket) => {
         }
     });
     // Listen for 'sendMessage' event
+    // Xử lý sự kiện 'sendMessage' từ client
     socket.on("sendMessage", async (data) => {
-        console.log("data: " +data)
+        console.log("data: ", data);
         try {
-            // Save message to the database
+            const parsedFiles =
+                typeof data.files === "string"
+                    ? JSON.parse(data.files)
+                    : data.files;
+
             const newMessage = new Message({
                 sender: data.sender,
                 conversation: data.conversationId,
-                text: data.text,
-                image: data.image,
+                text: data.text || "",
+                files: parsedFiles, // đảm bảo là mảng object
             });
+
             const savedMessage = await newMessage.save();
-    
-            // Broadcast the saved message to clients in the same conversation
+
             io.to(data.conversationId).emit("receiveMessage", savedMessage);
-    
-            // Fetch updated conversation
-            const conversation = await Conversation.findById(data.conversationId).populate("members", "fullName");
+
+            const conversation = await Conversation.findById(
+                data.conversationId
+            ).populate("members", "fullName");
             if (conversation) {
                 io.emit("conversationUpdated", conversation);
             }
         } catch (error) {
-            console.error("❌ Error saving message:", error);
+            console.error("❌ Lỗi khi lưu tin nhắn:", error);
         }
     });
 

@@ -40,11 +40,16 @@ export const sendMessage = async ({ conversationId, sender, text, image }) => {
     formData.append("text", text);
     if (image) formData.append("image", image);
 
-    const response = await apiClient.post("/message", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-    });
+    try {
+        const response = await apiClient.post("/message", formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+        });
 
-    return res.data;
+        return response.data; // Sửa lại từ 'res.data' thành 'response.data'
+    } catch (error) {
+        console.error("❌ Lỗi gửi tin nhắn:", error);
+        throw error;
+    }
 };
 
 // Lấy tất cả tin nhắn của 1 cuộc trò chuyện
@@ -79,5 +84,24 @@ export const getConversationById = async (conversationId) => {
     } catch (error) {
         console.error("❌ Lỗi lấy cuộc trò chuyện theo ID:", error);
         return null;
+    }
+};
+
+export const uploadImage = async (formData) => {
+    try {
+        const response = await apiClient.post(`/uploads`, formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+            withCredentials: true,
+        });
+        if (!response.data.files) {
+            throw new Error("Server response missing files array");
+        }
+        
+        return response.data; // Trả về URL của file đã upload
+    } catch (error) {
+        console.error("Lỗi upload file:", error);
+        throw error;
     }
 };
