@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Heart, MessageCircle, Send, Bookmark, ChevronLeft, ChevronRight } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Heart, MessageCircle, Send, ChevronLeft, ChevronRight } from "lucide-react";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination } from 'swiper/modules';
 import 'swiper/css';
@@ -16,6 +17,7 @@ import LikesModal from "./LikesModal";
 import { useUser } from "~/context/UserContext";
 
 export default function PostCard({ post }) {
+    const navigate = useNavigate(); 
     const { user } = useUser();
     const [showFullCaption, setShowFullCaption] = useState(false);
     const [liked, setLiked] = useState(post.isLiked || false);
@@ -66,6 +68,14 @@ export default function PostCard({ post }) {
       } catch (err) {
         console.error("Lỗi khi bình luận:", err);
       }
+    };
+
+    const handleCommentClick = () => {
+      navigate(`/post/${post._id}`, {
+        state: {
+          backgroundLocation: location.pathname,
+        },
+      });
     };
 
 
@@ -203,7 +213,7 @@ export default function PostCard({ post }) {
         >
           <Heart className={`w-6 h-6 ${liked ? "fill-current text-red-500" : ""}`} />
         </motion.div>
-          <MessageCircle className="w-6 h-6 hover:opacity-70 cursor-pointer" />
+          <MessageCircle className="w-6 h-6 hover:opacity-70 cursor-pointer" onClick={handleCommentClick}/>
         </div>
           <Send className="w-6 h-6 hover:opacity-70 cursor-pointer" />
       </div>

@@ -9,7 +9,7 @@ import FriendPage from "~/pages/FriendPage/FriendPage";
 import MessagePage from "~/pages/MessagePage/MessagePage";
 import ProfilePage from "~/pages/ProfilePage/ProfilePage";
 import EditProfile from "~/pages/Account/EditProfile";
-
+import PostDetailPage from "~/pages/PostPage/PostDetailPage"
 // ✅ Route dành cho người ĐÃ đăng nhập
 const PrivateRoute = () => {
     const token = localStorage.getItem("token");
@@ -69,6 +69,10 @@ export const routes = [
                 path: "account/edit-profile",
                 element: <EditProfile />,
             },
+            {
+                path: "post/:id",
+                element: <PostDetailPage />,
+            }
         ],
     },
     {
