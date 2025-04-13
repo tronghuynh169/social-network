@@ -8,6 +8,7 @@ import { getMessages, getConversationById } from "~/api/chat";
 import { getProfileById } from "~/api/profile";
 import { io } from "socket.io-client";
 import { uploadImage } from "~/api/upload"; // tạo file upload.js
+import { useNavigate } from "react-router-dom";
 
 // Initialize the Socket.IO client
 const socket = io(import.meta.env.VITE_API_URL || "http://localhost:5000");
@@ -15,6 +16,7 @@ const socket = io(import.meta.env.VITE_API_URL || "http://localhost:5000");
 const MessagePage = () => {
     const { profile } = useUser();
     const { conversationId } = useParams();
+    const navigate = useNavigate();
     const [message, setMessage] = useState("");
     const [messages, setMessages] = useState([]);
     const [conversation, setConversation] = useState([]);
@@ -37,6 +39,11 @@ const MessagePage = () => {
         const fetchConversation = async () => {
             const data = await getConversationById(conversationId);
             if (!data) return;
+
+            // ⚠️ Kiểm tra thành viên
+            if (!data.members.includes(profile._id)) {
+                return navigate("/"); // Không phải thành viên → quay về trang chủ
+            }
 
             const fullMembers = await Promise.all(
                 data.members.map(async (id) => {

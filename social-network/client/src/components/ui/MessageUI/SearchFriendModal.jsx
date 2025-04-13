@@ -204,6 +204,11 @@ const SearchFriendModal = ({
                                     });
 
                                     if (existing) {
+                                        if (
+                                            typeof onGroupCreated === "function"
+                                        ) {
+                                            onGroupCreated(); // 🟢 GỌI CALLBACK ĐỂ CẬP NHẬT SIDEBAR
+                                        }
                                         onClose();
                                         navigate(`/message/${existing._id}`);
                                         return;
@@ -232,6 +237,8 @@ const SearchFriendModal = ({
                                         name: selectedUsers[0].fullName,
                                         avatar: selectedUsers[0].avatar,
                                     });
+
+                                    socket.emit("newGroupCreated", newConv);
                                 }
 
                                 // Gọi callback nếu có

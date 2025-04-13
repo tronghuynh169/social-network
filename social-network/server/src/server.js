@@ -52,8 +52,6 @@ const io = new Server(server, {
 
 // Socket.IO logic
 io.on("connection", (socket) => {
-    console.log("🔥 New client connected:", socket.id);
-
     // Xử lý sự kiện "newGroupCreated"
     socket.on("newGroupCreated", async (newGroup) => {
         try {

@@ -55,10 +55,16 @@ const Sidebar = ({ setNameGroupChat, messages, avatar }) => {
                         .map((id) => userMap[id])
                         .filter(Boolean);
 
+                    const isGroup = conv.isGroup;
+
                     return {
                         conversationId: conv._id,
-                        name: conv.name,
-                        avatar: conv.isGroup
+                        name: isGroup
+                            ? conv.name
+                            : otherUsers.length === 1
+                            ? otherUsers[0]?.fullName
+                            : "Đối thoại riêng", // fallback
+                        avatar: isGroup
                             ? conv.avatar
                             : otherUsers[0]?.avatar || "",
                         members: otherUsers,
@@ -109,14 +115,11 @@ const Sidebar = ({ setNameGroupChat, messages, avatar }) => {
                     </div>
                 ) : (
                     usersInfo.map((info, idx) => {
-                        const name =
-                            info.name ||
-                            info.members.map((u) => u?.fullName).join(", ");
                         return (
                             <div
                                 key={info.conversationId || idx}
                                 onClick={() => {
-                                    setNameGroupChat(name); // Chỉ gọi khi click
+                                    setNameGroupChat(info.name); // Chỉ gọi khi click
                                     navigate(`/message/${info.conversationId}`);
                                 }}
                                 className={`cursor-pointer flex items-center gap-3 px-6 py-2 ${
@@ -135,7 +138,7 @@ const Sidebar = ({ setNameGroupChat, messages, avatar }) => {
                                     className="w-14 h-14 rounded-full object-cover"
                                 />
                                 <div className="max-w-[80%] line-clamp-1">
-                                    {name}
+                                    {info.name}
                                 </div>
                             </div>
                         );
