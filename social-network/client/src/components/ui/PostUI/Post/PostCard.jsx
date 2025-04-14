@@ -15,9 +15,11 @@ import {formatPostTime} from "~/components/utils/formatPostTime";
 import { motion } from 'framer-motion';
 import LikesModal from "./LikesModal";
 import { useUser } from "~/context/UserContext";
+import { usePostContext } from "~/context/PostContext";
 
 export default function PostCard({ post }) {
     const navigate = useNavigate(); 
+    const { postStates } = usePostContext();  
     const { user } = useUser();
     const [showFullCaption, setShowFullCaption] = useState(false);
     const [liked, setLiked] = useState(post.isLiked || false);
@@ -34,12 +36,14 @@ export default function PostCard({ post }) {
     const handleLike = async () => {
       try {
         const res = await toggleLike(post._id);
+        
+        // Cập nhật state local
         setLiked(res.isLiked);
+        setLikesCount(res.likesCount);
         
         // Trigger animation
         setLikeAnimationTrigger(true);
-        setTimeout(() => setLikeAnimationTrigger(false), 300); // Reset sau khi xong
-        setLikesCount(res.likesCount);
+        setTimeout(() => setLikeAnimationTrigger(false), 300);
       } catch (err) {
         console.error("Lỗi khi like:", err);
       }

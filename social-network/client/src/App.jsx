@@ -4,13 +4,15 @@ import { UserProvider } from "./context/UserContext";
 import { useLocation } from "react-router-dom";
 import "./GlobalStyle/globalStyle.scss";
 import PostDetailPage from "~/pages/PostPage/PostDetailPage"
-
+import { PostProvider } from "./context/PostContext";
 const App = () => {
     return (
         <UserProvider>
-            <Router>
-                <AppRoutes />
-            </Router>
+            <PostProvider>
+                <Router>
+                    <AppRoutes />
+                </Router>
+            </PostProvider>
         </UserProvider>
     );
 };

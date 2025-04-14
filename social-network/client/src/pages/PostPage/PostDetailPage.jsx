@@ -6,12 +6,14 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/pagination';
-import { motion, AnimatePresence } from 'framer-motion';
 import { getProfileByUserId } from "~/api/profile";
 import {formatPostTime} from "~/components/utils/formatPostTime";
 import { useUser } from "~/context/UserContext";
+import { motion } from 'framer-motion';
+import { usePostContext } from "~/context/PostContext";
 
 export default function PostDetailPage({ isModal = false }) {
+    const { updatePostState } = usePostContext(); // trong PostDetailPage
     const { user } = useUser();
     const { id: postId } = useParams();
     const navigate = useNavigate();
@@ -23,11 +25,33 @@ export default function PostDetailPage({ isModal = false }) {
     const [showFullCaption, setShowFullCaption] = useState(false);
     const [comments, setComments] = useState([]);
     const [comment, setComment] = useState("");
-
+    
     const handleSlideChange = (swiper) => {
         setAtStart(swiper.isBeginning);
         setAtEnd(swiper.isEnd);
     };
+
+    const handleLike = async () => {
+        try {
+          const res = await toggleLike(postDetails.post._id);
+          setPostDetails(prev => ({
+            ...prev,
+            post: {
+              ...prev.post,
+              isLiked: res.isLiked,
+            },
+            likesCount: res.likesCount
+          }));
+      
+          updatePostState(postDetails.post._id, {
+            isLiked: res.isLiked,
+            likesCount: res.likesCount
+          });
+      
+        } catch (err) {
+          console.error("Lỗi khi like:", err);
+        }
+      };
 
     const handleAddComment = async () => {
         if (!comment.trim()) return;
@@ -132,18 +156,14 @@ export default function PostDetailPage({ isModal = false }) {
         return <div className="text-white p-4">Loading...</div>;
     }
 
-    const hasMedia = postDetails.post.media?.length > 0;
+    const hasMedia = postDetails?.post?.media?.length > 0;
     const isSingleVideo = postDetails.post.media?.length === 1 && postDetails.post.media[0].type === 'video';
 
 
     const modalContent = (
-        <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.1 }}
+        <div
             className={`bg-[var(--secondary-color)] h-[90vh] w-full overflow-hidden flex
-                ${hasMedia ? "max-w-5xl flex-col md:flex-row" : "max-w-[500px] flex-col"}
+                ${hasMedia ? "max-w-5xl flex-col md:flex-row" : "max-w-md flex-col"}
             `}
         >
             {isModal && (
@@ -270,6 +290,9 @@ export default function PostDetailPage({ isModal = false }) {
                                 <p className="text-xs text-gray-400">
                                     {formatPostTime(c.createdAt)}
                                 </p>
+                                <p className="text-xs text-gray-400">
+                                    
+                                </p>
                             </div>
 
                             {/* Icon */}
@@ -280,10 +303,16 @@ export default function PostDetailPage({ isModal = false }) {
                 
                 <div className="mt-auto pt-4 border-t border-gray-700">
                     <div className="flex items-center space-x-4 text-sm text-gray-400 mb-4">
-                        <button className="flex items-center space-x-1">
-                            <Heart className="text-white" />
+                        <motion.div
+                        onClick={handleLike}
+                        initial={false}
+                        animate={{ scale: postDetails.post.isLiked ? [1, 1.4, 1] : 1 }}
+                        transition={{ duration: 0.3 }}
+                        className="flex items-center space-x-1 cursor-pointer"
+                        >
+                            <Heart className={`${postDetails.post.isLiked ? "fill-current text-red-500" : ""}`} />
                             <span>{postDetails.likesCount}</span>
-                        </button>
+                        </motion.div>
                         <button className="flex items-center space-x-1">
                             <MessageCircle className="text-white" />
                             <span>{postDetails.commentsCount}</span>
@@ -310,23 +339,23 @@ export default function PostDetailPage({ isModal = false }) {
                 </div>
 
             </div>
-        </motion.div>
+        </div>
     );
 
     return isModal ? (
-        <AnimatePresence>
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+            <div
                 className="fixed inset-0 z-50 bg-black/70 flex justify-center items-center"
                 onClick={handleClose}
             >
-                <div onClick={(e) => e.stopPropagation()} className="w-full max-w-5xl flex justify-center items-center">
+                <div
+                onClick={(e) => e.stopPropagation()}
+                className={`w-full flex justify-center items-center 
+                    ${hasMedia ? "max-w-5xl" : "max-w-md"}
+                `}
+                >
                     {modalContent}
                 </div>
-            </motion.div>
-        </AnimatePresence>
+            </div>
     ) : (
         <div className="min-h-screen bg-black text-white flex justify-center items-start">
             <div className="w-full max-w-5xl flex flex-col md:flex-row">
