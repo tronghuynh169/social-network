@@ -50,11 +50,21 @@ body {
     background-color: #555;
 }
 
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;     /* Firefox */
+  }
+
 [contenteditable]:empty:before {
     content: attr(data-placeholder);
     color: #888;
 }
 
+
+// Swiper
 .swiper-pagination-bullet {
     background-color: var(--text-secondary-color);
     opacity: 1;

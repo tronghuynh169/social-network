@@ -260,6 +260,8 @@ export default function PostCard({ post }) {
 
           {comments
               .filter((c) => c.userId._id === user.id) // Chỉ của bạn
+              .reverse() // Đảo ngược mảng để có bình luận mới nhất ở đầu
+              .slice(0, 3) // Chỉ lấy 3 bình luận mới nhất
               .map((c, idx) => (
                 <div key={c._id || idx} className="flex justify-between items-center w-full">
                   {/* Trái: fullName + 2 khoảng trắng + content */}
