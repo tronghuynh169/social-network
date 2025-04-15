@@ -223,12 +223,15 @@ export default function PostCard({ post }) {
       </div>
 
       {/* Likes */}
+      {
+        (likesCount > 0) &&
       <p
         className="text-sm font-semibold cursor-pointer hover:underline"
         onClick={() => setShowLikesModal(true)}
       >
         {likesCount} lượt thích
       </p>
+      }
 
       {showLikesModal && (
         <LikesModal

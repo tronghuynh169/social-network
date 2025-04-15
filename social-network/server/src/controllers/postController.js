@@ -258,7 +258,6 @@ exports.addReply = async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 };
-
 // Like/Unlike comment
 exports.toggleCommentLike = async (req, res) => {
     try {
@@ -268,15 +267,22 @@ exports.toggleCommentLike = async (req, res) => {
 
         const userId = req.user.id;
         const index = comment.likes.indexOf(userId);
+        let isLiked;
 
         if (index === -1) {
             comment.likes.push(userId);
+            isLiked = true;
         } else {
             comment.likes.splice(index, 1);
+            isLiked = false;
         }
 
         await comment.save();
-        res.json(comment);
+
+        res.status(200).json({
+            isLikedComment: isLiked,
+            likesCommentCount: comment.likes.length, // Chỉ trả về likesCount và isLiked
+        });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -301,10 +307,24 @@ exports.getPostDetails = async (req, res) => {
             return res.status(404).json({ message: 'Bài viết không tồn tại' });
         }
 
+        const ownerProfile = await Profile.findOne({
+            userId: post.userId._id,
+        }).lean();
+
         // Lấy danh sách like: Giả sử post.likes chứa mảng userId
         const likeUsers = await User.find({ _id: { $in: post.likes } })
             .select('username profilePicture')
             .lean();
+
+        for (let user of likeUsers) {
+            const profile = await Profile.findOne({ userId: user._id }).lean();
+            user.fullName = profile?.fullName || '';
+            user.avatar = profile?.avatar || '';
+        }
+
+        // Lấy tham số phân trang (pagination) từ query parameters
+        const page = parseInt(req.query.page) || 1; // Trang hiện tại (mặc định là 1)
+        const limit = parseInt(req.query.limit) || 10; // Số lượng bình luận mỗi lần (mặc định là 10)
 
         // Lấy danh sách bình luận gốc (không là reply)
         const comments = await Comment.find({
@@ -313,19 +333,39 @@ exports.getPostDetails = async (req, res) => {
         })
             .populate('userId', 'username profilePicture')
             .sort({ createdAt: 1 })
+            .skip((page - 1) * limit) // Bỏ qua các bình luận trước đó
+            .limit(limit) // Giới hạn số lượng bình luận mỗi lần
             .lean();
 
         // Với mỗi bình luận gốc, lấy nested replies (đệ quy)
         for (let comment of comments) {
+            const profile = await Profile.findOne({
+                userId: comment.userId._id,
+            }).lean();
+            comment.userId.fullName = profile?.fullName || '';
+            comment.userId.avatar = profile?.avatar || '';
             comment.replies = await getReplies(comment._id);
         }
+
         const userId = req.user?.id;
         const isLiked = post.likes.includes(req.user.id);
         post.isLiked = isLiked;
+
+        const totalComments = await Comment.countDocuments({
+            postId: postId,
+            $or: [{ replyTo: { $exists: false } }, { replyTo: null }],
+        });
+
         res.status(200).json({
             post,
             likes: likeUsers,
             comments,
+            ownerProfile, // thêm ở đây
+            pagination: {
+                totalComments,
+                currentPage: page,
+                totalPages: Math.ceil(totalComments / limit),
+            },
         });
     } catch (error) {
         console.error('🔥 Lỗi chi tiết:', error); // log toàn bộ object lỗi
@@ -339,12 +379,17 @@ exports.getPostDetails = async (req, res) => {
 // Hàm đệ quy lấy nested replies
 const getReplies = async (commentId) => {
     const replies = await Comment.find({ replyTo: commentId })
-        .populate('userId', 'username profilePicture')
+        .populate('userId', 'username') // chỉ cần userId để join Profile
         .sort({ createdAt: 1 })
         .lean();
 
     for (let reply of replies) {
-        reply.replies = await getReplies(reply.id);
+        const profile = await Profile.findOne({
+            userId: reply.userId._id,
+        }).lean();
+        reply.userId.fullName = profile?.fullName || '';
+        reply.userId.avatar = profile?.avatar || '';
+        reply.replies = await getReplies(reply._id); // Đệ quy
     }
 
     return replies;

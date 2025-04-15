@@ -16,7 +16,7 @@ export const PostProvider = ({ children }) => {
     };  
 
   return (
-    <PostContext.Provider value={{ posts, updatePostLike  }}>
+    <PostContext.Provider value={{ posts, updatePostLike   }}>
       {children}
     </PostContext.Provider>
   );
