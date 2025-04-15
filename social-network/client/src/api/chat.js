@@ -98,7 +98,7 @@ export const uploadImage = async (formData) => {
         if (!response.data.files) {
             throw new Error("Server response missing files array");
         }
-        
+
         return response.data; // Trả về URL của file đã upload
     } catch (error) {
         console.error("Lỗi upload file:", error);

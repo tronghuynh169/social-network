@@ -1,6 +1,9 @@
 const Conversation = require("../models/Conversation");
 const Message = require("../models/Message");
 const mongoose = require("mongoose");
+const path = require("path");
+const fs = require("fs");
+const multer = require("multer");
 
 // Tạo cuộc trò chuyện mới
 exports.createConversation = async (req, res) => {
@@ -33,11 +36,6 @@ exports.createConversation = async (req, res) => {
     }
 };
 
-// server/config/multerMessage.js (hoặc để chung trong controller cũng được)
-const path = require("path");
-const fs = require("fs");
-const multer = require("multer");
-
 const messageUploadDir = path.join(__dirname, "../uploads/messages");
 if (!fs.existsSync(messageUploadDir)) {
     fs.mkdirSync(messageUploadDir, { recursive: true });
@@ -67,14 +65,35 @@ exports.sendMessage = (req, res) => {
         let fileUrls = [];
 
         // Kiểm tra nếu có file được upload
+        // Kiểm tra nếu có file được upload
         if (req.files && req.files.length > 0) {
-            fileUrls = req.files.map((file) => ({
-                name: file.originalname,
-                url: `http://localhost:5000/uploads/messages/${file.filename}`,
-                type: file.mimetype,
-            }));
+            fileUrls = req.files.map((file) => {
+                let fileUrl;
+                const ext = path.extname(file.originalname).toLowerCase();
+
+                // Nếu là hình ảnh hoặc video, dùng timestamp trong tên file
+                if ([".jpg", ".jpeg", ".png", ".gif", ".mp4"].includes(ext)) {
+                    fileUrl = `http://localhost:5000/uploads/messages/${file.filename}`; // Dùng timestamp
+                } else {
+                    // Nếu là tài liệu, giữ tên gốc
+                    const originalName = Buffer.from(
+                        file.originalname,
+                        "latin1"
+                    ).toString("utf8");
+                    fileUrl = `http://localhost:5000/uploads/messages/${
+                        file.filename
+                    }?originalname=${encodeURIComponent(originalName)}`;
+                }
+
+                return {
+                    name: file.originalname,
+                    url: fileUrl,
+                    type: file.mimetype,
+                };
+            });
         }
-        console.log(fileUrls)
+
+        console.log(fileUrls);
 
         try {
             // Tạo tin nhắn mới
@@ -154,11 +173,37 @@ exports.uploadFiles = (req, res) => {
         return res.status(400).json({ error: "Không có file được tải lên" });
     }
 
-    const fileUrls = req.files.map((file) => ({
-        name: file.originalname,
-        url: `http://localhost:5000/uploads/messages/${file.filename}`,
-        type: file.mimetype,
-    }));
+    // Xử lý tên file và chuyển mã từ latin1 sang utf8
+    const fileUrls = req.files.map((file) => {
+        const originalName = Buffer.from(file.originalname, "latin1").toString(
+            "utf8"
+        );
+        return {
+            name: originalName,
+            url: `http://localhost:5000/uploads/messages/${file.filename}`,
+            type: file.mimetype,
+        };
+    });
 
     res.status(200).json({ files: fileUrls });
+};
+
+exports.downloadFile = (req, res) => {
+    const fileName = req.params.name; // Lấy tên file từ URL
+    const filePath = path.join(__dirname, "../uploads/messages", fileName);
+
+    if (fs.existsSync(filePath)) {
+        // Nếu có tên gốc trong query string, sử dụng nó, nếu không sử dụng tên gốc của file
+        const originalName = req.query.originalname || fileName; // Sử dụng fileName nếu không có originalname
+
+        res.setHeader(
+            "Content-Disposition",
+            `attachment; filename="${originalName}"`
+        );
+        res.setHeader("Content-Type", "application/octet-stream");
+
+        fs.createReadStream(filePath).pipe(res);
+    } else {
+        res.status(404).json({ error: "File không tồn tại" });
+    }
 };

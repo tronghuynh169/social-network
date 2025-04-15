@@ -14,12 +14,21 @@ const messageStorage = multer.diskStorage({
         cb(null, messageUploadDir);
     },
     filename: (req, file, cb) => {
-        // Tạo tên file: timestamp + extension
-        const uniqueSuffix = Date.now();
-        const ext = path.extname(file.originalname);
-        cb(null, `${uniqueSuffix}${ext}`);
+        const ext = path.extname(file.originalname).toLowerCase();
+        
+        // Nếu là hình ảnh hoặc video, dùng timestamp để tạo tên duy nhất
+        if ([".jpg", ".jpeg", ".png", ".gif", ".mp4"].includes(ext)) {
+            const uniqueSuffix = Date.now();
+            cb(null, `${uniqueSuffix}${ext}`); // Sử dụng timestamp cho hình ảnh và video
+        } else {
+            // Nếu là tài liệu (Word, PDF...), giữ nguyên tên gốc
+            const originalName = Buffer.from(file.originalname, "latin1").toString("utf8");
+            cb(null, originalName); // Giữ tên gốc cho tài liệu
+        }
     },
 });
+
+
 
 // Bộ lọc file cho phép
 const fileFilter = (req, file, cb) => {
