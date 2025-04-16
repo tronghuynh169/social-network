@@ -30,6 +30,9 @@ const ChatBox = ({
     avatar,
 }) => {
     const bottomRef = useRef(null);
+    const inputRef = useRef(null);
+    const [viewingImage, setViewingImage] = React.useState(null);
+    const [isImageModalOpen, setIsImageModalOpen] = React.useState(false);
 
     useEffect(() => {
         if (!conversationId) return;
@@ -65,6 +68,10 @@ const ChatBox = ({
     const handleFilesChange = (e) => {
         const files = Array.from(e.target.files);
         setSelectedFiles((prev) => [...prev, ...files]);
+
+        setTimeout(() => {
+            inputRef.current?.focus();
+        }, 0);
     };
 
     const handleRemoveFile = (index) => {
@@ -153,34 +160,52 @@ const ChatBox = ({
                                     isMe ? "justify-end" : "justify-start"
                                 }`}
                             >
-                                <div className="max-w-[50%]">
+                                <div className="max-w-[50%] flex flex-col gap-2">
                                     {!isMe && isGroup && (
                                         <div className="text-xs text-gray-400 mb-1">
                                             {msg.senderName}
                                         </div>
                                     )}
-                                    <div
-                                        className={`break-words rounded-2xl overflow-hidden ${
-                                            isMe
-                                                ? "bg-[var(--text-me-message-color)] text-white"
-                                                : "bg-[var(--text-otther-message-color)] text-white"
-                                        }`}
-                                    >
-                                        {msg.files &&
-                                            msg.files.map((file, idx) =>
-                                                file.type?.startsWith(
+
+                                    {msg.text && (
+                                        <div
+                                            className={`break-words rounded-2xl overflow-hidden px-3 py-2 whitespace-pre-wrap ${
+                                                isMe
+                                                    ? "bg-[var(--text-me-message-color)]"
+                                                    : "bg-[var(--text-otther-message-color)]"
+                                            }`}
+                                        >
+                                            {msg.text}
+                                        </div>
+                                    )}
+
+                                    {msg.files &&
+                                        msg.files.map((file, idx) => (
+                                            <div
+                                                key={idx}
+                                                className={`${
+                                                    isMe ? "ml-auto" : ""
+                                                }`}
+                                            >
+                                                {file.type?.startsWith(
                                                     "image/"
                                                 ) ? (
                                                     <img
-                                                        key={idx}
                                                         src={file.url}
                                                         alt={`chat-img-${idx}`}
-                                                        className="rounded-t-2xl max-w-[236px] object-cover mb-1"
+                                                        className={`rounded-2xl max-w-[236px] object-cover cursor-pointer `}
+                                                        onClick={() => {
+                                                            setViewingImage(
+                                                                file.url
+                                                            );
+                                                            setIsImageModalOpen(
+                                                                true
+                                                            );
+                                                        }}
                                                     />
                                                 ) : (
                                                     <div
-                                                        key={idx}
-                                                        className="bg-white text-black px-3 py-2 rounded-lg mb-1"
+                                                        className={`px-3 py-2 rounded-lg bg-[var(--button-color)] w-fit `}
                                                     >
                                                         <a
                                                             href={file.url}
@@ -191,15 +216,9 @@ const ChatBox = ({
                                                             {file.name}
                                                         </a>
                                                     </div>
-                                                )
-                                            )}
-
-                                        {msg.text && (
-                                            <div className="px-3 py-2 whitespace-pre-wrap">
-                                                {msg.text}
+                                                )}
                                             </div>
-                                        )}
-                                    </div>
+                                        ))}
                                 </div>
                             </div>
                         </div>
@@ -212,6 +231,14 @@ const ChatBox = ({
             <div className="pl-4 pr-6 py-3 w-[96.5%] mx-auto mb-5 border rounded-2xl border-[var(--secondary-color)] flex flex-col gap-2">
                 {selectedFiles.length > 0 && (
                     <div className="flex gap-2 flex-wrap">
+                        {/* Ô chọn thêm file */}
+                        <label
+                            htmlFor="upload-file"
+                            className="w-16 h-16 bg-[var(--secondary-color)] hover:bg-[var(--button-color)] flex items-center justify-center rounded-lg cursor-pointer border border-dashed border-gray-400"
+                        >
+                            +
+                        </label>
+
                         {selectedFiles.map((file, idx) => (
                             <div key={idx} className="relative w-fit">
                                 {file.type.startsWith("image/") ? (
@@ -221,23 +248,36 @@ const ChatBox = ({
                                         className="w-16 h-16 object-cover rounded-lg"
                                     />
                                 ) : (
-                                    <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center text-xs">
-                                        {file.name}
+                                    <div className="w-16 h-16 bg-[var(--secondary-color)] rounded-lg flex items-center justify-center text-xs text-center p-1 overflow-hidden">
+                                        <span className="line-clamp-2 break-words">
+                                            {file.name}
+                                        </span>
                                     </div>
                                 )}
                                 <button
                                     onClick={() => handleRemoveFile(idx)}
-                                    className="absolute -top-2 -right-2 bg-black bg-opacity-50 p-1 rounded-full text-white cursor-pointer"
+                                    className="absolute -top-2 -right-2 bg-black bg-opacity-50 p-1 rounded-full  cursor-pointer"
                                 >
                                     <X size={12} />
                                 </button>
                             </div>
                         ))}
+
+                        <input
+                            type="file"
+                            accept="*/*"
+                            multiple
+                            hidden
+                            id="upload-file"
+                            onChange={handleFilesChange}
+                        />
                     </div>
                 )}
+
                 <div className="flex items-center gap-3">
                     <Smile />
                     <Input
+                        ref={inputRef}
                         placeholder="Nhắn tin..."
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
@@ -270,6 +310,35 @@ const ChatBox = ({
                     )}
                 </div>
             </div>
+            {isImageModalOpen && viewingImage && (
+                <div
+                    className="fixed inset-0 bg-opacity-10 backdrop-brightness-50 modal-overlay z-50 flex items-center justify-center"
+                    onClick={() => {
+                        setViewingImage(null);
+                        setIsImageModalOpen(false);
+                    }}
+                >
+                    <div
+                        className="relative"
+                        onClick={(e) => e.stopPropagation()} // Ngăn việc click vào ảnh cũng tắt modal
+                    >
+                        <img
+                            src={viewingImage}
+                            alt="full-view"
+                            className="max-w-[90vw] max-h-[90vh] rounded-lg"
+                        />
+                        <button
+                            onClick={() => {
+                                setViewingImage(null);
+                                setIsImageModalOpen(false);
+                            }}
+                            className="absolute -top-3 -right-4 bg-[var(--button-color)] bg-opacity-50 p-2 rounded-full cursor-pointer"
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
