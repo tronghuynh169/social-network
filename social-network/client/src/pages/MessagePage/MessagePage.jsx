@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import SearchFriendModal from "~/components/ui/MessageUI/SearchFriendModal";
 import { useUser } from "~/context/UserContext";
 import Sidebar from "~/components/ui/MessageUI/Sidebar";
-import ChatBox from "~/components/ui/MessageUI/ChatBox";
+import ChatBox from "~/components/ui/MessageUI/chat/ChatBox";
 import { useParams, useNavigate } from "react-router-dom";
 import { getMessages, getConversationById, uploadImage } from "~/api/chat";
 import { getProfileById } from "~/api/profile";
