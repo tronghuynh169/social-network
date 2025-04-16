@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import SearchFriendModal from "~/components/ui/MessageUI/SearchFriendModal";
 import { useUser } from "~/context/UserContext";
 import Sidebar from "~/components/ui/MessageUI/Sidebar";
-import ChatBox from "~/components/ui/MessageUI/chat/ChatBox";
+import ChatBox from "~/components/ui/MessageUI/chat";
+import ChatInfo from "~/components/ui/MessageUI/ChatInfo";
 import { useParams, useNavigate } from "react-router-dom";
 import { getMessages, getConversationById, uploadImage } from "~/api/chat";
 import { getProfileById } from "~/api/profile";
@@ -23,6 +24,7 @@ const MessagePage = () => {
     const [showModal, setShowModal] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [avatar, setAvatar] = useState("");
+    const [showInfo, setShowInfo] = useState(false);
 
     useEffect(() => {
         const fetchMessages = async () => {
@@ -142,6 +144,8 @@ const MessagePage = () => {
                     currentUserId={profile._id}
                     avatar={avatar}
                     conversationId={conversationId}
+                    onToggleInfo={() => setShowInfo((prev) => !prev)}
+                    showInfo={showInfo}
                 />
             ) : (
                 <div className="flex flex-col justify-center items-center flex-1">
@@ -168,6 +172,14 @@ const MessagePage = () => {
                         Gửi tin nhắn
                     </button>
                 </div>
+            )}
+
+            {showInfo && (
+                <ChatInfo
+                    nameGroupChat={nameGroupChat}
+                    admin={admin}
+                    onClose={() => setShowInfo(false)}
+                />
             )}
 
             {/* Modal */}

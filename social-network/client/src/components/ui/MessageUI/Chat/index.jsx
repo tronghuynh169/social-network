@@ -20,6 +20,8 @@ const ChatBox = ({
     currentUserId,
     conversationId,
     avatar,
+    onToggleInfo={onToggleInfo},
+    showInfo={showInfo},
 }) => {
     const bottomRef = useRef(null);
     const inputRef = useRef(null);
@@ -57,6 +59,8 @@ const ChatBox = ({
                 nameGroupChat={nameGroupChat}
                 avatar={avatar}
                 admin={admin}
+                onToggleInfo={onToggleInfo}
+                showInfo={showInfo}
             />
             <ScrollArea className="flex-1 overflow-auto px-6 py-4 text-sm space-y-2">
                 <ChatMessages
@@ -84,6 +88,7 @@ const ChatBox = ({
                     setIsImageModalOpen(false);
                 }}
             />
+            
         </div>
     );
 };

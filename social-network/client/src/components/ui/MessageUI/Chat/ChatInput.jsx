@@ -62,7 +62,7 @@ const ChatInput = ({
                             )}
                             <button
                                 onClick={() => handleRemoveFile(idx)}
-                                className="absolute -top-2 -right-2 bg-black bg-opacity-50 p-1 rounded-full cursor-pointer"
+                                className="absolute -top-2 -right-2 bg-opacity-50 p-1 rounded-full cursor-pointer"
                             >
                                 <X size={12} />
                             </button>
