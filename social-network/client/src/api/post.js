@@ -66,3 +66,13 @@ export const toggleCommentLike = async (postId, commentId) => {
 export const getPostDetails = async (postId) => {
     return await api.get(`/${postId}/details`);
 };
+
+//  Lấy danh sách user đã like bài viết
+export const getPostLikes = async (postId) => {
+    return await api.get(`/${postId}/likes`);
+};
+
+//  Lấy danh sách user đã like comment
+export const getCommentLikes = async (postId, commentId) => {
+    return await api.get(`/${postId}/comments/${commentId}/likes`);
+};

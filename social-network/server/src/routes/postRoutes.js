@@ -11,6 +11,8 @@ const {
     addReply,
     toggleCommentLike,
     getPostDetails,
+    getPostLikes,
+    getCommentLikes
 } = require('../controllers/postController');
 const auth = require('../middlewares/authMiddleware');
 const upload = require('../middlewares/uploadMiddleware');
@@ -31,6 +33,8 @@ router.get('/', auth, getAllPosts); // API lấy bài viết của mình và ng�
 router.get('/user/:id', auth, getUserPosts); // API lấy bài viết của một user
 router.delete('/:id', auth, deletePost);
 router.post('/:postId/like', auth, toggleLike);
+router.get("/:postId/likes", getPostLikes);
+router.get("/:postId/comments/:commentId/likes", getCommentLikes);
 router.post('/:postId/comments', auth, addComment);
 router.post('/:postId/comments/:commentId/replies', auth, addReply);
 router.post('/:postId/comments/:commentId/like', auth, toggleCommentLike);

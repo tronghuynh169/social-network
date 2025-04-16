@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getPostLikes } from "~/api/post";
+import { getCommentLikes } from "~/api/post";
 import {
     getProfileByUserId,
     getFollowing,
@@ -8,7 +8,7 @@ import {
     unfollowUser,
 } from "~/api/profile";
 
-const LikesModal = ({ postId, currentUserId, onClose }) => {
+const LikesCommentModal = ({ postId,commentId ,currentUserId, onClose }) => {
     const [likesUsers, setLikesUsers] = useState([]);
     const [followingList, setFollowingList] = useState(new Set());
     const [loading, setLoading] = useState(true);
@@ -20,7 +20,7 @@ const LikesModal = ({ postId, currentUserId, onClose }) => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const { data: postData } = await getPostLikes(postId);
+                const { data: postData } = await getCommentLikes(postId, commentId);
                 console.log(postData);
                 const currentUserProfile = await getProfileByUserId(
                     currentUserId
@@ -242,4 +242,4 @@ const LikesModal = ({ postId, currentUserId, onClose }) => {
     );
 };
 
-export default LikesModal;
+export default LikesCommentModal;
