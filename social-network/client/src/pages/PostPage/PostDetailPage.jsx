@@ -26,6 +26,8 @@ import { useUser } from "~/context/UserContext";
 import { motion } from "framer-motion";
 import { usePostContext } from "~/context/PostContext";
 import LikesCommentModal from "~/components/ui/PostUI/Post/LikesCommentModal";
+import CommentItem from "~/components/ui/PostUI/Post/CommentItem";
+
 export default function PostDetailPage({ isModal = false }) {
     const { updatePostLike } = usePostContext(); // trong PostDetailPage
     const { user } = useUser();
@@ -77,17 +79,32 @@ export default function PostDetailPage({ isModal = false }) {
 
             const { isLikedComment, likesCommentCount } = res.data;
 
-            // Cập nhật lại các bình luận trong postDetails
-            const updatedComments = postDetails.comments.map((comment) =>
-                comment._id === commentId
-                    ? { ...comment, isLikedComment, likesCommentCount }
-                    : comment
-            );
+            // Hàm đệ quy để cập nhật comment hoặc reply theo ID
+            const updateCommentTree = (comments) => {
+                return comments.map((comment) => {
+                    if (comment._id === commentId) {
+                        return {
+                            ...comment,
+                            isLikedComment,
+                            likesCommentCount,
+                        };
+                    }
 
-            // Cập nhật lại postDetails state với comments đã được cập nhật
+                    if (comment.replies && comment.replies.length > 0) {
+                        return {
+                            ...comment,
+                            replies: updateCommentTree(comment.replies),
+                        };
+                    }
+
+                    return comment;
+                });
+            };
+
+            // Cập nhật state
             setPostDetails((prev) => ({
                 ...prev,
-                comments: updatedComments,
+                comments: updateCommentTree(prev.comments),
             }));
         } catch (err) {
             console.error("Lỗi khi like bình luận:", err);
@@ -99,13 +116,17 @@ export default function PostDetailPage({ isModal = false }) {
         try {
             let newComment;
             if (replyTo) {
-                newComment = await addReply(postDetails.post._id, replyTo, comment);
+                newComment = await addReply(
+                    postDetails.post._id,
+                    replyTo,
+                    comment
+                );
             } else {
                 newComment = await addComment(postDetails.post._id, comment);
             }
-    
+
             const profile = await getProfileByUserId(user.id);
-    
+
             const fullComment = {
                 ...newComment,
                 content: comment,
@@ -120,21 +141,29 @@ export default function PostDetailPage({ isModal = false }) {
                 likesCommentCount: 0,
                 replyTo,
             };
-    
-            setPostDetails((prev) => ({
-                ...prev,
-                comments: replyTo
+
+            // Cập nhật lại state với reply được thêm vào
+            setPostDetails((prev) => {
+                const updatedComments = replyTo
                     ? prev.comments.map((comment) =>
                           comment._id === replyTo
                               ? {
                                     ...comment,
-                                    replies: [...(comment.replies || []), fullComment],
+                                    replies: [
+                                        ...(comment.replies || []),
+                                        fullComment,
+                                    ],
                                 }
                               : comment
                       )
-                    : [...prev.comments, { ...fullComment, replies: [] }],
-            }));
-    
+                    : [...prev.comments, { ...fullComment, replies: [] }];
+
+                return { ...prev, comments: updatedComments };
+            });
+
+            // Gọi lại API để fetch lại dữ liệu mới nhất từ server
+            fetchPostDetails();
+
             setComment("");
             setReplyTo(null);
             setReplyToUser(null);
@@ -143,19 +172,20 @@ export default function PostDetailPage({ isModal = false }) {
         }
     };
 
+    const fetchPostDetails = async () => {
+        try {
+            const response = await getPostDetails(postId);
+            const post = response.data.post;
+            const comments = response.data.comments || [];
+            console.log(response.data);
+
+            setPostDetails(response.data); // giữ nguyên dữ liệu backend trả về
+        } catch (error) {
+            console.error("Error fetching post details:", error);
+        }
+    };
+
     useEffect(() => {
-        const fetchPostDetails = async () => {
-            try {
-                const response = await getPostDetails(postId);
-                const post = response.data.post;
-                const comments = response.data.comments || [];
-
-                setPostDetails(response.data); // giữ nguyên dữ liệu backend trả về
-            } catch (error) {
-                console.error("Error fetching post details:", error);
-            }
-        };
-
         fetchPostDetails();
     }, [postId, user.id]);
 
@@ -310,138 +340,26 @@ export default function PostDetailPage({ isModal = false }) {
                         )}
                     </div>
                 </div>
-
                 <div className="text-sm space-y-4 max-h-full overflow-y-auto pr-2 py-2 no-scrollbar">
                     {postDetails.comments
-                        .filter((c) => !c.replyTo) // chỉ lấy comment gốc
+                        .filter((c) => !c.replyTo) // Lọc các comment gốc
                         .sort(
                             (a, b) =>
                                 new Date(b.createdAt) - new Date(a.createdAt)
                         )
-                        .map((c, idx) => (
-                            <div key={c._id || idx}>
-                                <div className="flex items-start gap-3 w-full">
-                                    {/* Avatar */}
-                                    <img
-                                        src={
-                                            c.userId?.avatar ||
-                                            "/default-avatar.png"
-                                        }
-                                        alt="Avatar"
-                                        className="w-8 h-8 rounded-full object-cover"
-                                    />
-
-                                    {/* Nội dung */}
-                                    <div className="flex-1">
-                                        <p className="text-sm leading-snug break-words break-all whitespace-pre-wrap">
-                                            <span className="font-semibold">
-                                                {c.userId.fullName ||
-                                                    c.userId.username}
-                                            </span>{" "}
-                                            <span>{c.content}</span>
-                                        </p>
-
-                                        <div className="flex items-center gap-4 mt-1 text-xs text-gray-400">
-                                            <span>
-                                                {formatPostTime(c.createdAt)}
-                                            </span>
-
-                                            {c.likesCommentCount > 0 && (
-                                                <span
-                                                    onClick={() =>
-                                                        setShowCommentLikesModal(
-                                                            true
-                                                        )
-                                                    }
-                                                    className="hover:underline cursor-pointer"
-                                                >
-                                                    {c.likesCommentCount} lượt
-                                                    thích
-                                                </span>
-                                            )}
-
-                                            <span
-                                                onClick={() => {
-                                                    setReplyTo(c._id);
-                                                    setReplyToUser(
-                                                        c.userId.fullName ||
-                                                            c.userId.username
-                                                    );
-                                                }}
-                                                className="cursor-pointer"
-                                            >
-                                                Trả lời
-                                            </span>
-
-                                            {/* Chỉ hiện khi là chủ comment */}
-                                            {c.userId._id === user.id && (
-                                                <MoreHorizontal className="w-4 h-4 cursor-pointer" />
-                                            )}
-
-                                            {/* Modal */}
-                                            {showCommentLikesModal && (
-                                                <LikesCommentModal
-                                                    postId={c.postId}
-                                                    commentId={c._id}
-                                                    currentUserId={user.id}
-                                                    onClose={() =>
-                                                        setShowCommentLikesModal(
-                                                            false
-                                                        )
-                                                    }
-                                                />
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Icon like */}
-                                    <Heart
-                                        className={`w-4 h-4 cursor-pointer mt-1 ${
-                                            c.isLikedComment
-                                                ? "fill-current text-red-500"
-                                                : "text-gray-500"
-                                        }`}
-                                        onClick={() => handleCommentLike(c._id)}
-                                    />
-                                </div>
-
-                                {/* Reply */}
-                                {c.replies?.map((reply) => (
-                                    <div
-                                        key={reply._id}
-                                        className="ml-11 mt-2 border-l-[2px] border-gray-300 pl-4"
-                                    >
-                                        <p className="text-sm leading-snug">
-                                            <span className="font-semibold">
-                                                {reply.userId.fullName ||
-                                                    reply.userId.username}
-                                            </span>{" "}
-                                            <span>{reply.content}</span>
-                                        </p>
-
-                                        <div className="flex items-center gap-4 text-xs text-gray-400 mt-1">
-                                            <span>
-                                                {formatPostTime(
-                                                    reply.createdAt
-                                                )}
-                                            </span>
-                                            <span
-                                                className="cursor-pointer"
-                                                onClick={() => {
-                                                    setReplyTo(reply._id);
-                                                    setReplyToUser(
-                                                        reply.userId.fullName ||
-                                                            reply.userId
-                                                                .username
-                                                    );
-                                                }}
-                                            >
-                                                Trả lời
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                        .map((c) => (
+                            <CommentItem
+                                key={`${c._id}-${c.createdAt}`}
+                                comment={c}
+                                user={user}
+                                onReply={(id, name) => {
+                                    setReplyTo(id);
+                                    setReplyToUser(name);
+                                }}
+                                onLike={handleCommentLike}
+                                showLikesModal={showCommentLikesModal}
+                                setShowLikesModal={setShowCommentLikesModal}
+                            />
                         ))}
                 </div>
 

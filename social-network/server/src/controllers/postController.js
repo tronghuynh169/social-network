@@ -350,7 +350,7 @@ exports.getPostDetails = async (req, res) => {
                 (like) => like.toString() === userId
             );
             comment.likesCommentCount = comment.likes.length;
-            comment.replies = await getReplies(comment._id);
+            comment.replies = await getReplies(comment._id, userId);
         }
 
         const isLiked = post.likes.includes(req.user.id);
@@ -377,9 +377,9 @@ exports.getPostDetails = async (req, res) => {
 };
 
 // Hàm đệ quy lấy nested replies
-const getReplies = async (commentId) => {
+const getReplies = async (commentId, userId) => {
     const replies = await Comment.find({ replyTo: commentId })
-        .populate("userId", "username") // chỉ cần userId để join Profile
+        .populate("userId", "username")
         .sort({ createdAt: 1 })
         .lean();
 
@@ -387,9 +387,18 @@ const getReplies = async (commentId) => {
         const profile = await Profile.findOne({
             userId: reply.userId._id,
         }).lean();
+
         reply.userId.fullName = profile?.fullName || "";
         reply.userId.avatar = profile?.avatar || "";
-        reply.replies = await getReplies(reply._id); // Đệ quy
+
+        // ✅ Bổ sung xử lý like
+        reply.isLikedComment = reply.likes.some(
+            (like) => like.toString() === userId
+        );
+        reply.likesCommentCount = reply.likes.length;
+
+        // ✅ Truyền userId xuống đệ quy
+        reply.replies = await getReplies(reply._id, userId);
     }
 
     return replies;
