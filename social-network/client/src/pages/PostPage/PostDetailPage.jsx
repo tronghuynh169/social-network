@@ -4,6 +4,7 @@ import {
     getPostDetails,
     toggleLike,
     addComment,
+    addReply,
     toggleCommentLike,
 } from "~/api/post";
 import {
@@ -39,6 +40,8 @@ export default function PostDetailPage({ isModal = false }) {
     const [comments, setComments] = useState([]);
     const [comment, setComment] = useState("");
     const [showCommentLikesModal, setShowCommentLikesModal] = useState(false);
+    const [replyTo, setReplyTo] = useState(null);
+    const [replyToUser, setReplyToUser] = useState(null);
 
     const handleSlideChange = (swiper) => {
         setAtStart(swiper.isBeginning);
@@ -94,31 +97,47 @@ export default function PostDetailPage({ isModal = false }) {
     const handleAddComment = async () => {
         if (!comment.trim()) return;
         try {
-            const newComment = await addComment(postDetails.post._id, comment);
-
-            // Lấy fullName
+            let newComment;
+            if (replyTo) {
+                newComment = await addReply(postDetails.post._id, replyTo, comment);
+            } else {
+                newComment = await addComment(postDetails.post._id, comment);
+            }
+    
             const profile = await getProfileByUserId(user.id);
-
+    
             const fullComment = {
                 ...newComment,
                 content: comment,
                 userId: {
                     _id: user.id,
                     username: user.username,
-                    fullName: profile.fullName, // thêm fullName
+                    fullName: profile.fullName,
                     avatar: profile.avatar,
                 },
-                createdAt: new Date().toISOString(), // Gán thời gian hiện tại cho createdAt
-                isLikedComment: false, // ✅ đúng tên field
-                likesCommentCount: 0, // ✅ đúng tên field
+                createdAt: new Date().toISOString(),
+                isLikedComment: false,
+                likesCommentCount: 0,
+                replyTo,
             };
-
-            setComments((prev) => [...prev, fullComment]);
+    
             setPostDetails((prev) => ({
                 ...prev,
-                comments: [...prev.comments, fullComment],
+                comments: replyTo
+                    ? prev.comments.map((comment) =>
+                          comment._id === replyTo
+                              ? {
+                                    ...comment,
+                                    replies: [...(comment.replies || []), fullComment],
+                                }
+                              : comment
+                      )
+                    : [...prev.comments, { ...fullComment, replies: [] }],
             }));
+    
             setComment("");
+            setReplyTo(null);
+            setReplyToUser(null);
         } catch (err) {
             console.error("Lỗi khi bình luận:", err);
         }
@@ -292,79 +311,136 @@ export default function PostDetailPage({ isModal = false }) {
                     </div>
                 </div>
 
-                <div className="text-sm space-y-6 max-h-full overflow-y-auto pr-2 py-2 no-scrollbar">
+                <div className="text-sm space-y-4 max-h-full overflow-y-auto pr-2 py-2 no-scrollbar">
                     {postDetails.comments
+                        .filter((c) => !c.replyTo) // chỉ lấy comment gốc
                         .sort(
                             (a, b) =>
                                 new Date(b.createdAt) - new Date(a.createdAt)
-                        ) // Sắp xếp theo createdAt
+                        )
                         .map((c, idx) => (
-                            <div
-                                key={c._id || idx}
-                                className="grid grid-cols-[auto_1fr_auto] gap-3 items-center w-full"
-                            >
-                                {/* Avatar */}
-                                <img
-                                    src={
-                                        c.userId?.avatar ||
-                                        "/default-avatar.png"
-                                    }
-                                    alt="Avatar"
-                                    className="w-10 h-10 rounded-full"
-                                />
+                            <div key={c._id || idx}>
+                                <div className="flex items-start gap-3 w-full">
+                                    {/* Avatar */}
+                                    <img
+                                        src={
+                                            c.userId?.avatar ||
+                                            "/default-avatar.png"
+                                        }
+                                        alt="Avatar"
+                                        className="w-8 h-8 rounded-full object-cover"
+                                    />
 
-                                {/* Nội dung */}
-                                <div className="break-words break-all whitespace-pre-wrap leading-snug">
-                                    <span className="font-semibold whitespace-nowrap">
-                                        {c.userId.fullName || c.userId.username}
-                                    </span>
-                                    <span className="ml-1">{c.content}</span>
-                                    <div className="flex items-center">
-                                        <p className="text-xs text-gray-400">
-                                            {formatPostTime(c.createdAt)}
+                                    {/* Nội dung */}
+                                    <div className="flex-1">
+                                        <p className="text-sm leading-snug break-words break-all whitespace-pre-wrap">
+                                            <span className="font-semibold">
+                                                {c.userId.fullName ||
+                                                    c.userId.username}
+                                            </span>{" "}
+                                            <span>{c.content}</span>
                                         </p>
-                                        {c.likesCommentCount > 0 && (
-                                            <p
-                                                className="text-xs text-gray-400 px-2 cursor-pointer hover:underline"
-                                                onClick={() =>
-                                                    setShowCommentLikesModal(
-                                                        true
-                                                    )
-                                                }
+
+                                        <div className="flex items-center gap-4 mt-1 text-xs text-gray-400">
+                                            <span>
+                                                {formatPostTime(c.createdAt)}
+                                            </span>
+
+                                            {c.likesCommentCount > 0 && (
+                                                <span
+                                                    onClick={() =>
+                                                        setShowCommentLikesModal(
+                                                            true
+                                                        )
+                                                    }
+                                                    className="hover:underline cursor-pointer"
+                                                >
+                                                    {c.likesCommentCount} lượt
+                                                    thích
+                                                </span>
+                                            )}
+
+                                            <span
+                                                onClick={() => {
+                                                    setReplyTo(c._id);
+                                                    setReplyToUser(
+                                                        c.userId.fullName ||
+                                                            c.userId.username
+                                                    );
+                                                }}
+                                                className="cursor-pointer"
                                             >
-                                                {c.likesCommentCount} lượt thích
-                                            </p>
-                                        )}
-                                        {showCommentLikesModal && (
-                                            <LikesCommentModal
-                                                postId={c.postId}
-                                                commentId={c._id}
-                                                currentUserId={user.id}
-                                                onClose={() =>
-                                                    setShowCommentLikesModal(
-                                                        false
-                                                    )
-                                                }
-                                            />
-                                        )}
-                                        <p className="text-xs text-gray-400 px-2">
-                                            Trả lời
-                                        </p>
-                                        {c.userId._id === user.id && (
-                                            <MoreHorizontal className="w-5 h-5 text-gray-400" />
-                                        )}
+                                                Trả lời
+                                            </span>
+
+                                            {/* Chỉ hiện khi là chủ comment */}
+                                            {c.userId._id === user.id && (
+                                                <MoreHorizontal className="w-4 h-4 cursor-pointer" />
+                                            )}
+
+                                            {/* Modal */}
+                                            {showCommentLikesModal && (
+                                                <LikesCommentModal
+                                                    postId={c.postId}
+                                                    commentId={c._id}
+                                                    currentUserId={user.id}
+                                                    onClose={() =>
+                                                        setShowCommentLikesModal(
+                                                            false
+                                                        )
+                                                    }
+                                                />
+                                            )}
+                                        </div>
                                     </div>
+
+                                    {/* Icon like */}
+                                    <Heart
+                                        className={`w-4 h-4 cursor-pointer mt-1 ${
+                                            c.isLikedComment
+                                                ? "fill-current text-red-500"
+                                                : "text-gray-500"
+                                        }`}
+                                        onClick={() => handleCommentLike(c._id)}
+                                    />
                                 </div>
 
-                                {/* Icon */}
-                                <Heart
-                                    className={`w-4 h-4 cursor-pointer ${
-                                        c.isLikedComment
-                                            ? "fill-current text-red-500"
-                                            : "text-gray-500"
-                                    }`}
-                                    onClick={() => handleCommentLike(c._id)}
-                                />
+                                {/* Reply */}
+                                {c.replies?.map((reply) => (
+                                    <div
+                                        key={reply._id}
+                                        className="ml-11 mt-2 border-l-[2px] border-gray-300 pl-4"
+                                    >
+                                        <p className="text-sm leading-snug">
+                                            <span className="font-semibold">
+                                                {reply.userId.fullName ||
+                                                    reply.userId.username}
+                                            </span>{" "}
+                                            <span>{reply.content}</span>
+                                        </p>
+
+                                        <div className="flex items-center gap-4 text-xs text-gray-400 mt-1">
+                                            <span>
+                                                {formatPostTime(
+                                                    reply.createdAt
+                                                )}
+                                            </span>
+                                            <span
+                                                className="cursor-pointer"
+                                                onClick={() => {
+                                                    setReplyTo(reply._id);
+                                                    setReplyToUser(
+                                                        reply.userId.fullName ||
+                                                            reply.userId
+                                                                .username
+                                                    );
+                                                }}
+                                            >
+                                                Trả lời
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         ))}
                 </div>
@@ -397,6 +473,23 @@ export default function PostDetailPage({ isModal = false }) {
                         </button>
                         <Send className="mr-2" />
                     </div>
+                    {replyToUser && (
+                        <div className="text-sm text-blue-400 mb-1 flex items-center justify-between">
+                            Đang trả lời{" "}
+                            <span className="font-semibold ml-1">
+                                {replyToUser}
+                            </span>
+                            <button
+                                className="ml-2 text-xs text-gray-400 hover:text-white"
+                                onClick={() => {
+                                    setReplyTo(null);
+                                    setReplyToUser(null);
+                                }}
+                            >
+                                Hủy
+                            </button>
+                        </div>
+                    )}
                     {/* Input placeholder */}
                     <div className="flex items-center space-x-2 pt-2">
                         <input
