@@ -92,31 +92,45 @@ const MessagePage = () => {
     const handleSendMessage = async () => {
         if (!message.trim() && selectedFiles.length === 0) return;
 
-        let uploadedFiles = [];
-        if (selectedFiles.length > 0) {
-            const formData = new FormData();
-            selectedFiles.forEach((file) => formData.append("messages", file));
-
-            try {
-                const res = await uploadImage(formData);
-                console.log("Upload response:", res);
-                uploadedFiles = res.files; // Giả sử server trả về {files: [...]}
-            } catch (err) {
-                console.error("❌ Upload file thất bại:", err);
-                return;
-            }
+        // Gửi text nếu có
+        if (message.trim()) {
+            const textMessage = {
+                conversationId,
+                sender: profile._id,
+                text: message,
+                files: [], // Không có file
+            };
+            socket.emit("sendMessage", textMessage);
+            setMessage("");
         }
 
-        const newMessage = {
-            conversationId,
-            sender: profile._id,
-            text: message,
-            files: uploadedFiles, // Gửi tất cả file dưới dạng mảng
-        };
-        console.log(uploadedFiles);
-        socket.emit("sendMessage", newMessage);
-        setMessage("");
-        setSelectedFiles([]);
+        // Gửi từng file
+        if (selectedFiles.length > 0) {
+            for (const file of selectedFiles) {
+                const formData = new FormData();
+                formData.append("messages", file);
+
+                let uploadedFile;
+                try {
+                    const res = await uploadImage(formData);
+                    console.log("Upload response:", res);
+                    uploadedFile = res.files[0]; // Giả sử server trả về {files: [...]}
+                } catch (err) {
+                    console.error("❌ Upload file thất bại:", err);
+                    continue;
+                }
+
+                const fileMessage = {
+                    conversationId,
+                    sender: profile._id,
+                    text: "", // Không có text
+                    files: [uploadedFile], // Chỉ gửi 1 file
+                };
+
+                socket.emit("sendMessage", fileMessage);
+            }
+            setSelectedFiles([]);
+        }
     };
 
     return (
