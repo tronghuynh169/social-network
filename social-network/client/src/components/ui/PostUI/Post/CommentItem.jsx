@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Heart, MoreHorizontal } from "lucide-react";
 import LikesCommentModal from "./LikesCommentModal"; // import đúng đường dẫn nếu cần
 import { formatPostTime } from "~/components/utils/formatPostTime";
@@ -8,15 +9,16 @@ const CommentItem = ({
     onReply,
     onLike,
     isReply = false,
-    showLikesModal,
-    setShowLikesModal,
+    isDirectReply = false, // mới thêm
 }) => {
+    const [showLikesModal, setShowLikesModal] = useState(false);
+    const indentClass = isDirectReply ? "pl-12" : "";
+
+    const [showReplies, setShowReplies] = useState(false);
+    const hasReplies = comment.replies && comment.replies.length > 0;
+    const allReplies = showReplies ? flattenReplies(comment.replies) : [];
     return (
-        <div
-            className={`w-full ${
-                isReply ? " mt-2 border-l-[2px] border-gray-300 pl-4" : ""
-            }`}
-        >
+        <div className={`w-full ${indentClass}`}>
             <div className="flex items-start gap-3 w-full">
                 {/* Avatar */}
                 <img
@@ -34,13 +36,13 @@ const CommentItem = ({
                         <span>{comment.content}</span>
                     </p>
 
-                    <div className="flex items-center gap-4 mt-1 text-xs text-gray-400">
+                    <div className="flex items-center gap-4 mt-1 text-xs text-[var(--text-secondary-color)]">
                         <span>{formatPostTime(comment.createdAt)}</span>
 
                         {comment.likesCommentCount > 0 && (
                             <span
                                 onClick={() => setShowLikesModal(true)}
-                                className="hover:underline cursor-pointer"
+                                className="hover:underline cursor-pointer text-[var(--text-secondary-color)]"
                             >
                                 {comment.likesCommentCount} lượt thích
                             </span>
@@ -54,7 +56,7 @@ const CommentItem = ({
                                         comment.userId.username
                                 )
                             }
-                            className="cursor-pointer"
+                            className="cursor-pointer text-[var(--text-secondary-color)]"
                         >
                             Trả lời
                         </span>
@@ -72,6 +74,21 @@ const CommentItem = ({
                             />
                         )}
                     </div>
+
+                    {/* Nút xem câu trả lời */}
+                    {!isReply && hasReplies && (
+                        <div className="flex items-center mt-4">
+                            <div className="h-[1px] w-[20px] bg-[var(--text-secondary-color)] inline-block "/>
+                            <button
+                                onClick={() => setShowReplies((prev) => !prev)}
+                                className="ml-2 text-[var(--text-secondary-color)] text-[12px] cursor-pointer"
+                            >
+                                {showReplies
+                                    ? "Ẩn câu trả lời"
+                                    : `Xem câu trả lời (${countReplies(comment)})`}
+                            </button>
+                        </div>
+                    )}
                 </div>
                 {/* Icon like */}
                 <Heart
@@ -84,9 +101,9 @@ const CommentItem = ({
                 />
             </div>
             {/* Đệ quy hiển thị replies */}
-            {comment.replies?.length > 0 && (
-                <div className="mt-2 space-y-2">
-                    {comment.replies.map((reply) => (
+            {allReplies.length > 0 && (
+                <div className="mt-4 space-y-4">
+                    {allReplies.map((reply) => (
                         <CommentItem
                             key={`${comment._id}-${reply._id}`}
                             comment={reply}
@@ -94,6 +111,7 @@ const CommentItem = ({
                             onReply={onReply}
                             onLike={onLike}
                             isReply={true} // Set isReply = true để xác định là reply
+                            isDirectReply={!isReply} // chỉ reply cấp 1 mới thụt
                             showLikesModal={false}
                             setShowLikesModal={() => {}}
                         />
@@ -103,5 +121,25 @@ const CommentItem = ({
         </div>
     );
 };
+
+// Hàm đếm tất cả replies ở mọi cấp (đệ quy)
+const countReplies = (comment) => {
+    if (!comment.replies || comment.replies.length === 0) return 0;
+    return comment.replies.reduce(
+        (total, reply) => total + 1 + countReplies(reply),
+        0
+    );
+};
+
+// Flatten đệ quy tất cả replies thành mảng phẳng
+const flattenReplies = (replies = []) =>
+    replies.reduce(
+      (acc, reply) => [
+        ...acc,
+        reply,
+        ...flattenReplies(reply.replies),
+      ],
+      []
+    );
 
 export default CommentItem;

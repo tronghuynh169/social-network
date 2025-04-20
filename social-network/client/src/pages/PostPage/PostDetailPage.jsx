@@ -340,7 +340,7 @@ export default function PostDetailPage({ isModal = false }) {
                         )}
                     </div>
                 </div>
-                <div className="text-sm space-y-4 max-h-full overflow-y-auto pr-2 py-2 no-scrollbar">
+                <div className="text-sm space-y-4 max-h-full overflow-y-auto pr-2 py-4 no-scrollbar">
                     {postDetails.comments
                         .filter((c) => !c.replyTo) // Lọc các comment gốc
                         .sort(
@@ -362,7 +362,7 @@ export default function PostDetailPage({ isModal = false }) {
                             />
                         ))}
                 </div>
-
+                
                 <div className="mt-auto pt-4 border-t border-gray-700">
                     <div className="flex items-center space-x-4 text-sm text-gray-400 mb-4">
                         <motion.div
