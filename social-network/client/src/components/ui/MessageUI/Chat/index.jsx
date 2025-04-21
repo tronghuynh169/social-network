@@ -23,11 +23,26 @@ const ChatBox = ({
     onToggleInfo = { onToggleInfo },
     showInfo = { showInfo },
     setReplyMessage,
+    socket,
 }) => {
     const bottomRef = useRef(null);
     const inputRef = useRef(null);
     const [viewingImage, setViewingImage] = useState(null);
     const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+
+    useEffect(() => {
+        socket.on("messageLiked", (updatedMessage) => {
+            setMessages((prev) =>
+                prev.map((msg) =>
+                    msg._id === updatedMessage._id ? updatedMessage : msg
+                )
+            );
+        });
+
+        return () => {
+            socket.off("messageLiked");
+        };
+    }, []);
 
     useEffect(() => {
         if (!conversationId) return;
@@ -71,6 +86,7 @@ const ChatBox = ({
                     setViewingImage={setViewingImage}
                     setIsImageModalOpen={setIsImageModalOpen}
                     setReplyMessage={setReplyMessage}
+                    socket={socket}
                 />
                 <div ref={bottomRef} />
             </ScrollArea>

@@ -180,6 +180,7 @@ const MessagePage = () => {
                     onToggleInfo={() => setShowInfo((prev) => !prev)}
                     showInfo={showInfo}
                     setReplyMessage={setReplyMessage}
+                    socket={socket}
                 />
             ) : (
                 <div className="flex flex-col justify-center items-center flex-1">

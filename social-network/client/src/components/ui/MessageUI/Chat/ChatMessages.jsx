@@ -16,6 +16,7 @@ const ChatMessages = ({
     setViewingImage,
     setIsImageModalOpen,
     setReplyMessage,
+    socket,
 }) => {
     return messages.map((msg, index) => {
         const isMe =
@@ -129,12 +130,28 @@ const ChatMessages = ({
                             </button>
                         </div>
                         <button
+                            onClick={() =>
+                                socket.emit("likeMessage", {
+                                    messageId: msg._id,
+                                    userId: currentUserId,
+                                })
+                            }
                             className={`absolute ${
                                 isMe ? "right-0 -bottom-5" : "left-0 -bottom-5"
                             } py-0.5 px-2 bg-[var(--secondary-color)] rounded-full flex gap-1 items-center cursor-pointer`}
                         >
-                            <Heart size={16} />
-                            <p>2</p>
+                            <Heart
+                                size={16}
+                                fill={
+                                    msg.likes?.some(
+                                        (user) => user._id === currentUserId
+                                    )
+                                        ? "red"
+                                        : "none"
+                                }
+                                color="red"
+                            />
+                            <p>{msg.likes?.length || 0}</p>
                         </button>
                     </div>
                 </div>

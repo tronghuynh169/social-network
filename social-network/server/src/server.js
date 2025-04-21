@@ -123,6 +123,47 @@ io.on("connection", (socket) => {
     socket.on("disconnect", () => {
         console.log("❌ Client disconnected:", socket.id);
     });
+
+    socket.on("likeMessage", async ({ messageId, userId }) => {
+        try {
+            const message = await Message.findById(messageId);
+
+            if (!message) return;
+
+            const alreadyLiked = message.likes.includes(userId);
+
+            if (alreadyLiked) {
+                // Unlike
+                message.likes = message.likes.filter(
+                    (id) => id.toString() !== userId.toString()
+                );
+            } else {
+                // Like
+                message.likes.push(userId);
+            }
+
+            const updatedMessage = await message.save().then((msg) =>
+                msg.populate([
+                    { path: "sender", select: "fullName avatar" },
+                    {
+                        path: "replyTo",
+                        populate: { path: "sender", select: "fullName avatar" },
+                    },
+                    {
+                        path: "likes",
+                        select: "fullName avatar",
+                    },
+                ])
+            );
+
+            io.to(message.conversation.toString()).emit(
+                "messageLiked",
+                updatedMessage
+            );
+        } catch (error) {
+            console.error("❌ Lỗi khi like tin nhắn:", error);
+        }
+    });
 });
 
 // Start the server
