@@ -33,7 +33,7 @@ const CommentItem = ({
                         <span className="font-semibold">
                             {comment.userId.fullName || comment.userId.username}
                         </span>{" "}
-                        <span>{comment.content}</span>
+                        <span>{renderCommentText(comment.content)}</span>
                     </p>
 
                     <div className="flex items-center gap-4 mt-1 text-xs text-[var(--text-secondary-color)]">
@@ -121,6 +121,47 @@ const CommentItem = ({
         </div>
     );
 };
+
+
+// 🔍 Chuyển @Tên -> <a>
+function renderCommentText(text) {
+    const regex = /@{(.+?)}\|([^\|@]+?)  /g; // Hai dấu cách ở cuối
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = regex.exec(text)) !== null) {
+        const [fullMatch, userId, fullName] = match;
+        const start = match.index;
+
+        if (start > lastIndex) {
+            parts.push(text.slice(lastIndex, start));
+        }
+
+        parts.push(
+            <a
+                key={userId}
+                href={`/user/${userId}`}
+                className="text-blue-400 hover:underline"
+            >
+                @{fullName.trim()}
+            </a>,
+            ' ' // Một khoảng trắng để giữ đúng spacing sau thẻ <a>
+        );
+
+        lastIndex = regex.lastIndex;
+    }
+
+    if (lastIndex < text.length) {
+        parts.push(text.slice(lastIndex));
+    }
+
+    return <>{parts}</>;
+}
+
+
+
+
 
 // Hàm đếm tất cả replies ở mọi cấp (đệ quy)
 const countReplies = (comment) => {

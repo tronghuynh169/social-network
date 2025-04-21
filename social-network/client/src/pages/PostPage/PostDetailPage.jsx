@@ -44,6 +44,8 @@ export default function PostDetailPage({ isModal = false }) {
     const [showCommentLikesModal, setShowCommentLikesModal] = useState(false);
     const [replyTo, setReplyTo] = useState(null);
     const [replyToUser, setReplyToUser] = useState(null);
+    const [displayComment, setDisplayComment] = useState(""); // Chỉ hiện @Tên
+    
 
     const handleSlideChange = (swiper) => {
         setAtStart(swiper.isBeginning);
@@ -165,6 +167,7 @@ export default function PostDetailPage({ isModal = false }) {
             fetchPostDetails();
 
             setComment("");
+            setDisplayComment("");
             setReplyTo(null);
             setReplyToUser(null);
         } catch (err) {
@@ -355,6 +358,8 @@ export default function PostDetailPage({ isModal = false }) {
                                 onReply={(id, name) => {
                                     setReplyTo(id);
                                     setReplyToUser(name);
+                                    setComment(`@{${id}}|${name}  `);
+                                    setDisplayComment(`@${name} `);
                                 }}
                                 onLike={handleCommentLike}
                                 showLikesModal={showCommentLikesModal}
@@ -391,30 +396,24 @@ export default function PostDetailPage({ isModal = false }) {
                         </button>
                         <Send className="mr-2" />
                     </div>
-                    {replyToUser && (
-                        <div className="text-sm text-blue-400 mb-1 flex items-center justify-between">
-                            Đang trả lời{" "}
-                            <span className="font-semibold ml-1">
-                                {replyToUser}
-                            </span>
-                            <button
-                                className="ml-2 text-xs text-gray-400 hover:text-white"
-                                onClick={() => {
-                                    setReplyTo(null);
-                                    setReplyToUser(null);
-                                }}
-                            >
-                                Hủy
-                            </button>
-                        </div>
-                    )}
+                    
                     {/* Input placeholder */}
                     <div className="flex items-center space-x-2 pt-2">
                         <input
                             type="text"
                             placeholder="Bình luận..."
-                            value={comment}
-                            onChange={(e) => setComment(e.target.value)}
+                            value={displayComment}
+                            onChange={(e) => {
+                                const newDisplayValue = e.target.value;
+                                setDisplayComment(newDisplayValue);
+                                
+                                // Nếu đang reply và text bắt đầu bằng @Tên
+                                if (replyTo && newDisplayValue.startsWith(`@${replyToUser}`)) {
+                                  setComment(`@{${replyTo}}|${replyToUser} ${newDisplayValue.slice(replyToUser.length + 1)}`);
+                                } else {
+                                  setComment(newDisplayValue);
+                                }
+                              }}
                             className="flex-1 text-white text-sm outline-none"
                         />
                         {comment && (
