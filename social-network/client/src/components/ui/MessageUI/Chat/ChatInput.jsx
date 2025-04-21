@@ -1,15 +1,25 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Smile, Mic, ImageIcon, Heart, X } from "lucide-react";
 import { Input } from "~/components/ui/input";
 
 const ChatInput = ({
+    currentUserId,
     message,
     setMessage,
     onSend,
     selectedFiles,
     setSelectedFiles,
     inputRef,
+    replyMessage,
+    setReplyMessage,
 }) => {
+    // Focus vào input khi có reply
+    useEffect(() => {
+        if (replyMessage) {
+            inputRef.current?.focus();
+        }
+    }, [replyMessage]);
+
     const handleSendMessage = () => {
         if (message.trim() || selectedFiles.length > 0) {
             onSend();
@@ -68,6 +78,52 @@ const ChatInput = ({
                             </button>
                         </div>
                     ))}
+                </div>
+            )}
+            {replyMessage && (
+                <div className="rounded-lg mb-2 text-sm">
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <span className="">Đang trả lời </span>
+                            <span className="font-medium">
+                                {replyMessage.sender?._id === currentUserId
+                                    ? "chính mình"
+                                    : replyMessage.sender?.fullName ||
+                                      "Người dùng"}
+                            </span>
+                        </div>
+                        <button
+                            onClick={() => setReplyMessage(null)}
+                            className="cursor-pointer"
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
+                    <div className="text-[var(--text-secondary-color)] mt-1">
+                        {
+                            // Kiểm tra nếu replyMessage có file đính kèm
+                            replyMessage.files &&
+                            replyMessage.files.length > 0 ? (
+                                // Kiểm tra nếu là hình ảnh
+                                replyMessage.files[0].type.startsWith(
+                                    "image/"
+                                ) ? (
+                                    <span className="">Hình ảnh</span>
+                                ) : // Kiểm tra nếu là video
+                                replyMessage.files[0].type.startsWith(
+                                      "video/"
+                                  ) ? (
+                                    <span className="">Video</span>
+                                ) : (
+                                    // Nếu là file khác
+                                    <span className="">File đính kèm</span>
+                                )
+                            ) : (
+                                // Nếu không có file, hiển thị nội dung tin nhắn
+                                replyMessage.text
+                            )
+                        }
+                    </div>
                 </div>
             )}
             <input

@@ -134,7 +134,8 @@ exports.getMessages = async (req, res) => {
                     path: "sender", // người gửi của tin nhắn gốc
                     select: "fullName avatar",
                 },
-            });
+            })
+            .populate("likes", "fullName avatar");
 
         res.status(200).json(messages);
     } catch (err) {
@@ -142,7 +143,6 @@ exports.getMessages = async (req, res) => {
         res.status(500).json({ error: "Lấy tin nhắn thất bại" });
     }
 };
-
 
 // Lấy các cuộc trò chuyện của user
 exports.getUserConversations = async (req, res) => {

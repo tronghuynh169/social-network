@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import socket from "~/socket";
 import ChatHeader from "./ChatHeader";
 import ChatMessages from "./ChatMessages";
 import ChatInput from "./ChatInput";
-import ImageModal from "./ImageModal";
+import ImageModal from "./Modal/ImageModal";
+import LikeModal from "./Modal/LikeModal";
 
 const ChatBox = ({
     messages,
@@ -22,6 +22,7 @@ const ChatBox = ({
     avatar,
     onToggleInfo = { onToggleInfo },
     showInfo = { showInfo },
+    replyMessage,
     setReplyMessage,
     socket,
 }) => {
@@ -29,44 +30,73 @@ const ChatBox = ({
     const inputRef = useRef(null);
     const [viewingImage, setViewingImage] = useState(null);
     const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+    const [isLikeModalOpen, setIsLikeModalOpen] = useState(false);
+    const [likes, setLikes] = useState([]);
+    const [messageId, setMessageId] = useState([]);
 
+    // Lắng nghe sự kiện "messageLiked" để cập nhật danh sách tin nhắn
     useEffect(() => {
-        socket.on("messageLiked", (updatedMessage) => {
+        const handleMessageLiked = (updatedMessage) => {
             setMessages((prev) =>
                 prev.map((msg) =>
                     msg._id === updatedMessage._id ? updatedMessage : msg
                 )
             );
-        });
+        };
+
+        socket.on("messageLiked", handleMessageLiked);
 
         return () => {
-            socket.off("messageLiked");
+            socket.off("messageLiked", handleMessageLiked);
         };
-    }, []);
+    }, [socket, setMessages]);
 
+    // Lắng nghe sự kiện "newMessage" để thêm tin nhắn mới
     useEffect(() => {
         if (!conversationId) return;
+
         const handleReceiveMessage = (msg) => {
             if (msg.conversation === conversationId) {
                 setMessages((prev) => [...prev, msg]);
             }
         };
-        socket.on("newMessage", handleReceiveMessage);
-        return () => socket.off("newMessage", handleReceiveMessage);
-    }, [conversationId, setMessages]);
 
+        socket.on("newMessage", handleReceiveMessage);
+
+        return () => socket.off("newMessage", handleReceiveMessage);
+    }, [conversationId, socket, setMessages]);
+
+    // Tham gia phòng chat
     useEffect(() => {
         if (conversationId) {
             socket.emit("joinRoom", conversationId);
         }
-    }, [conversationId]);
+    }, [conversationId, socket]);
 
+    // Tự động cuộn xuống dưới khi có tin nhắn mới
     useEffect(() => {
         const timeout = setTimeout(() => {
             bottomRef.current?.scrollIntoView({ behavior: "auto" });
         }, 0);
+
         return () => clearTimeout(timeout);
     }, [messages]);
+
+    // Hàm xử lý gỡ like
+    const handleUnlike = (userId) => {
+        if (!messageId) return;
+
+        // Sử dụng sự kiện "likeMessage" để gỡ like
+        socket.emit("likeMessage", {
+            messageId,
+            userId,
+        });
+
+        // Cập nhật danh sách like trong state
+        setLikes((prevLikes) =>
+            prevLikes.filter((user) => user._id !== userId)
+        );
+    };
 
     return (
         <div className="flex-1 relative flex flex-col">
@@ -85,18 +115,25 @@ const ChatBox = ({
                     isGroup={isGroup}
                     setViewingImage={setViewingImage}
                     setIsImageModalOpen={setIsImageModalOpen}
+                    setIsLikeModalOpen={setIsLikeModalOpen}
+                    setLikes={setLikes} // Truyền setLikes để cập nhật danh sách like
+                    replyMessage={replyMessage}
                     setReplyMessage={setReplyMessage}
                     socket={socket}
+                    setMessageId={setMessageId}
                 />
                 <div ref={bottomRef} />
             </ScrollArea>
             <ChatInput
+                currentUserId={currentUserId}
                 message={message}
                 setMessage={setMessage}
                 onSend={onSend}
                 selectedFiles={selectedFiles}
                 setSelectedFiles={setSelectedFiles}
                 inputRef={inputRef}
+                replyMessage={replyMessage}
+                setReplyMessage={setReplyMessage}
             />
             <ImageModal
                 isOpen={isImageModalOpen}
@@ -105,6 +142,13 @@ const ChatBox = ({
                     setViewingImage(null);
                     setIsImageModalOpen(false);
                 }}
+            />
+            <LikeModal
+                currentUserId={currentUserId}
+                isOpen={isLikeModalOpen}
+                likes={likes}
+                onUnlike={handleUnlike} // Truyền hàm gỡ like
+                onClose={() => setIsLikeModalOpen(false)} // Đóng LikeModal
             />
         </div>
     );

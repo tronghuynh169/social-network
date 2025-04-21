@@ -179,6 +179,7 @@ const MessagePage = () => {
                     conversationId={conversationId}
                     onToggleInfo={() => setShowInfo((prev) => !prev)}
                     showInfo={showInfo}
+                    replyMessage={replyMessage}
                     setReplyMessage={setReplyMessage}
                     socket={socket}
                 />

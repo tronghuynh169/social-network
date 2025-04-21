@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import dayjs from "dayjs";
-import { MoreVertical, CornerUpLeft, Smile, Heart } from "lucide-react";
+import { MoreVertical, Smile, Heart, Reply } from "lucide-react";
+import LikeModal from "./Modal/LikeModal";
 
 const shouldShowTime = (msg, index, messages) => {
     if (index === 0) return true;
@@ -16,18 +17,20 @@ const ChatMessages = ({
     setViewingImage,
     setIsImageModalOpen,
     setReplyMessage,
+    setIsLikeModalOpen,
+    setLikes,
     socket,
+    setMessageId,
 }) => {
     return messages.map((msg, index) => {
         const isMe =
             (msg.sender?._id || msg.sender)?.toString() ===
             currentUserId.toString();
         const showTime = shouldShowTime(msg, index, messages);
-        console.log("sender: ", msg.sender);
         return (
             <div key={index}>
                 {showTime && (
-                    <div className="text-center text-xs text-gray-400 my-4">
+                    <div className="text-center text-xs text-[var(--text-secondary-color)] my-4">
                         {dayjs(msg.createdAt).format("HH:mm DD/MM/YYYY")}
                     </div>
                 )}
@@ -35,11 +38,53 @@ const ChatMessages = ({
                     className={`mb-2 flex ${
                         isMe ? "justify-end" : "justify-start"
                     }`}
+                    style={{ marginBottom: "24px" }}
                 >
                     <div className="max-w-[50%] flex flex-col gap-2 relative">
                         {!isMe && isGroup && (
-                            <div className="text-xs text-gray-400 mb-1">
+                            <div className="text-xs text-[var(--text-secondary-color)] mb-1">
                                 {msg.senderName}
+                            </div>
+                        )}
+                        {msg.replyTo && (
+                            <div
+                                className={`mb-1 max-w-full flex flex-col gap-1 ${
+                                    isMe ? "items-end" : "items-start"
+                                }`}
+                            >
+                                <div
+                                    className={`text-sm font-semibold flex items-center gap-1 text-[var(--text-secondary-color)]`}
+                                >
+                                    <Reply size={16} />
+                                    {msg.sender?._id === currentUserId
+                                        ? "Bạn đang trả lời chính mình"
+                                        : `${
+                                              msg.sender?.fullName
+                                          } đang trả lời ${
+                                              msg.replyTo.sender?._id ===
+                                              currentUserId
+                                                  ? "bạn"
+                                                  : msg.replyTo.sender
+                                                        ?.fullName ||
+                                                    "người dùng"
+                                          }`}
+                                </div>
+                                <div
+                                    className={`${
+                                        isMe
+                                            ? "border-r-4 pr-2 border-[var(--secondary-color)]"
+                                            : "border-l-4 pl-2 border-[var(--secondary-color)]"
+                                    }`}
+                                >
+                                    <div
+                                        className={`text-sm text-[var(--text-secondary-color)] bg-[var(--secondary-color)] px-3 py-1 rounded-full w-fit max-w-full`}
+                                    >
+                                        {msg.replyTo.text
+                                            ? msg.replyTo.text
+                                            : msg.replyTo.files?.[0]?.name ||
+                                              "Tin nhắn đã bị xóa"}
+                                    </div>
+                                </div>
                             </div>
                         )}
                         <div
@@ -55,20 +100,6 @@ const ChatMessages = ({
                                             : "bg-[var(--text-otther-message-color)]"
                                     }`}
                                 >
-                                    {msg.replyTo && (
-                                        <div className="border-l-4 border-blue-400 pl-2 mb-1 text-sm text-gray-700 bg-gray-100 rounded">
-                                            <span className="text-blue-500 font-semibold">
-                                                {msg.replyTo?.sender
-                                                    ?.fullName || "Người dùng"}
-                                                :
-                                            </span>{" "}
-                                            {msg.replyTo.text
-                                                ? msg.replyTo.text
-                                                : msg.replyTo.files?.[0]
-                                                      ?.name ||
-                                                  "Tin nhắn đã bị xóa"}
-                                        </div>
-                                    )}
                                     {msg.text}
                                 </div>
                             )}
@@ -85,7 +116,7 @@ const ChatMessages = ({
                                                 alt={`chat-img-${idx}`}
                                                 className="rounded-2xl max-w-[236px] object-cover cursor-pointer"
                                                 onClick={() => {
-                                                    setViewingImage(file.url);
+                                                    setViewingImage();
                                                     setIsImageModalOpen(true);
                                                 }}
                                             />
@@ -116,43 +147,55 @@ const ChatMessages = ({
                                     </div>
                                 ))}
 
-                            <button className="p-1 cursor-pointer hover:bg-[var(--secondary-color)] rounded-full">
+                            <button
+                                className="p-1 cursor-pointer hover:bg-[var(--secondary-color)] rounded-full"
+                                onClick={() => {
+                                    socket.emit("likeMessage", {
+                                        messageId: msg._id,
+                                        userId: currentUserId,
+                                    });
+                                }}
+                            >
                                 <Smile size={16} />
                             </button>
+
                             <button
                                 className="cursor-pointer hover:bg-[var(--secondary-color)] rounded-full"
                                 onClick={() => setReplyMessage(msg)}
                             >
-                                <CornerUpLeft size={16} />
+                                <Reply size={20} />
                             </button>
                             <button className="cursor-pointer hover:bg-[var(--secondary-color)] rounded-full">
                                 <MoreVertical size={16} />
                             </button>
                         </div>
-                        <button
-                            onClick={() =>
-                                socket.emit("likeMessage", {
-                                    messageId: msg._id,
-                                    userId: currentUserId,
-                                })
-                            }
-                            className={`absolute ${
-                                isMe ? "right-0 -bottom-5" : "left-0 -bottom-5"
-                            } py-0.5 px-2 bg-[var(--secondary-color)] rounded-full flex gap-1 items-center cursor-pointer`}
-                        >
-                            <Heart
-                                size={16}
-                                fill={
-                                    msg.likes?.some(
-                                        (user) => user._id === currentUserId
-                                    )
-                                        ? "red"
-                                        : "none"
-                                }
-                                color="red"
-                            />
-                            <p>{msg.likes?.length || 0}</p>
-                        </button>
+                        {msg.likes?.length > 0 && (
+                            <div
+                                className={`absolute cursor-pointer ${
+                                    isMe
+                                        ? "right-0 -bottom-4"
+                                        : "left-0 -bottom-4"
+                                } py-0.5 px-2 bg-[var(--secondary-color)] rounded-full flex gap-1 items-center`}
+                                onClick={() => {
+                                    setLikes(msg.likes);
+                                    setIsLikeModalOpen(true);
+                                    setMessageId(msg._id);
+                                }}
+                            >
+                                <Heart
+                                    size={16}
+                                    fill={
+                                        msg.likes?.some(
+                                            (user) => user._id === currentUserId
+                                        )
+                                            ? "red"
+                                            : "none"
+                                    }
+                                    color="red"
+                                />
+                                <p className="text-xs">{msg.likes.length}</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
