@@ -1,5 +1,6 @@
 import React from "react";
 import dayjs from "dayjs";
+import { MoreVertical, CornerUpLeft, Smile, Heart } from "lucide-react";
 
 const shouldShowTime = (msg, index, messages) => {
     if (index === 0) return true;
@@ -30,65 +31,90 @@ const ChatMessages = ({
                         isMe ? "justify-end" : "justify-start"
                     }`}
                 >
-                    <div className="max-w-[50%] flex flex-col gap-2">
+                    <div className="max-w-[50%] flex flex-col gap-2 relative">
                         {!isMe && isGroup && (
                             <div className="text-xs text-gray-400 mb-1">
                                 {msg.senderName}
                             </div>
                         )}
-                        {msg.text && (
-                            <div
-                                className={`break-words rounded-2xl overflow-hidden px-3 py-2 whitespace-pre-wrap ${
-                                    isMe
-                                        ? "bg-[var(--text-me-message-color)]"
-                                        : "bg-[var(--text-otther-message-color)]"
-                                }`}
-                            >
-                                {msg.text}
-                            </div>
-                        )}
-                        {msg.files &&
-                            msg.files.map((file, idx) => (
+                        <div
+                            className={`flex gap-0.5 ${
+                                isMe ? "flex-row-reverse" : ""
+                            }`}
+                        >
+                            {msg.text && (
                                 <div
-                                    key={idx}
-                                    className={`${isMe ? "ml-auto" : ""}`}
+                                    className={`break-words rounded-2xl overflow-hidden px-3 py-2 whitespace-pre-wrap ${
+                                        isMe
+                                            ? "bg-[var(--text-me-message-color)]"
+                                            : "bg-[var(--text-otther-message-color)]"
+                                    }`}
                                 >
-                                    {file.type?.startsWith("image/") ? (
-                                        <img
-                                            src={file.url}
-                                            alt={`chat-img-${idx}`}
-                                            className="rounded-2xl max-w-[236px] object-cover cursor-pointer"
-                                            onClick={() => {
-                                                setViewingImage(file.url);
-                                                setIsImageModalOpen(true);
-                                            }}
-                                        />
-                                    ) : file.type?.startsWith("video/") ? (
-                                        <video
-                                            controls
-                                            className="rounded-2xl max-w-[236px] max-h-[300px] object-contain"
-                                        >
-                                            <source
-                                                src={file.url}
-                                                type={file.type}
-                                            />
-                                            Trình duyệt của bạn không hỗ trợ
-                                            video.
-                                        </video>
-                                    ) : (
-                                        <div className="px-3 py-2 rounded-lg bg-[var(--button-color)] w-fit">
-                                            <a
-                                                href={file.url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="underline"
-                                            >
-                                                {file.name}
-                                            </a>
-                                        </div>
-                                    )}
+                                    {msg.text}
                                 </div>
-                            ))}
+                            )}
+
+                            {msg.files &&
+                                msg.files.map((file, idx) => (
+                                    <div
+                                        key={idx}
+                                        className={`${isMe ? "ml-auto" : ""}`}
+                                    >
+                                        {file.type?.startsWith("image/") ? (
+                                            <img
+                                                src={file.url}
+                                                alt={`chat-img-${idx}`}
+                                                className="rounded-2xl max-w-[236px] object-cover cursor-pointer"
+                                                onClick={() => {
+                                                    setViewingImage(file.url);
+                                                    setIsImageModalOpen(true);
+                                                }}
+                                            />
+                                        ) : file.type?.startsWith("video/") ? (
+                                            <video
+                                                controls
+                                                className="rounded-2xl max-w-[236px] max-h-[300px] object-contain"
+                                            >
+                                                <source
+                                                    src={file.url}
+                                                    type={file.type}
+                                                />
+                                                Trình duyệt của bạn không hỗ trợ
+                                                video.
+                                            </video>
+                                        ) : (
+                                            <div className="px-3 py-2 rounded-lg bg-[var(--button-color)] w-fit">
+                                                <a
+                                                    href={file.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="underline"
+                                                >
+                                                    {file.name}
+                                                </a>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+
+                            <button className="p-1 cursor-pointer hover:bg-[var(--secondary-color)] rounded-full">
+                                <Smile size={16} />
+                            </button>
+                            <button className="cursor-pointer hover:bg-[var(--secondary-color)] rounded-full">
+                                <CornerUpLeft size={16} />
+                            </button>
+                            <button className="cursor-pointer hover:bg-[var(--secondary-color)] rounded-full">
+                                <MoreVertical size={16} />
+                            </button>
+                        </div>
+                        <button
+                            className={`absolute ${
+                                isMe ? "right-0 -bottom-5" : "left-0 -bottom-5"
+                            } py-0.5 px-2 bg-[var(--secondary-color)] rounded-full flex gap-1 items-center cursor-pointer`}
+                        >
+                            <Heart size={16} />
+                            <p>2</p>
+                        </button>
                     </div>
                 </div>
             </div>
