@@ -133,7 +133,6 @@ export default function PostCard({ post }) {
       
         fetchPost();
       }, []);
-      
 
   return (
     <div className="max-w-md mx-auto bg-black text-[var(--text-primary-color)] border-b border-[var(--border-color)] p-4 space-y-4">
@@ -259,11 +258,15 @@ export default function PostCard({ post }) {
         )}
       </div>
       {/* Bình luận */}
-      {comments.length > 0 && (
+      {comments.length > 0 && ( 
         <div className="text-sm space-y-1">
-          <button className="text-gray-400 text-sm hover:underline">
-            Xem tất cả {comments.length} bình luận
+          <button className="text-gray-400 text-sm hover:underline cursor-pointer" onClick={handleCommentClick}>
+            Xem tất cả {comments.reduce((acc, comment) => {
+              return acc + 1 + countRepliesRecursive(comment.replies || []);
+            }, 0
+            )} bình luận
           </button>
+        
 
           {comments
               .filter((c) => c.userId._id === user.id) // Chỉ của bạn
@@ -305,3 +308,11 @@ export default function PostCard({ post }) {
     </div>
   );
 }
+
+const countRepliesRecursive = (replies) => {
+  if (!replies || replies.length === 0) return 0;
+
+  return replies.reduce((acc, reply) => {
+    return acc + 1 + countRepliesRecursive(reply.replies || []);
+  }, 0);
+};

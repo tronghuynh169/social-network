@@ -76,3 +76,8 @@ export const getPostLikes = async (postId) => {
 export const getCommentLikes = async (postId, commentId) => {
     return await api.get(`/${postId}/comments/${commentId}/likes`);
 };
+
+//  Xóa comment và các reply
+export const deleteComment = async (postId, commentId) => {
+    return await api.delete(`/${postId}/comments/${commentId}`);
+};

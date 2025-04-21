@@ -6,6 +6,7 @@ import {
     addComment,
     addReply,
     toggleCommentLike,
+    deleteComment
 } from "~/api/post";
 import {
     Heart,
@@ -15,6 +16,7 @@ import {
     ChevronRight,
     X,
     MoreHorizontal,
+    Loader2,
 } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination } from "swiper/modules";
@@ -45,7 +47,7 @@ export default function PostDetailPage({ isModal = false }) {
     const [replyTo, setReplyTo] = useState(null);
     const [replyToUser, setReplyToUser] = useState(null);
     const [displayComment, setDisplayComment] = useState(""); // Chỉ hiện @Tên
-    
+    const [isCommenting, setIsCommenting] = useState(false);
 
     const handleSlideChange = (swiper) => {
         setAtStart(swiper.isBeginning);
@@ -115,6 +117,7 @@ export default function PostDetailPage({ isModal = false }) {
 
     const handleAddComment = async () => {
         if (!comment.trim()) return;
+        setIsCommenting(true);
         try {
             let newComment;
             if (replyTo) {
@@ -164,7 +167,7 @@ export default function PostDetailPage({ isModal = false }) {
             });
 
             // Gọi lại API để fetch lại dữ liệu mới nhất từ server
-            fetchPostDetails();
+            await fetchPostDetails();
 
             setComment("");
             setDisplayComment("");
@@ -172,6 +175,30 @@ export default function PostDetailPage({ isModal = false }) {
             setReplyToUser(null);
         } catch (err) {
             console.error("Lỗi khi bình luận:", err);
+        }
+        finally {
+            setIsCommenting(false);
+        }
+    };
+
+    const handleDeleteComment = async (commentId) => {
+        try {
+            await deleteComment(postDetails.post._id, commentId);
+    
+            // 1. Xóa comment khỏi giao diện ngay lập tức
+            setPostDetails((prev) => ({
+                ...prev,
+                comments: prev.comments.filter(
+                    (c) => c._id !== commentId && c.replyTo !== commentId
+                ),
+            }));
+    
+            // 2. Gọi lại API sau 300ms để đồng bộ toàn bộ dữ liệu
+            setTimeout(() => {
+                fetchPostDetails();
+            }, 300);
+        } catch (err) {
+            console.error("Lỗi xóa comment:", err);
         }
     };
 
@@ -362,6 +389,7 @@ export default function PostDetailPage({ isModal = false }) {
                                     setDisplayComment(`@${name} `);
                                 }}
                                 onLike={handleCommentLike}
+                                onDelete={handleDeleteComment} // Truyền hàm xóa vào đây
                                 showLikesModal={showCommentLikesModal}
                                 setShowLikesModal={setShowCommentLikesModal}
                             />
@@ -402,6 +430,7 @@ export default function PostDetailPage({ isModal = false }) {
                         <input
                             type="text"
                             placeholder="Bình luận..."
+                            disabled={isCommenting}
                             value={displayComment}
                             onChange={(e) => {
                                 const newDisplayValue = e.target.value;
@@ -414,16 +443,29 @@ export default function PostDetailPage({ isModal = false }) {
                                   setComment(newDisplayValue);
                                 }
                               }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && !isCommenting && displayComment.trim()) {
+                                    e.preventDefault(); // tránh submit form nếu có
+                                    handleAddComment();
+                                }
+                            }}
                             className="flex-1 text-white text-sm outline-none"
                         />
-                        {comment && (
-                            <button
-                                className="text-blue-500 text-sm font-medium"
-                                onClick={handleAddComment}
-                            >
-                                Đăng
-                            </button>
-                        )}
+                        {
+                            isCommenting ? (
+                                <Loader2 className="animate-spin text-gray-400 w-4 h-4" />
+                              ) : 
+                             ( 
+                                displayComment &&
+                                <button
+                                    className="text-[var(--text-enable-color)] text-sm font-medium cursor-pointer hover:text-[#c8d7e4]"
+                                    onClick={handleAddComment}
+                                >
+                                    Đăng
+                                </button>
+                             
+                            )
+                        }
                     </div>
                 </div>
             </div>

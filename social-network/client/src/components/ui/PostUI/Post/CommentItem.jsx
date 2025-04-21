@@ -2,21 +2,31 @@ import { useState } from "react";
 import { Heart, MoreHorizontal } from "lucide-react";
 import LikesCommentModal from "./LikesCommentModal"; // import đúng đường dẫn nếu cần
 import { formatPostTime } from "~/components/utils/formatPostTime";
+import DeleteCommentModal from "./DeleteCommentModal";
 
 const CommentItem = ({
     comment,
     user,
     onReply,
     onLike,
+    onDelete, // Hàm xóa bình luận
     isReply = false,
     isDirectReply = false, // mới thêm
 }) => {
     const [showLikesModal, setShowLikesModal] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false); // State để mở modal xóa
     const indentClass = isDirectReply ? "pl-12" : "";
 
     const [showReplies, setShowReplies] = useState(false);
     const hasReplies = comment.replies && comment.replies.length > 0;
     const allReplies = showReplies ? flattenReplies(comment.replies) : [];
+
+    // Hàm xử lý xóa bình luận
+    const handleDelete = () => {
+        onDelete(comment._id); // Gọi hàm xóa được truyền vào prop
+        setShowDeleteModal(false); // Đóng modal sau khi xác nhận
+    };
+
     return (
         <div className={`w-full ${indentClass}`}>
             <div className="flex items-start gap-3 w-full">
@@ -62,7 +72,20 @@ const CommentItem = ({
                         </span>
 
                         {comment.userId._id === user.id && (
-                            <MoreHorizontal className="w-4 h-4 cursor-pointer" />
+                            <>
+                                <MoreHorizontal
+                                    className="w-4 h-4 cursor-pointer"
+                                    onClick={() => setShowDeleteModal(true)}
+                                />
+                                <DeleteCommentModal
+                                    isOpen={showDeleteModal}
+                                    onClose={() => setShowDeleteModal(false)}
+                                    onConfirm={() => {
+                                        onDelete(comment._id); // Gọi hàm xóa
+                                        setShowDeleteModal(false);
+                                    }}
+                                />
+                            </>
                         )}
 
                         {showLikesModal && (
@@ -142,7 +165,7 @@ function renderCommentText(text) {
             <a
                 key={userId}
                 href={`/user/${userId}`}
-                className="text-blue-400 hover:underline"
+                className="text-[#c8d7e4] hover:underline"
             >
                 @{fullName.trim()}
             </a>,
