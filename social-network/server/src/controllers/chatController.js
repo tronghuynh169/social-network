@@ -61,7 +61,7 @@ exports.sendMessage = (req, res) => {
             });
         }
 
-        const { conversationId, sender, text } = req.body;
+        const { conversationId, sender, text, replyTo } = req.body;
         let fileUrls = [];
 
         // Kiểm tra nếu có file được upload
@@ -102,6 +102,7 @@ exports.sendMessage = (req, res) => {
                 sender,
                 text,
                 files: fileUrls, // Lưu các URL file hình ảnh/video
+                replyTo: replyTo || null,
             });
 
             res.status(201).json({
@@ -124,15 +125,24 @@ exports.sendMessage = (req, res) => {
 exports.getMessages = async (req, res) => {
     const { conversationId } = req.params;
     try {
-        const messages = await Message.find({
-            conversation: conversationId,
-        }).sort({ createdAt: 1 });
+        const messages = await Message.find({ conversation: conversationId })
+            .sort({ createdAt: 1 })
+            .populate("sender", "fullName avatar") // người gửi
+            .populate({
+                path: "replyTo", // tin nhắn gốc
+                populate: {
+                    path: "sender", // người gửi của tin nhắn gốc
+                    select: "fullName avatar",
+                },
+            });
+
         res.status(200).json(messages);
     } catch (err) {
         console.error("❌ Lỗi khi lấy tin nhắn:", err);
         res.status(500).json({ error: "Lấy tin nhắn thất bại" });
     }
 };
+
 
 // Lấy các cuộc trò chuyện của user
 exports.getUserConversations = async (req, res) => {

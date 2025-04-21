@@ -87,11 +87,20 @@ io.on("connection", (socket) => {
                 conversation: data.conversationId,
                 text: data.text || "",
                 files: parsedFiles, // đảm bảo là mảng object
+                replyTo: data.replyTo || null,
             });
 
-            const savedMessage = await newMessage.save();
+            const savedMessage = await newMessage.save().then((msg) =>
+                msg.populate([
+                    { path: "sender", select: "fullName avatar" },
+                    {
+                        path: "replyTo",
+                        populate: { path: "sender", select: "fullName avatar" },
+                    },
+                ])
+            );
 
-            io.to(data.conversationId).emit("receiveMessage", savedMessage);
+            io.to(data.conversationId).emit("receiveMessage", savedMessage); // ✅ GỬI ĐẦY ĐỦ
 
             const conversation = await Conversation.findById(
                 data.conversationId

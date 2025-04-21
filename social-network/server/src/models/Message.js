@@ -4,7 +4,7 @@ const messageSchema = new mongoose.Schema(
     {
         sender: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "User",
+            ref: "Profile",
             required: true,
         },
         conversation: {
@@ -23,9 +23,20 @@ const messageSchema = new mongoose.Schema(
         readBy: [
             {
                 type: mongoose.Schema.Types.ObjectId,
-                ref: "User",
+                ref: "Profile",
             },
         ],
+        likes: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Profile",
+            },
+        ],
+        replyTo: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Message",
+            default: null,
+        },
     },
     { timestamps: true }
 );

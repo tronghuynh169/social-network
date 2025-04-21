@@ -25,6 +25,7 @@ const MessagePage = () => {
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [avatar, setAvatar] = useState("");
     const [showInfo, setShowInfo] = useState(false);
+    const [replyMessage, setReplyMessage] = useState(null);
 
     useEffect(() => {
         const fetchMessages = async () => {
@@ -99,9 +100,18 @@ const MessagePage = () => {
                 sender: profile._id,
                 text: message,
                 files: [], // Không có file
+                replyTo: replyMessage
+                    ? {
+                          _id: replyMessage._id,
+                          text: replyMessage.text,
+                          files: replyMessage.files,
+                          sender: replyMessage.sender, // ✅ thêm dòng này
+                      }
+                    : null,
             };
             socket.emit("sendMessage", textMessage);
             setMessage("");
+            setReplyMessage(null);
         }
 
         // Gửi từng file
@@ -125,11 +135,20 @@ const MessagePage = () => {
                     sender: profile._id,
                     text: "", // Không có text
                     files: [uploadedFile], // Chỉ gửi 1 file
+                    replyTo: replyMessage
+                        ? {
+                              _id: replyMessage._id,
+                              text: replyMessage.text,
+                              files: replyMessage.files,
+                              sender: replyMessage.sender, // ✅ thêm dòng này
+                          }
+                        : null,
                 };
 
                 socket.emit("sendMessage", fileMessage);
             }
             setSelectedFiles([]);
+            setReplyMessage(null); // Reset sau khi gửi file
         }
     };
 
@@ -160,6 +179,7 @@ const MessagePage = () => {
                     conversationId={conversationId}
                     onToggleInfo={() => setShowInfo((prev) => !prev)}
                     showInfo={showInfo}
+                    setReplyMessage={setReplyMessage}
                 />
             ) : (
                 <div className="flex flex-col justify-center items-center flex-1">

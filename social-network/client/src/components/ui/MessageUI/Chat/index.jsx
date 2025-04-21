@@ -20,8 +20,9 @@ const ChatBox = ({
     currentUserId,
     conversationId,
     avatar,
-    onToggleInfo={onToggleInfo},
-    showInfo={showInfo},
+    onToggleInfo = { onToggleInfo },
+    showInfo = { showInfo },
+    setReplyMessage,
 }) => {
     const bottomRef = useRef(null);
     const inputRef = useRef(null);
@@ -69,6 +70,7 @@ const ChatBox = ({
                     isGroup={isGroup}
                     setViewingImage={setViewingImage}
                     setIsImageModalOpen={setIsImageModalOpen}
+                    setReplyMessage={setReplyMessage}
                 />
                 <div ref={bottomRef} />
             </ScrollArea>
@@ -88,7 +90,6 @@ const ChatBox = ({
                     setIsImageModalOpen(false);
                 }}
             />
-            
         </div>
     );
 };

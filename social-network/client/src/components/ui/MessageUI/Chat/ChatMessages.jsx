@@ -15,10 +15,14 @@ const ChatMessages = ({
     isGroup,
     setViewingImage,
     setIsImageModalOpen,
+    setReplyMessage,
 }) => {
     return messages.map((msg, index) => {
-        const isMe = msg.sender === currentUserId;
+        const isMe =
+            (msg.sender?._id || msg.sender)?.toString() ===
+            currentUserId.toString();
         const showTime = shouldShowTime(msg, index, messages);
+        console.log("sender: ", msg.sender);
         return (
             <div key={index}>
                 {showTime && (
@@ -50,6 +54,20 @@ const ChatMessages = ({
                                             : "bg-[var(--text-otther-message-color)]"
                                     }`}
                                 >
+                                    {msg.replyTo && (
+                                        <div className="border-l-4 border-blue-400 pl-2 mb-1 text-sm text-gray-700 bg-gray-100 rounded">
+                                            <span className="text-blue-500 font-semibold">
+                                                {msg.replyTo?.sender
+                                                    ?.fullName || "Người dùng"}
+                                                :
+                                            </span>{" "}
+                                            {msg.replyTo.text
+                                                ? msg.replyTo.text
+                                                : msg.replyTo.files?.[0]
+                                                      ?.name ||
+                                                  "Tin nhắn đã bị xóa"}
+                                        </div>
+                                    )}
                                     {msg.text}
                                 </div>
                             )}
@@ -100,7 +118,10 @@ const ChatMessages = ({
                             <button className="p-1 cursor-pointer hover:bg-[var(--secondary-color)] rounded-full">
                                 <Smile size={16} />
                             </button>
-                            <button className="cursor-pointer hover:bg-[var(--secondary-color)] rounded-full">
+                            <button
+                                className="cursor-pointer hover:bg-[var(--secondary-color)] rounded-full"
+                                onClick={() => setReplyMessage(msg)}
+                            >
                                 <CornerUpLeft size={16} />
                             </button>
                             <button className="cursor-pointer hover:bg-[var(--secondary-color)] rounded-full">
