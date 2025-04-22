@@ -39,6 +39,16 @@ export const deletePost = async (postId) => {
     return await api.delete(`/${postId}`);
 };
 
+// Cập nhật bài viết (truyền thêm dữ liệu cập nhật)
+export const updatePost = async (postId, data) => {
+    try {
+        const response = await api.put(`/posts/${postId}`, data);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error;
+    }
+};
+
 // Like hoặc Unlike bài viết
 export const toggleLike = async (postId) => {
     const res = await api.post(`/${postId}/like`);

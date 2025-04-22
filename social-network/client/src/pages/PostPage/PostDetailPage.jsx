@@ -6,7 +6,9 @@ import {
     addComment,
     addReply,
     toggleCommentLike,
-    deleteComment
+    deleteComment,
+    deletePost,
+    updatePost
 } from "~/api/post";
 import {
     Heart,
@@ -28,6 +30,7 @@ import { useUser } from "~/context/UserContext";
 import { motion } from "framer-motion";
 import { usePostContext } from "~/context/PostContext";
 import PostOptionsModal from "~/components/ui/PostUI/Post/PostOptionsModal";
+import ConfirmDeleteModal from "~/components/ui/PostUI/Post/ConfirmDeleteModal";
 import CommentItem from "~/components/ui/PostUI/Post/CommentItem";
 
 export default function PostDetailPage({ isModal = false }) {
@@ -49,16 +52,38 @@ export default function PostDetailPage({ isModal = false }) {
     const [displayComment, setDisplayComment] = useState(""); // Chỉ hiện @Tên
     const [isCommenting, setIsCommenting] = useState(false);
     const [showOptionModal, setShowOptionModal] = useState(false);
+    const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
 
     const handleDelete = () => {
-        console.log('🗑️ Xóa bài viết');
-        setShowModal(false);
-      };
+        setShowOptionModal(false);
+        setShowConfirmDeleteModal(true); // mở modal xác nhận
+    };
+
+    const confirmDelete = async () => {
+        try {
+            await deletePost(postDetails.post._id); // hoặc postId nếu có sẵn
+            setShowConfirmDeleteModal(false);
+            // Optionally: reload post list, toast, hoặc navigate
+            console.log("Đã xóa bài viết");
+        } catch (err) {
+            console.error("Lỗi xoá bài viết:", err);
+        }
+    };
     
-      const handleEdit = () => {
-        console.log('✏️ Chỉnh sửa bài viết');
-        setShowModal(false);
-      };
+    const handleEdit = async () => {
+        try {
+            const updatedData = {
+                caption: newCaption,
+                media: updatedMedia, // nếu có sửa ảnh/video
+                visibility: newVisibility,
+            };
+            await updatePost(post._id, updatedData);
+            setShowModal(false);
+            // Có thể gọi hàm cập nhật lại dữ liệu bài viết sau khi chỉnh sửa
+        } catch (err) {
+            console.error('Lỗi cập nhật bài viết:', err);
+        }
+    };
     
       const handleGoToPost = () => {
         window.location.href = `/post/${post._id}`;
@@ -203,10 +228,8 @@ export default function PostDetailPage({ isModal = false }) {
 
     const handleDeleteComment = async (commentId) => {
         try {
-            console.log("Trước khi xóa:", postDetails.comments);
             await deleteComment(postDetails.post._id, commentId);
             await fetchPostDetails();
-            console.log("Sau khi xóa:", postDetails.comments);
             }
          catch (err) {
             console.error("Lỗi xóa comment:", err);
@@ -375,6 +398,12 @@ export default function PostDetailPage({ isModal = false }) {
                             onGoToPost={handleGoToPost}
                             onCopyLink={handleCopyLink}
                             />
+                        )}
+                        {showConfirmDeleteModal && (
+                        <ConfirmDeleteModal
+                            onConfirm={confirmDelete}
+                            onCancel={() => setShowConfirmDeleteModal(false)}
+                        />
                         )}
                     </div>
 

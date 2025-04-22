@@ -173,23 +173,6 @@ exports.getAllPosts = async (req, res) => {
     }
 };
 
-// Xóa bài viết
-exports.deletePost = async (req, res) => {
-    try {
-        const post = await Post.findById(req.params.id);
-        // Sửa post.user thành post.userId
-        if (!post || !post.userId.equals(req.user.id)) {
-            return res
-                .status(403)
-                .json({ message: 'Bạn không có quyền xóa bài này!' });
-        }
-        await post.deleteOne();
-        res.status(200).json({ message: 'Bài viết đã bị xóa!' });
-    } catch (error) {
-        res.status(500).json({ message: 'Lỗi khi xóa bài viết!', error });
-    }
-};
-
 // Like / unlike bài viết
 exports.toggleLike = async (req, res) => {
     try {
@@ -287,6 +270,71 @@ exports.toggleCommentLike = async (req, res) => {
         });
     } catch (err) {
         res.status(500).json({ message: err.message });
+    }
+};
+
+// Xoá bài viết (chỉ cho phép người tạo)
+exports.deletePost = async (req, res) => {
+    const { postId } = req.params;
+    const userId = req.user?.id;
+
+    try {
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res
+                .status(404)
+                .json({ message: 'Không tìm thấy bài viết.' });
+        }
+
+        if (post.userId.toString() !== userId) {
+            return res
+                .status(403)
+                .json({ message: 'Bạn không có quyền xoá bài viết này.' });
+        }
+
+        // Xoá comment
+        await Comment.deleteMany({ postId });
+
+        // Xoá bài viết
+        await Post.findByIdAndDelete(postId); // ✅ Cách dùng đúng
+
+        res.status(200).json({
+            message: 'Đã xoá bài viết và các comment liên quan.',
+        });
+    } catch (error) {
+        console.error('Lỗi khi xoá bài viết:', error);
+        res.status(500).json({ message: 'Lỗi server khi xoá bài viết.' });
+    }
+};
+
+// Cập nhật bài viết (chỉ người tạo)
+exports.updatePost = async (req, res) => {
+    try {
+        const { postId } = req.params;
+        const userId = req.user.id;
+        const { caption, media, visibility } = req.body;
+
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res
+                .status(404)
+                .json({ message: 'Không tìm thấy bài viết.' });
+        }
+
+        if (post.userId.toString() !== userId) {
+            return res
+                .status(403)
+                .json({ message: 'Bạn không có quyền sửa bài viết này.' });
+        }
+
+        post.caption = caption ?? post.caption;
+        post.media = media ?? post.media;
+        post.visibility = visibility ?? post.visibility;
+
+        const updatedPost = await post.save();
+        res.status(200).json(updatedPost);
+    } catch (err) {
+        res.status(500).json({ error: 'Lỗi khi cập nhật bài viết.' });
     }
 };
 

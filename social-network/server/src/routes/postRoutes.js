@@ -5,7 +5,6 @@ const {
     createPost,
     getAllPosts,
     getUserPosts,
-    deletePost,
     toggleLike,
     addComment,
     addReply,
@@ -14,6 +13,8 @@ const {
     getPostLikes,
     getCommentLikes,
     deleteComment,
+    deletePost,
+    updatePost,
 } = require('../controllers/postController');
 const auth = require('../middlewares/authMiddleware');
 const upload = require('../middlewares/uploadMiddleware');
@@ -32,7 +33,8 @@ router.post(
 ); // Cho phép tối đa 10 ảnh
 router.get('/', auth, getAllPosts); // API lấy bài viết của mình và người mình follow
 router.get('/user/:id', auth, getUserPosts); // API lấy bài viết của một user
-router.delete('/:id', auth, deletePost);
+router.delete('/:postId', auth, deletePost);
+router.put('/:postId', auth, updatePost);
 router.post('/:postId/like', auth, toggleLike);
 router.get('/:postId/likes', getPostLikes);
 router.get('/:postId/comments/:commentId/likes', getCommentLikes);
