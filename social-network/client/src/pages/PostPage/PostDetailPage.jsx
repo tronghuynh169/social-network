@@ -27,7 +27,7 @@ import { formatPostTime } from "~/components/utils/formatPostTime";
 import { useUser } from "~/context/UserContext";
 import { motion } from "framer-motion";
 import { usePostContext } from "~/context/PostContext";
-import LikesCommentModal from "~/components/ui/PostUI/Post/LikesCommentModal";
+import PostOptionsModal from "~/components/ui/PostUI/Post/PostOptionsModal";
 import CommentItem from "~/components/ui/PostUI/Post/CommentItem";
 
 export default function PostDetailPage({ isModal = false }) {
@@ -48,6 +48,26 @@ export default function PostDetailPage({ isModal = false }) {
     const [replyToUser, setReplyToUser] = useState(null);
     const [displayComment, setDisplayComment] = useState(""); // Chỉ hiện @Tên
     const [isCommenting, setIsCommenting] = useState(false);
+    const [showOptionModal, setShowOptionModal] = useState(false);
+
+    const handleDelete = () => {
+        console.log('🗑️ Xóa bài viết');
+        setShowModal(false);
+      };
+    
+      const handleEdit = () => {
+        console.log('✏️ Chỉnh sửa bài viết');
+        setShowModal(false);
+      };
+    
+      const handleGoToPost = () => {
+        window.location.href = `/post/${post._id}`;
+      };
+    
+      const handleCopyLink = () => {
+        navigator.clipboard.writeText(`${window.location.origin}/post/${post._id}`);
+        alert('📋 Đã sao chép liên kết!');
+      };
 
     const handleSlideChange = (swiper) => {
         setAtStart(swiper.isBeginning);
@@ -183,21 +203,12 @@ export default function PostDetailPage({ isModal = false }) {
 
     const handleDeleteComment = async (commentId) => {
         try {
+            console.log("Trước khi xóa:", postDetails.comments);
             await deleteComment(postDetails.post._id, commentId);
-    
-            // 1. Xóa comment khỏi giao diện ngay lập tức
-            setPostDetails((prev) => ({
-                ...prev,
-                comments: prev.comments.filter(
-                    (c) => c._id !== commentId && c.replyTo !== commentId
-                ),
-            }));
-    
-            // 2. Gọi lại API sau 300ms để đồng bộ toàn bộ dữ liệu
-            setTimeout(() => {
-                fetchPostDetails();
-            }, 300);
-        } catch (err) {
+            await fetchPostDetails();
+            console.log("Sau khi xóa:", postDetails.comments);
+            }
+         catch (err) {
             console.error("Lỗi xóa comment:", err);
         }
     };
@@ -208,7 +219,7 @@ export default function PostDetailPage({ isModal = false }) {
             const post = response.data.post;
             const comments = response.data.comments || [];
             console.log(response.data);
-
+            
             setPostDetails(response.data); // giữ nguyên dữ liệu backend trả về
         } catch (error) {
             console.error("Error fetching post details:", error);
@@ -242,6 +253,11 @@ export default function PostDetailPage({ isModal = false }) {
         return <div className="text-white p-4">Loading...</div>;
     }
 
+    // Tính isOwner sau khi đã có postDetails
+    const isOwner = user && postDetails?.post?.userId._id === user.id;
+    console.log("owner: ", isOwner)
+    console.log(postDetails?.post?.userId._id);
+    console.log(user.id);
     const hasMedia = postDetails?.post?.media?.length > 0;
     const isSingleVideo =
         postDetails.post.media?.length === 1 &&
@@ -249,7 +265,7 @@ export default function PostDetailPage({ isModal = false }) {
 
     const modalContent = (
         <div
-            className={`bg-[var(--secondary-color)] h-[90vh] w-full overflow-hidden flex
+            className={`bg-[var(--primary-color)] h-[90vh] w-full overflow-hidden flex
                 ${
                     hasMedia
                         ? "max-w-5xl flex-col md:flex-row"
@@ -330,20 +346,36 @@ export default function PostDetailPage({ isModal = false }) {
             >
                 {/* Caption + Info */}
                 <div className="border-b-2 pb-2 border-[var(--border-color)]">
-                    <div className="flex items-center space-x-3">
-                        <img
-                            src={info?.avatar || "/default-avatar.png"}
-                            alt="Avatar"
-                            className="w-10 h-10 rounded-full"
-                        />
-                        <div>
-                            <p className="font-semibold text-sm">
-                                {info?.fullName}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                                {formatPostTime(postDetails.post.createdAt)}
-                            </p>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                            <img
+                                src={info?.avatar || "/default-avatar.png"}
+                                alt="Avatar"
+                                className="w-10 h-10 rounded-full"
+                            />
+                            <div>
+                                <p className="font-semibold text-sm">
+                                    {info?.fullName}
+                                </p>
+                                <p className="text-xs text-gray-400">
+                                    {formatPostTime(postDetails.post.createdAt)}
+                                </p>
+                            </div>
                         </div>
+                        <MoreHorizontal
+                            className="w-4 h-4 cursor-pointer"
+                            onClick={() => setShowOptionModal(true)}
+                        />
+                        {showOptionModal && (
+                            <PostOptionsModal
+                            isOwner={isOwner}
+                            onClose={() => setShowOptionModal(false)}
+                            onDelete={handleDelete}
+                            onEdit={handleEdit}
+                            onGoToPost={handleGoToPost}
+                            onCopyLink={handleCopyLink}
+                            />
+                        )}
                     </div>
 
                     {/* Caption */}
@@ -396,7 +428,7 @@ export default function PostDetailPage({ isModal = false }) {
                         ))}
                 </div>
                 
-                <div className="mt-auto pt-4 border-t border-gray-700">
+                <div className="mt-auto pt-4 border-t-2 border-[var(--border-color)]">
                     <div className="flex items-center space-x-4 text-sm text-gray-400 mb-4">
                         <motion.div
                             onClick={handleLike}

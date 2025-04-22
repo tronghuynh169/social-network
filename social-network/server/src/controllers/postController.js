@@ -325,10 +325,6 @@ exports.getPostDetails = async (req, res) => {
             user.avatar = profile?.avatar || '';
         }
 
-        // Lấy tham số phân trang (pagination) từ query parameters
-        const page = parseInt(req.query.page) || 1; // Trang hiện tại (mặc định là 1)
-        const limit = parseInt(req.query.limit) || 10; // Số lượng bình luận mỗi lần (mặc định là 10)
-
         // Lấy danh sách bình luận gốc (không là reply)
         const comments = await Comment.find({
             postId: postId,
@@ -377,17 +373,17 @@ exports.getPostDetails = async (req, res) => {
 };
 
 exports.deleteComment = async (req, res) => {
-    const { id } = req.params;
-
+    const { commentId } = req.params;
+    console.log('🧪 ID nhận được để xóa comment:', commentId);
     try {
         // Lấy tất cả các reply (mọi cấp) của comment
-        const allReplyIds = await getAllReplyIds(id);
+        const allReplyIds = await getAllReplyIds(commentId);
 
         // Xóa các reply con
         await Comment.deleteMany({ _id: { $in: allReplyIds } });
 
         // Xóa comment gốc
-        await Comment.findByIdAndDelete(id);
+        await Comment.findByIdAndDelete(commentId);
 
         res.status(200).json({
             message: 'Đã xóa bình luận và toàn bộ phản hồi.',
@@ -398,14 +394,21 @@ exports.deleteComment = async (req, res) => {
     }
 };
 
-const getAllReplyIds = async (commentId) => {
-    const replies = await Comment.find({ replyTo: commentId }).select('_id');
-
+const getAllReplyIds = async (commentId, visited = new Set()) => {
     let allReplyIds = [];
+
+    if (!commentId) return []; // 💥 Sửa lỗi commentId undefined
+
+    const key = commentId.toString();
+    if (visited.has(key)) return [];
+
+    visited.add(key);
+
+    const replies = await Comment.find({ replyTo: commentId }).select('_id');
 
     for (const reply of replies) {
         allReplyIds.push(reply._id);
-        const nestedIds = await getAllReplyIds(reply._id);
+        const nestedIds = await getAllReplyIds(reply._id, visited);
         allReplyIds = allReplyIds.concat(nestedIds);
     }
 
