@@ -15,11 +15,11 @@ import {formatPostTime} from "~/components/utils/formatPostTime";
 import { motion } from 'framer-motion';
 import LikesModal from "./LikesModal";
 import { useUser } from "~/context/UserContext";
-import { usePostContext } from "~/context/PostContext";
+import { usePosts } from "~/context/PostContext";
 
 export default function PostCard({ post }) {
     const navigate = useNavigate(); 
-    const { postStates } = usePostContext();  
+    const { postStates } = usePosts();  
     const { user } = useUser();
     const [showFullCaption, setShowFullCaption] = useState(false);
     const [liked, setLiked] = useState(post.isLiked || false);

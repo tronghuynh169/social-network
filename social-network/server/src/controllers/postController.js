@@ -3,6 +3,7 @@ const Comment = require('../models/Comment');
 const Profile = require('../models/Profile');
 const User = require('../models/User');
 const mongoose = require('mongoose');
+
 // Đăng bài viết (Sửa để upload nhiều ảnh)
 exports.createPost = async (req, res) => {
     try {
@@ -312,8 +313,15 @@ exports.updatePost = async (req, res) => {
     try {
         const { postId } = req.params;
         const userId = req.user.id;
-        const { caption, media, visibility } = req.body;
+        const { caption, visibility } = req.body;
 
+        // Lấy oldMedia từ body
+        let oldMedia = req.body['oldMedia[]'] || [];
+        if (typeof oldMedia === 'string') {
+            oldMedia = [oldMedia]; // Nếu chỉ có 1 media cũ
+        }
+
+        // Lấy thông tin bài viết
         const post = await Post.findById(postId);
         if (!post) {
             return res
@@ -321,19 +329,27 @@ exports.updatePost = async (req, res) => {
                 .json({ message: 'Không tìm thấy bài viết.' });
         }
 
+        // Kiểm tra quyền sửa
         if (post.userId.toString() !== userId) {
             return res
                 .status(403)
                 .json({ message: 'Bạn không có quyền sửa bài viết này.' });
         }
 
+        // Lấy URL của media mới
+        const newMediaURLs = req.files.map(
+            (file) => `/uploads/posts/${file.filename}`
+        );
+
+        // Gộp media
         post.caption = caption ?? post.caption;
-        post.media = media ?? post.media;
         post.visibility = visibility ?? post.visibility;
+        post.media = [...oldMedia, ...newMediaURLs];
 
         const updatedPost = await post.save();
         res.status(200).json(updatedPost);
     } catch (err) {
+        console.error('Lỗi khi cập nhật bài viết:', err);
         res.status(500).json({ error: 'Lỗi khi cập nhật bài viết.' });
     }
 };

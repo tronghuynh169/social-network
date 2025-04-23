@@ -28,13 +28,13 @@ import { getProfileByUserId } from "~/api/profile";
 import { formatPostTime } from "~/components/utils/formatPostTime";
 import { useUser } from "~/context/UserContext";
 import { motion } from "framer-motion";
-import { usePostContext } from "~/context/PostContext";
 import PostOptionsModal from "~/components/ui/PostUI/Post/PostOptionsModal";
 import ConfirmDeleteModal from "~/components/ui/PostUI/Post/ConfirmDeleteModal";
 import CommentItem from "~/components/ui/PostUI/Post/CommentItem";
+import { usePosts } from '~/context/PostContext';
 
 export default function PostDetailPage({ isModal = false }) {
-    const { updatePostLike } = usePostContext(); // trong PostDetailPage
+    const { updatePostLike, setPosts, posts } = usePosts(); // trong PostDetailPage
     const { user } = useUser();
     const { id: postId } = useParams();
     const navigate = useNavigate();
@@ -63,7 +63,8 @@ export default function PostDetailPage({ isModal = false }) {
         try {
             await deletePost(postDetails.post._id); // hoặc postId nếu có sẵn
             setShowConfirmDeleteModal(false);
-            // Optionally: reload post list, toast, hoặc navigate
+            setPosts(prev => prev.filter(post => post._id !== postId));
+            navigate('/');
             console.log("Đã xóa bài viết");
         } catch (err) {
             console.error("Lỗi xoá bài viết:", err);
@@ -78,7 +79,7 @@ export default function PostDetailPage({ isModal = false }) {
                 visibility: newVisibility,
             };
             await updatePost(post._id, updatedData);
-            setShowModal(false);
+            setShowOptionModal(false);
             // Có thể gọi hàm cập nhật lại dữ liệu bài viết sau khi chỉnh sửa
         } catch (err) {
             console.error('Lỗi cập nhật bài viết:', err);

@@ -1,4 +1,5 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect  } from "react";
+import { getAllPosts } from '~/api/post';
 
 const PostContext = createContext();
 
@@ -15,11 +16,23 @@ export const PostProvider = ({ children }) => {
         );
     };  
 
+    useEffect(() => {
+      const fetchPosts = async () => {
+        try {
+          const res = await getAllPosts();
+          setPosts(res.data);
+        } catch (err) {
+          console.error("Lỗi khi load bài viết:", err);
+        }
+      };
+      fetchPosts();
+    }, []);
+
   return (
-    <PostContext.Provider value={{ posts, updatePostLike   }}>
+    <PostContext.Provider value={{ posts, setPosts  ,updatePostLike   }}>
       {children}
     </PostContext.Provider>
   );
 };
 
-export const usePostContext = () => useContext(PostContext);
+export const usePosts = () => useContext(PostContext);

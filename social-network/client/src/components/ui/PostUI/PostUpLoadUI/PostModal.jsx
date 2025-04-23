@@ -5,9 +5,11 @@ import ConfirmCloseModal from './ConfirmCloseModal';
 import { createPost } from '~/api/post'; // Đường dẫn import tới hàm createPost
 import { motion, AnimatePresence } from 'framer-motion'; // ✅ thêm
 
-const PostModal = ({ isOpen, onClose }) => {
+const PostModal = ({ isOpen, onClose, mode = 'create', initialPostData = null }) => {
     const [caption, setCaption] = useState('');
     const [files, setFiles] = useState([]);
+    const [oldMedia, setOldMedia] = useState([]); // media cũ từ server (URL)
+    const [newFiles, setNewFiles] = useState([]); // media mới từ input
     const [currentIndex, setCurrentIndex] = useState(0);
     const [visibility, setVisibility] = useState('public');
     const [showConfirmClose, setShowConfirmClose] = useState(false);
@@ -80,6 +82,14 @@ const PostModal = ({ isOpen, onClose }) => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [isOpen, onClose]);
+
+    useEffect(() => {
+        if (mode === 'edit' && initialPostData) {
+            setCaption(initialPostData.caption || '');
+            setVisibility(initialPostData.visibility || 'public');
+            setFiles([]); // hoặc preload file nếu muốn, nhưng phức tạp
+        }
+    }, [mode, initialPostData]);
 
     if (!isOpen) return null;
 
@@ -245,7 +255,7 @@ const PostModal = ({ isOpen, onClose }) => {
                                 className={`w-full py-2 rounded-md text-white font-medium transition 
                                     ${canPost ? 'bg-[var(--button-enable-color)] hover:bg-blue-600 cursor-pointer' : 'bg-[var(--button-disable-color)] cursor-not-allowed'}`}
                             >
-                                {loading ? 'Đang đăng...' : 'Đăng'}
+                                {loading ? 'Đang đăng...' : (mode === 'edit' ? 'Cập nhật' : 'Đăng')}
                             </button>
                     </div>
                 </motion.div>

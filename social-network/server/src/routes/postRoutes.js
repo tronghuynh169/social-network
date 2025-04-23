@@ -34,7 +34,16 @@ router.post(
 router.get('/', auth, getAllPosts); // API lấy bài viết của mình và người mình follow
 router.get('/user/:id', auth, getUserPosts); // API lấy bài viết của một user
 router.delete('/:postId', auth, deletePost);
-router.put('/:postId', auth, updatePost);
+router.put(
+    '/:postId',
+    auth,
+    upload.array('newFiles', 10),
+    (req, res, next) => {
+        console.log('Uploaded files:', req.files);
+        next();
+    },
+    updatePost
+);
 router.post('/:postId/like', auth, toggleLike);
 router.get('/:postId/likes', getPostLikes);
 router.get('/:postId/comments/:commentId/likes', getCommentLikes);
