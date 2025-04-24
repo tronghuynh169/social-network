@@ -151,7 +151,7 @@ io.on("connection", (socket) => {
                     },
                     {
                         path: "likes",
-                        select: "fullName avatar",
+                        select: "fullName avatar slug",
                     },
                 ])
             );

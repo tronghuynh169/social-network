@@ -1,30 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Heart, X } from "lucide-react";
-import { getProfileById } from "~/api/profile";
 import { Link } from "react-router-dom";
 
 const LikeModal = ({ isOpen, likes, onClose, currentUserId, onUnlike }) => {
-    const [slug, setSlug] = useState("");
-    const [id, setId] = useState("");
-
-    useEffect(() => {
-        const fetchUserDetails = async () => {
-            try {
-                if (id) {
-                    const profileData = await getProfileById(id);
-                    setSlug(profileData.slug); // Cập nhật profile
-                }
-            } catch (error) {
-                console.error(
-                    "Lỗi trong khi gọi API getProfileByFullName:",
-                    error
-                );
-            }
-        };
-
-        fetchUserDetails();
-    }, [id]); // Gọi lại khi fullName thay đổi
-
     if (!isOpen || !likes) return null;
 
     return (
@@ -68,15 +46,7 @@ const LikeModal = ({ isOpen, likes, onClose, currentUserId, onUnlike }) => {
                                         </p>
                                     </div>
                                 ) : (
-                                    <Link
-                                        to={`/${slug}`}
-                                        onClick={() => {
-                                            setId(""); // Reset id trước
-                                            setTimeout(() => {
-                                                setId(user._id); // Cập nhật id sau
-                                            }, 0);
-                                        }}
-                                    >
+                                    <Link to={`/${user.slug}`}>
                                         <p className="font-medium text-sm">
                                             {user.fullName}
                                         </p>
