@@ -50,7 +50,7 @@ const PostModal = ({ isOpen, onClose, mode = 'create', initialPostData = null, o
         formData.append('visibility', visibility);
         
         // Thêm media cũ vào form data
-        oldMedia.forEach(url => formData.append('oldMedia[]', url));
+        oldMedia.forEach(url => formData.append('oldMedia', url));
         
         // Thêm media mới vào form data
         newFiles.forEach(file => formData.append('newFiles', file));

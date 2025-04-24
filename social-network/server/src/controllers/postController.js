@@ -314,20 +314,23 @@ exports.updatePost = async (req, res) => {
         const { postId } = req.params;
         const userId = req.user.id;
         const { caption, visibility } = req.body;
-
+        console.log('Body:', req.body);
         // Lấy oldMedia từ body
-        let oldMedia = req.body['oldMedia[]'] || [];
+        let oldMedia = req.body.oldMedia || [];
         if (typeof oldMedia === 'string') {
             oldMedia = [oldMedia]; // Nếu chỉ có 1 media cũ, chuyển thành mảng
         }
 
         // Đảm bảo oldMedia là một mảng các đối tượng có { type, url }
-        oldMedia = oldMedia.map((media) => {
-            if (typeof media === 'string') {
-                return { type: 'image', url: media }; // Giả sử media cũ là ảnh
-            }
-            return media;
+        oldMedia = oldMedia.map((url) => {
+            const relativeUrl = url.replace(/^https?:\/\/[^/]+/, '');
+            const type = relativeUrl.match(/\.(mp4|webm|mov)$/i)
+                ? 'video'
+                : 'image';
+            return { type, url: relativeUrl };
         });
+
+        console.log('Old media sau khi sua:', oldMedia);
 
         // Lấy thông tin bài viết
         const post = await Post.findById(postId);
@@ -354,7 +357,7 @@ exports.updatePost = async (req, res) => {
         post.caption = caption ?? post.caption;
         post.visibility = visibility ?? post.visibility;
         post.media = [...oldMedia, ...newMedia];
-
+        console.log('Media to save:', post.media);
         // Lưu bài viết đã cập nhật
         const updatedPost = await post.save();
         res.status(200).json(updatedPost);
