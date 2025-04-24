@@ -399,6 +399,7 @@ export default function PostDetailPage({ isModal = false }) {
                                 onClose={() => setShowEditModal(false)}
                                 mode="edit"
                                 initialPostData={editPostData}
+                                onUpdate={(updatedPost) => setPostDetails(updatedPost)}
                             />
                         )}
                         {showConfirmDeleteModal && (

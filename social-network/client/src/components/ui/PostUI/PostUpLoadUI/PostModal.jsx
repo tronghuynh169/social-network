@@ -2,10 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import VisibilitySelector from './VisibilitySelector';
 import { Paperclip, X } from 'lucide-react';
 import ConfirmCloseModal from './ConfirmCloseModal';
-import { createPost, updatePost } from '~/api/post'; // Đường dẫn import tới hàm createPost
+import { createPost, updatePost,getPostDetails  } from '~/api/post'; // Đường dẫn import tới hàm createPost
 import { motion, AnimatePresence } from 'framer-motion'; // ✅ thêm
 
-const PostModal = ({ isOpen, onClose, mode = 'create', initialPostData = null  }) => {
+const PostModal = ({ isOpen, onClose, mode = 'create', initialPostData = null, onUpdate  }) => {
     const [caption, setCaption] = useState('');
     const [files, setFiles] = useState([]);
     const [oldMedia, setOldMedia] = useState([]); // media cũ từ server (URL)
@@ -58,6 +58,8 @@ const PostModal = ({ isOpen, onClose, mode = 'create', initialPostData = null  }
         try {
             setLoading(true);
             await updatePost(initialPostData._id, formData); // Gửi form data cập nhật bài viết
+            const refreshedPost = await getPostDetails(initialPostData._id);
+            onUpdate(refreshedPost.data);
             onClose(); // đóng modal sau khi cập nhật thành công
         } catch (err) {
             console.error('Lỗi cập nhật bài viết:', err);
