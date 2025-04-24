@@ -32,6 +32,8 @@ const CreateMenuPost = ({ onClose }) => {
         exit: { opacity: 0, y: -10 },
     };
 
+    
+
     return (
         <AnimatePresence>
           <motion.div
@@ -45,7 +47,7 @@ const CreateMenuPost = ({ onClose }) => {
           >
             <div>
               <button
-                onClick={() => setShowModal(true)}
+                onClick={() => {setShowModal(true)} }
                 className="flex justify-between items-center w-full p-3 text-sm hover:bg-neutral-700 cursor-pointer">
                 Bài viết <ImagePlus size={18} />
               </button>

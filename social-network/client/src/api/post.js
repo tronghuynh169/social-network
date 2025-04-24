@@ -42,7 +42,7 @@ export const deletePost = async (postId) => {
 // Cập nhật bài viết (truyền thêm dữ liệu cập nhật)
 export const updatePost = async (postId, data) => {
     try {
-        const response = await api.put(`/posts/${postId}`, data);
+        const response = await api.put(`/${postId}`, data);
         return response.data;
     } catch (error) {
         throw error.response?.data || error;

@@ -318,8 +318,16 @@ exports.updatePost = async (req, res) => {
         // Lấy oldMedia từ body
         let oldMedia = req.body['oldMedia[]'] || [];
         if (typeof oldMedia === 'string') {
-            oldMedia = [oldMedia]; // Nếu chỉ có 1 media cũ
+            oldMedia = [oldMedia]; // Nếu chỉ có 1 media cũ, chuyển thành mảng
         }
+
+        // Đảm bảo oldMedia là một mảng các đối tượng có { type, url }
+        oldMedia = oldMedia.map((media) => {
+            if (typeof media === 'string') {
+                return { type: 'image', url: media }; // Giả sử media cũ là ảnh
+            }
+            return media;
+        });
 
         // Lấy thông tin bài viết
         const post = await Post.findById(postId);
@@ -336,16 +344,18 @@ exports.updatePost = async (req, res) => {
                 .json({ message: 'Bạn không có quyền sửa bài viết này.' });
         }
 
-        // Lấy URL của media mới
-        const newMediaURLs = req.files.map(
-            (file) => `/uploads/posts/${file.filename}`
-        );
+        // Lấy URL của media mới và thêm kiểu loại file
+        const newMedia = req.files.map((file) => ({
+            type: file.mimetype.startsWith('image') ? 'image' : 'video', // Kiểm tra loại file
+            url: `/uploads/posts/${file.filename}`,
+        }));
 
         // Gộp media
         post.caption = caption ?? post.caption;
         post.visibility = visibility ?? post.visibility;
-        post.media = [...oldMedia, ...newMediaURLs];
+        post.media = [...oldMedia, ...newMedia];
 
+        // Lưu bài viết đã cập nhật
         const updatedPost = await post.save();
         res.status(200).json(updatedPost);
     } catch (err) {

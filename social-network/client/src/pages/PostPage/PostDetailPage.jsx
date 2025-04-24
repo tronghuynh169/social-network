@@ -32,6 +32,7 @@ import PostOptionsModal from "~/components/ui/PostUI/Post/PostOptionsModal";
 import ConfirmDeleteModal from "~/components/ui/PostUI/Post/ConfirmDeleteModal";
 import CommentItem from "~/components/ui/PostUI/Post/CommentItem";
 import { usePosts } from '~/context/PostContext';
+import PostModal from "~/components/ui/PostUI/PostUpLoadUI/PostModal";
 
 export default function PostDetailPage({ isModal = false }) {
     const { updatePostLike, setPosts, posts } = usePosts(); // trong PostDetailPage
@@ -53,6 +54,8 @@ export default function PostDetailPage({ isModal = false }) {
     const [isCommenting, setIsCommenting] = useState(false);
     const [showOptionModal, setShowOptionModal] = useState(false);
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editPostData, setEditPostData] = useState(null);
 
     const handleDelete = () => {
         setShowOptionModal(false);
@@ -71,20 +74,13 @@ export default function PostDetailPage({ isModal = false }) {
         }
     };
     
-    const handleEdit = async () => {
-        try {
-            const updatedData = {
-                caption: newCaption,
-                media: updatedMedia, // nếu có sửa ảnh/video
-                visibility: newVisibility,
-            };
-            await updatePost(post._id, updatedData);
-            setShowOptionModal(false);
-            // Có thể gọi hàm cập nhật lại dữ liệu bài viết sau khi chỉnh sửa
-        } catch (err) {
-            console.error('Lỗi cập nhật bài viết:', err);
-        }
+    const handleEdit = () => {
+        setEditPostData(postDetails.post); // post là bài viết đang hiển thị trong PostDetailPage
+        setShowOptionModal(false); // đóng menu tuỳ chọn
+        setShowEditModal(true);    // mở modal chỉnh sửa
     };
+
+    
     
       const handleGoToPost = () => {
         window.location.href = `/post/${post._id}`;
@@ -279,9 +275,6 @@ export default function PostDetailPage({ isModal = false }) {
 
     // Tính isOwner sau khi đã có postDetails
     const isOwner = user && postDetails?.post?.userId._id === user.id;
-    console.log("owner: ", isOwner)
-    console.log(postDetails?.post?.userId._id);
-    console.log(user.id);
     const hasMedia = postDetails?.post?.media?.length > 0;
     const isSingleVideo =
         postDetails.post.media?.length === 1 &&
@@ -398,6 +391,14 @@ export default function PostDetailPage({ isModal = false }) {
                             onEdit={handleEdit}
                             onGoToPost={handleGoToPost}
                             onCopyLink={handleCopyLink}
+                            />
+                        )}
+                        {showEditModal && (
+                            <PostModal
+                                isOpen={showEditModal}
+                                onClose={() => setShowEditModal(false)}
+                                mode="edit"
+                                initialPostData={editPostData}
                             />
                         )}
                         {showConfirmDeleteModal && (
