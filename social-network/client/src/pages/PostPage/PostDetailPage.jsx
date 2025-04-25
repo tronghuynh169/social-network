@@ -56,8 +56,8 @@ export default function PostDetailPage({ isModal = false }) {
     const [showOptionModal, setShowOptionModal] = useState(false);
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
-    const [likeAnimationTrigger, setLikeAnimationTrigger] = useState(false);
     const [editPostData, setEditPostData] = useState(null);
+    const [likeAnimationTrigger, setLikeAnimationTrigger] = useState(false);
     const [showLikesModal, setShowLikesModal] = useState(false);
     const commentInputRef = useRef(null);
 

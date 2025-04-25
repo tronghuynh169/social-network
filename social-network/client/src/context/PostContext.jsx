@@ -16,6 +16,36 @@ export const PostProvider = ({ children }) => {
         );
     };  
 
+    const updatePostData = (updatedData) => {
+      console.log("dữ liệu nhận được:", updatedData);
+      const updatedPost = {
+        ...updatedData.post,
+        isLiked: updatedData.isLiked,
+        likes: updatedData.likes,
+        likesCount: updatedData.likesCount,
+        comments: updatedData.comments,
+        totalComments: updatedData.totalComments,
+        ownerProfile: updatedData.ownerProfile
+      };
+    
+      // Nếu bài viết là mới, thêm vào đầu danh sách
+      if (!posts.some(post => post._id === updatedPost._id)) {
+        setPosts(prevPosts => {
+          console.log('Thêm bài viết mới vào đầu:', updatedPost);
+          return [updatedPost, ...prevPosts];
+      });
+      } else {
+        // Cập nhật bài viết hiện tại trong danh sách
+        setPosts(prevPosts =>
+          prevPosts.map(post =>
+            post._id === updatedPost._id
+              ? { ...post, ...updatedPost }
+              : post
+          )
+        );
+      }
+    };
+
     useEffect(() => {
       const fetchPosts = async () => {
         try {
@@ -32,7 +62,7 @@ export const PostProvider = ({ children }) => {
     }, []);
 
   return (
-    <PostContext.Provider value={{ posts, setPosts  ,updatePostLike   }}>
+    <PostContext.Provider value={{ posts, setPosts  ,updatePostLike , updatePostData   }}>
       {children}
     </PostContext.Provider>
   );

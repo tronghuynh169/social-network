@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Heart, MessageCircle, Send, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, MessageCircle, Send, ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination } from 'swiper/modules';
 import 'swiper/css';
@@ -9,17 +9,21 @@ import { getProfileByUserId } from "~/api/profile";
 import {
   toggleLike,
   addComment,
-  getPostDetails
+  getPostDetails,
+  deletePost
 } from "~/api/post";
 import {formatPostTime} from "~/components/utils/formatPostTime";
 import { motion } from 'framer-motion';
 import LikesModal from "./LikesModal";
 import { useUser } from "~/context/UserContext";
 import { usePosts } from "~/context/PostContext";
+import PostOptionsModal from "~/components/ui/PostUI/Post/PostOptionsModal";
+import ConfirmDeleteModal from "~/components/ui/PostUI/Post/ConfirmDeleteModal";
+import PostModal from "~/components/ui/PostUI/PostUpLoadUI/PostModal";
 
 export default function PostCard({ post }) {
     const navigate = useNavigate(); 
-    const { posts, updatePostLike } = usePosts();  
+    const { posts, updatePostLike, setPosts } = usePosts();  
     const postFromContext = posts.find(p => p._id === post._id); // Tìm bài viết trong context
     const { user } = useUser();
     const [showFullCaption, setShowFullCaption] = useState(false);
@@ -33,6 +37,10 @@ export default function PostCard({ post }) {
     const [atEnd, setAtEnd] = useState(false);
     const [showLikesModal, setShowLikesModal] = useState(false);
     const [comments, setComments] = useState([]);
+    const [showOptionModal, setShowOptionModal] = useState(false);
+    const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editPostData, setEditPostData] = useState(null);
 
     const handleLike = async () => {
       try {
@@ -51,6 +59,39 @@ export default function PostCard({ post }) {
       } catch (err) {
         console.error("Lỗi khi like:", err);
       }
+    };
+
+    const handleDelete = () => {
+      setShowOptionModal(false);
+      setShowConfirmDeleteModal(true); // mở modal xác nhận
+  };
+
+  const confirmDelete = async () => {
+    try {
+        const postIdToDelete = post._id;
+        await deletePost(postIdToDelete);
+        setShowConfirmDeleteModal(false);
+        setPosts(prev => prev.filter(p => p._id !== postIdToDelete));
+        navigate('/');
+        console.log("Đã xóa bài viết");
+    } catch (err) {
+        console.error("Lỗi xoá bài viết:", err);
+    }
+};
+  
+  const handleEdit = () => {
+      setEditPostData(post); // post là bài viết đang hiển thị trong PostDetailPage
+      setShowOptionModal(false); // đóng menu tuỳ chọn
+      setShowEditModal(true);    // mở modal chỉnh sửa
+  };
+
+    const handleGoToPost = () => {
+      window.location.href = `/post/${post._id}`;
+    };
+  
+    const handleCopyLink = () => {
+      navigator.clipboard.writeText(`${window.location.origin}/post/${post._id}`);
+      alert('📋 Đã sao chép liên kết!');
     };
 
     useEffect(() => {
@@ -100,16 +141,21 @@ export default function PostCard({ post }) {
     };
 
     useEffect(() => {
-        const fetchInfo = async () => {
-          try {
-            const res = await getProfileByUserId(post.userId._id);
+      const fetchInfo = async () => {
+        try {
+          if (post?.userId) {
+            const userId = typeof post.userId === 'string' ? post.userId : post.userId._id;
+            const res = await getProfileByUserId(userId);
             setInfo(res);
-          } catch (err) {
-            console.error('Lỗi khi load bài viết:', err);
+          } else {
+            console.log("Không có userId hợp lệ.");
           }
-        };
-        fetchInfo();
-      }, []);
+        } catch (err) {
+          console.error('Lỗi khi load bài viết:', err);
+        }
+      };
+      fetchInfo();
+    }, [post]); // Thêm post vào danh sách phụ thuộc
 
       useEffect(() => {
         const fetchPost = async () => {
@@ -145,21 +191,69 @@ export default function PostCard({ post }) {
         fetchPost();
       }, []);
 
+      const isOwner = user && post?.userId._id === user.id;
+
   return (
     <div className="max-w-md mx-auto bg-black text-[var(--text-primary-color)] border-b border-[var(--border-color)] p-4 space-y-4">
       {/* Header */}
-      <div className="flex items-center space-x-3">
-        <img
-          src={info?.avatar || "/default-avatar.png"}
-          alt="Avatar"
-          className="w-10 h-10 rounded-full"
-        />
-        <div>
-          <p className="font-semibold text-sm">{info?.fullName}</p>
-          <p className="text-xs text-gray-400">
-            {formatPostTime(post.createdAt)}
-        </p>
+      <div className="flex items-center justify-between space-x-3">
+        <div className="flex items-center space-x-3">
+          <img
+            src={info?.avatar || "/default-avatar.png"}
+            alt="Avatar"
+            className="w-10 h-10 rounded-full"
+          />
+          <div>
+            <p className="font-semibold text-sm">{info?.fullName}</p>
+            <p className="text-xs text-gray-400">
+              {formatPostTime(post.createdAt)}
+          </p>
+          </div>
         </div>
+        <MoreHorizontal
+            className="w-4 h-4 cursor-pointer"
+            onClick={() => setShowOptionModal(true)}
+        />
+        {showOptionModal && (
+            <PostOptionsModal
+            isOwner={isOwner}
+            onClose={() => setShowOptionModal(false)}
+            onDelete={handleDelete}
+            onEdit={handleEdit}
+            onGoToPost={handleGoToPost}
+            onCopyLink={handleCopyLink}
+            />
+        )}
+        {showConfirmDeleteModal && (
+        <ConfirmDeleteModal
+            onConfirm={confirmDelete}
+            onCancel={() => setShowConfirmDeleteModal(false)}
+        />
+        )}
+        {showEditModal && (
+            <PostModal
+                isOpen={showEditModal}
+                onClose={() => setShowEditModal(false)}
+                mode="edit"
+                initialPostData={editPostData}
+                onUpdate={async (updatedPost) => {
+                  try { 
+                    // Gọi API để lấy dữ liệu mới nhất từ server
+                    console.log("updatedPost:",updatedPost);
+                    const { data: refreshedPost } = await getPostDetails(updatedPost.post._id);
+                    
+                    // Cập nhật state posts với dữ liệu mới
+                    setPosts(prevPosts => 
+                      prevPosts.map(p => 
+                        p._id === refreshedPost._id ? refreshedPost : p
+                      )
+                    );
+                  } catch (err) {
+                    console.error("Lỗi khi làm mới bài viết:", err);
+                  }
+                }}
+            />
+        )}
       </div>
 
       {/* Media */}

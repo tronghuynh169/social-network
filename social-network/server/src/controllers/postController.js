@@ -38,10 +38,30 @@ exports.createPost = async (req, res) => {
 
         await newPost.save();
 
-        const postUrl = `http://localhost:5173/posts/${newPost._id}`;
+        // Lấy lại bài viết và populate userId nếu cần
+        const post = await Post.findById(newPost._id).populate('userId').lean();
+
+        // Tìm profile của chủ bài viết
+        const ownerProfile = await Profile.findOne({
+            userId: post.userId._id,
+        }).lean();
+
+        // Bổ sung dữ liệu mock cho các trường FE mong đợi
+        const fullPost = {
+            ...post,
+            comments: [],
+            totalComments: 0,
+            likes: [],
+            likesCount: 0,
+            isLiked: false,
+            ownerProfile,
+            userId: post.userId._id, // đảm bảo giữ nguyên kiểu string
+        };
+
+        const postUrl = `http://localhost:5173/posts/${post._id}`;
         res.status(201).json({
             message: 'Bài viết đã đăng!',
-            post: newPost,
+            post: fullPost,
             link: postUrl,
         });
     } catch (error) {

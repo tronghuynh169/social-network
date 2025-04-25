@@ -4,8 +4,10 @@ import { Paperclip, X } from 'lucide-react';
 import ConfirmCloseModal from './ConfirmCloseModal';
 import { createPost, updatePost,getPostDetails  } from '~/api/post'; // Đường dẫn import tới hàm createPost
 import { motion, AnimatePresence } from 'framer-motion'; // ✅ thêm
+import { usePosts } from '~/context/PostContext'; // import context
 
 const PostModal = ({ isOpen, onClose, mode = 'create', initialPostData = null, onUpdate  }) => {
+    const { updatePostData } = usePosts(); // destructure từ context
     const [caption, setCaption] = useState('');
     const [files, setFiles] = useState([]);
     const [oldMedia, setOldMedia] = useState([]); // media cũ từ server (URL)
@@ -29,7 +31,9 @@ const PostModal = ({ isOpen, onClose, mode = 'create', initialPostData = null, o
             setLoading(true);
             const response = await createPost(formData);
             console.log('Bài viết đã đăng:', response.data);
-    
+            
+            // ✅ Cập nhật context ngay sau khi đăng bài
+            updatePostData(response.data);
             // ✅ Reset form sau khi đăng thành công
             setCaption('');
             setFiles([]);
@@ -60,6 +64,8 @@ const PostModal = ({ isOpen, onClose, mode = 'create', initialPostData = null, o
             await updatePost(initialPostData._id, formData); // Gửi form data cập nhật bài viết
             const refreshedPost = await getPostDetails(initialPostData._id);
             onUpdate(refreshedPost.data);
+            console.log(refreshedPost.data)
+            updatePostData(refreshedPost.data); // Cập nhật vào context 🔥
             onClose(); // đóng modal sau khi cập nhật thành công
         } catch (err) {
             console.error('Lỗi cập nhật bài viết:', err);
