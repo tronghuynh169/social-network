@@ -19,13 +19,14 @@ import { usePosts } from "~/context/PostContext";
 
 export default function PostCard({ post }) {
     const navigate = useNavigate(); 
-    const { postStates } = usePosts();  
+    const { posts, updatePostLike } = usePosts();  
+    const postFromContext = posts.find(p => p._id === post._id); // Tìm bài viết trong context
     const { user } = useUser();
     const [showFullCaption, setShowFullCaption] = useState(false);
     const [liked, setLiked] = useState(post.isLiked || false);
     const [likeAnimationTrigger, setLikeAnimationTrigger] = useState(false);
     const [info, setInfo] = useState();
-    const [likesCount, setLikesCount] = useState(post.likes?.length || 0);
+    const [likesCount, setLikesCount] = useState(postFromContext?.likesCount || 0);
     const [comment, setComment] = useState("");
     const [swiperInstance, setSwiperInstance] = useState(null);
     const [atStart, setAtStart] = useState(true);
@@ -40,6 +41,9 @@ export default function PostCard({ post }) {
         // Cập nhật state local
         setLiked(res.isLiked);
         setLikesCount(res.likesCount);
+
+        // Cập nhật vào context
+        updatePostLike(post._id, res.isLiked, res.likesCount);
         
         // Trigger animation
         setLikeAnimationTrigger(true);
@@ -48,6 +52,13 @@ export default function PostCard({ post }) {
         console.error("Lỗi khi like:", err);
       }
     };
+
+    useEffect(() => {
+      if (postFromContext) {
+        setLiked(postFromContext.isLiked);  // Cập nhật lại trạng thái liked nếu context thay đổi
+        setLikesCount(postFromContext.likesCount);  // Cập nhật lại số lượng likes nếu context thay đổi
+      }
+    }, [postFromContext]);  // Chạy lại khi context thay đổi
 
     const handleAddComment = async () => {
       if (!comment.trim()) return;

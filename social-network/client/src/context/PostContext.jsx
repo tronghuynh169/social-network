@@ -20,7 +20,10 @@ export const PostProvider = ({ children }) => {
       const fetchPosts = async () => {
         try {
           const res = await getAllPosts();
-          setPosts(res.data);
+          setPosts(res.data.map(post => ({
+            ...post,
+            likesCount: post.likes?.length || 0,
+          })));
         } catch (err) {
           console.error("Lỗi khi load bài viết:", err);
         }

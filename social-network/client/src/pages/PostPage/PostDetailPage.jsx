@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
     getPostDetails,
     toggleLike,
@@ -33,6 +33,7 @@ import ConfirmDeleteModal from "~/components/ui/PostUI/Post/ConfirmDeleteModal";
 import CommentItem from "~/components/ui/PostUI/Post/CommentItem";
 import { usePosts } from '~/context/PostContext';
 import PostModal from "~/components/ui/PostUI/PostUpLoadUI/PostModal";
+import LikesModal from "~/components/ui/PostUI/Post/LikesModal";
 
 export default function PostDetailPage({ isModal = false }) {
     const { updatePostLike, setPosts, posts } = usePosts(); // trong PostDetailPage
@@ -55,7 +56,10 @@ export default function PostDetailPage({ isModal = false }) {
     const [showOptionModal, setShowOptionModal] = useState(false);
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [likeAnimationTrigger, setLikeAnimationTrigger] = useState(false);
     const [editPostData, setEditPostData] = useState(null);
+    const [showLikesModal, setShowLikesModal] = useState(false);
+    const commentInputRef = useRef(null);
 
     const handleDelete = () => {
         setShowOptionModal(false);
@@ -111,6 +115,10 @@ export default function PostDetailPage({ isModal = false }) {
 
             // Đồng bộ sang PostContext
             updatePostLike(postDetails.post._id, res.isLiked, res.likesCount);
+
+                // Trigger animation
+            setLikeAnimationTrigger(true);
+            setTimeout(() => setLikeAnimationTrigger(false), 300);
         } catch (err) {
             console.error("Lỗi khi like:", err);
         }
@@ -461,38 +469,54 @@ export default function PostDetailPage({ isModal = false }) {
                 </div>
                 
                 <div className="mt-auto pt-4 border-t-2 border-[var(--border-color)]">
-                    <div className="flex items-center space-x-4 text-sm text-gray-400 mb-4">
+                    <div className="flex items-center space-x-4 text-sm text-gray-400 mb-3">
                         <motion.div
                             onClick={handleLike}
                             initial={false}
-                            animate={{
-                                scale: postDetails.post.isLiked
-                                    ? [1, 1.4, 1]
-                                    : 1,
-                            }}
+                            animate={likeAnimationTrigger ? { scale: [1, 1.4, 1] } : { scale: 1 }}
                             transition={{ duration: 0.3 }}
-                            className="flex items-center space-x-1 cursor-pointer"
+                            className="flex items-center space-x-1 cursor-pointer hover:opacity-70"
                         >
                             <Heart
                                 className={`${
                                     postDetails.post.isLiked
                                         ? "fill-current text-red-500"
-                                        : ""
+                                        : "text-white"
                                 }`}
                             />
-                            <span>{postDetails.likesCount}</span>
                         </motion.div>
-                        <button className="flex items-center space-x-1">
+                        <button className="flex items-center space-x-1 cursor-pointer hover:opacity-70"
+                                onClick={() => commentInputRef.current?.focus()}
+                        >
                             <MessageCircle className="text-white" />
-                            <span>{postDetails.commentsCount}</span>
                         </button>
                         <Send className="mr-2" />
                     </div>
+                    {/* Likes */}
+                    <div className="mb-2">
+                        {
+                            (postDetails.likesCount > 0) ?
+                        <p
+                            className="text-sm font-semibold cursor-pointer hover:underline"
+                            onClick={() => setShowLikesModal(true)}
+                        >
+                            {postDetails.likesCount} lượt thích
+                        </p> : <p className="text-sm font-semibold">Hãy là người đầu tiên thích bài viết này</p>
+                        }
+                    </div>
+                    {showLikesModal && (
+                        <LikesModal
+                        postId={postDetails.post._id}
+                        currentUserId={user.id}
+                        onClose={() => setShowLikesModal(false)}
+                        />
+                    )}
                     
                     {/* Input placeholder */}
-                    <div className="flex items-center space-x-2 pt-2">
+                    <div className="flex items-center space-x-2 pt-3">
                         <input
                             type="text"
+                            ref={commentInputRef}
                             placeholder="Bình luận..."
                             disabled={isCommenting}
                             value={displayComment}

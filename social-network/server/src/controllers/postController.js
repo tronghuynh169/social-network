@@ -426,7 +426,9 @@ exports.getPostDetails = async (req, res) => {
             comment.replies = await getReplies(comment._id, userId);
         }
 
-        const isLiked = post.likes.includes(req.user.id);
+        const isLiked = post.likes
+            .map((id) => id.toString())
+            .includes(req.user.id.toString());
         post.isLiked = isLiked;
 
         const totalComments = await Comment.countDocuments({
@@ -434,11 +436,16 @@ exports.getPostDetails = async (req, res) => {
             $or: [{ replyTo: { $exists: false } }, { replyTo: null }],
         });
 
+        const likesCount = post.likes.length;
+
         res.status(200).json({
             post,
             likes: likeUsers,
             comments,
             ownerProfile,
+            isLiked,
+            likesCount,
+            totalComments,
         });
     } catch (error) {
         console.error('🔥 Lỗi chi tiết:', error); // log toàn bộ object lỗi
