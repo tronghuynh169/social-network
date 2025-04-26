@@ -36,7 +36,7 @@ import PostModal from "~/components/ui/PostUI/PostUpLoadUI/PostModal";
 import LikesModal from "~/components/ui/PostUI/Post/LikesModal";
 
 export default function PostDetailPage({ isModal = false }) {
-    const { updatePostLike, setPosts, posts } = usePosts(); // trong PostDetailPage
+    const { updatePostLike, setPosts, posts, updatePostData } = usePosts(); // trong PostDetailPage
     const { user } = useUser();
     const { id: postId } = useParams();
     const navigate = useNavigate();
@@ -156,10 +156,15 @@ export default function PostDetailPage({ isModal = false }) {
             };
 
             // Cập nhật state
-            setPostDetails((prev) => ({
-                ...prev,
-                comments: updateCommentTree(prev.comments),
-            }));
+            // Cập nhật state local
+            const updatedPostDetails = {
+                ...postDetails,
+                comments: updateCommentTree(postDetails.comments),
+            };
+            setPostDetails(updatedPostDetails);
+
+            // 🎯 Đồng bộ PostContext
+            updatePostData(updatedPostDetails);
         } catch (err) {
             console.error("Lỗi khi like bình luận:", err);
         }
@@ -218,6 +223,10 @@ export default function PostDetailPage({ isModal = false }) {
 
             // Gọi lại API để fetch lại dữ liệu mới nhất từ server
             await fetchPostDetails();
+            const updatedPostData = await fetchPostDetails();
+            if (updatedPostData) {
+                updatePostData(updatedPostData); // ✨ cập nhật vào context
+            }
 
             setComment("");
             setDisplayComment("");
@@ -235,6 +244,10 @@ export default function PostDetailPage({ isModal = false }) {
         try {
             await deleteComment(postDetails.post._id, commentId);
             await fetchPostDetails();
+            const updatedPostData = await fetchPostDetails();
+            if (updatedPostData) {
+                updatePostData(updatedPostData); // ✨ cập nhật vào context
+            }
             }
          catch (err) {
             console.error("Lỗi xóa comment:", err);
@@ -249,6 +262,7 @@ export default function PostDetailPage({ isModal = false }) {
             console.log(response.data);
             
             setPostDetails(response.data); // giữ nguyên dữ liệu backend trả về
+            return response.data; // ✨ thêm dòng này để return dữ liệu
         } catch (error) {
             console.error("Error fetching post details:", error);
         }

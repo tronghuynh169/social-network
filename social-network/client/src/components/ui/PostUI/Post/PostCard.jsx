@@ -10,7 +10,8 @@ import {
   toggleLike,
   addComment,
   getPostDetails,
-  deletePost
+  deletePost,
+  toggleCommentLike 
 } from "~/api/post";
 import {formatPostTime} from "~/components/utils/formatPostTime";
 import { motion } from 'framer-motion';
@@ -20,10 +21,11 @@ import { usePosts } from "~/context/PostContext";
 import PostOptionsModal from "~/components/ui/PostUI/Post/PostOptionsModal";
 import ConfirmDeleteModal from "~/components/ui/PostUI/Post/ConfirmDeleteModal";
 import PostModal from "~/components/ui/PostUI/PostUpLoadUI/PostModal";
+import CommentItem from "~/components/ui/PostUI/Post/CommentItem";
 
 export default function PostCard({ post }) {
     const navigate = useNavigate(); 
-    const { posts, updatePostLike, setPosts } = usePosts();  
+    const { posts, updatePostLike, setPosts, updatePostData } = usePosts();  
     const postFromContext = posts.find(p => p._id === post._id); // Tìm bài viết trong context
     const { user } = useUser();
     const [showFullCaption, setShowFullCaption] = useState(false);
@@ -36,7 +38,7 @@ export default function PostCard({ post }) {
     const [atStart, setAtStart] = useState(true);
     const [atEnd, setAtEnd] = useState(false);
     const [showLikesModal, setShowLikesModal] = useState(false);
-    const [comments, setComments] = useState([]);
+    const [comments, setComments] = useState(postFromContext?.comments || []);
     const [showOptionModal, setShowOptionModal] = useState(false);
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -60,6 +62,40 @@ export default function PostCard({ post }) {
         console.error("Lỗi khi like:", err);
       }
     };
+
+    const handleCommentLike = async (commentId) => {
+      try {
+        const res = await toggleCommentLike(post._id, commentId);
+        const { isLikedComment, likesCommentCount } = res.data;
+    
+        // Hàm đệ quy cập nhật comment/reply
+        const updateCommentTree = (comments) => {
+          return comments.map((comment) => {
+            if (comment._id === commentId) {
+              return {
+                ...comment,
+                isLikedComment,
+                likesCommentCount,
+              };
+            }
+            if (comment.replies && comment.replies.length > 0) {
+              return {
+                ...comment,
+                replies: updateCommentTree(comment.replies),
+              };
+            }
+            return comment;
+          });
+        };
+    
+        const updatedComments = updateCommentTree(comments);
+        setComments(updatedComments); // ✅ chỉ set local thôi
+    
+      } catch (err) {
+        console.error("Lỗi khi like comment:", err);
+      }
+    };
+  
 
     const handleDelete = () => {
       setShowOptionModal(false);
@@ -95,6 +131,12 @@ export default function PostCard({ post }) {
     };
 
     useEffect(() => {
+      if (postFromContext?.comments) {
+        setComments(postFromContext.comments);
+      }
+    }, [postFromContext?.comments]);
+
+    useEffect(() => {
       if (postFromContext) {
         setLiked(postFromContext.isLiked);  // Cập nhật lại trạng thái liked nếu context thay đổi
         setLikesCount(postFromContext.likesCount);  // Cập nhật lại số lượng likes nếu context thay đổi
@@ -105,18 +147,21 @@ export default function PostCard({ post }) {
       if (!comment.trim()) return;
       try {
         const newComment = await addComment(post._id, comment);
-        
+        console.log(newComment.data);
         // Lấy fullName
         const profile = await getProfileByUserId(user.id);
     
         const fullComment = {
-          ...newComment,
+          ...newComment.data,
           content: comment,
           userId: {
             _id: user.id,
             username: user.username,
             fullName: profile.fullName, // thêm fullName
+            avatar: profile.avatar
           },
+          isLikedComment: false, // 💥 Thêm mặc định
+          likesCommentCount: 0,   // 💥 Thêm mặc định
         };
     
         setComments((prev) => [...prev, fullComment]);
@@ -365,7 +410,7 @@ export default function PostCard({ post }) {
       {/* Bình luận */}
       {comments.length > 0 && ( 
         <div className="text-sm space-y-1">
-          <button className="text-gray-400 text-sm hover:underline cursor-pointer" onClick={handleCommentClick}>
+          <button className="text-gray-400 text-sm hover:underline cursor-pointer mb-4" onClick={handleCommentClick}>
             Xem tất cả {comments.reduce((acc, comment) => {
               return acc + 1 + countRepliesRecursive(comment.replies || []);
             }, 0
@@ -374,25 +419,23 @@ export default function PostCard({ post }) {
         
 
           {comments
-              .filter((c) => c.userId._id === user.id) // Chỉ của bạn
-              .reverse() // Đảo ngược mảng để có bình luận mới nhất ở đầu
-              .slice(0, 3) // Chỉ lấy 3 bình luận mới nhất
-              .map((c, idx) => (
-                <div key={c._id || idx} className="flex justify-between items-center w-full">
-                  {/* Trái: fullName + 2 khoảng trắng + content */}
-                  <div className="flex items-center max-w-[90%] overflow-hidden">
-                    <span className="font-semibold whitespace-nowrap">
-                      {c.userId.fullName || c.userId.username}
-                    </span>
-                    <span className="truncate ml-2">
-                      {c.content}
-                    </span>
-                  </div>
-
-                  {/* Phải: icon */}
-                  <Heart className="w-4 h-4 shrink-0 ml-2" />
-                </div>
-            ))}
+            .filter((c) => c.userId._id === user.id)
+            .reverse()
+            .slice(0, 3)
+            .map((c) => (
+              <CommentItem
+                key={c._id}
+                comment={c}
+                user={user}
+                onReply={(commentId, username) => {
+                  console.log("Reply to", commentId, username);
+                }}
+                onLike={handleCommentLike}
+                onDelete={(commentId) => {
+                  console.log("Delete comment", commentId);
+                }}
+              />
+          ))}
         </div>
       )}
       <div className="flex items-center space-x-2 pt-2">
