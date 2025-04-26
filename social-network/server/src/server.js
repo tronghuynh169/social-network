@@ -153,6 +153,10 @@ io.on("connection", (socket) => {
                         path: "likes",
                         select: "fullName avatar slug",
                     },
+                    {
+                        path: "readBy",
+                        select: "fullName avatar",
+                    },
                 ])
             );
 
@@ -162,6 +166,45 @@ io.on("connection", (socket) => {
             );
         } catch (error) {
             console.error("❌ Lỗi khi like tin nhắn:", error);
+        }
+    });
+
+    socket.on("markMessagesAsRead", async ({ conversationId, userId }) => {
+        try {
+            // Lấy tất cả tin nhắn chưa đọc trong cuộc hội thoại
+            const unreadMessages = await Message.find({
+                conversation: conversationId,
+                readBy: { $ne: userId }, // Lọc các tin nhắn chưa được đọc bởi user hiện tại
+            });
+
+            // Cập nhật readBy cho từng tin nhắn
+            const updatePromises = unreadMessages.map((msg) =>
+                Message.findByIdAndUpdate(msg._id, {
+                    $addToSet: { readBy: userId }, // Chỉ thêm nếu userId chưa tồn tại
+                })
+            );
+
+            await Promise.all(updatePromises);
+
+            // Lấy lại danh sách tin nhắn sau khi cập nhật
+            const messages = await Message.find({
+                conversation: conversationId,
+            })
+                .populate("sender", "fullName avatar")
+                .populate("readBy", "fullName avatar") // Populate để trả về danh sách người đã đọc
+                .populate("likes", "fullName avatar slug")
+                .populate({
+                    path: "replyTo",
+                    populate: { path: "sender", select: "fullName avatar" },
+                });
+
+            // Phát sự kiện cập nhật tin nhắn đã đọc đến tất cả client trong phòng
+            io.to(conversationId).emit("messagesRead", {
+                conversationId,
+                messages,
+            });
+        } catch (err) {
+            console.error("❌ Error updating readBy:", err);
         }
     });
 });

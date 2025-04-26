@@ -51,6 +51,15 @@ const ChatBox = ({
         };
     }, [socket, setMessages]);
 
+    useEffect(() => {
+        if (conversationId && socket && currentUserId) {
+            socket.emit("markMessagesAsRead", {
+                conversationId,
+                userId: currentUserId,
+            });
+        }
+    }, [conversationId, socket, currentUserId]);
+
     // Lắng nghe sự kiện "newMessage" để thêm tin nhắn mới
     useEffect(() => {
         if (!conversationId) return;
@@ -74,12 +83,24 @@ const ChatBox = ({
     }, [conversationId, socket]);
 
     // Tự động cuộn xuống dưới khi có tin nhắn mới
-    useEffect(() => {
-        const timeout = setTimeout(() => {
-            bottomRef.current?.scrollIntoView({ behavior: "auto" });
-        }, 0);
+    const prevMessagesRef = useRef([]);
+    const isFirstLoad = useRef(true);
 
-        return () => clearTimeout(timeout);
+    useEffect(() => {
+        const prevMessages = prevMessagesRef.current;
+
+        const newMessageAdded =
+            messages.length > prevMessages.length &&
+            messages[messages.length - 1]?._id !==
+                prevMessages[prevMessages.length - 1]?._id;
+
+        // Luôn cuộn nếu lần đầu vào (F5, mở chat)
+        if (isFirstLoad.current || newMessageAdded) {
+            bottomRef.current?.scrollIntoView({ behavior: "auto" });
+            isFirstLoad.current = false;
+        }
+
+        prevMessagesRef.current = messages;
     }, [messages]);
 
     // Hàm xử lý gỡ like

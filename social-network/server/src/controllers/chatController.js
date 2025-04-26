@@ -135,6 +135,7 @@ exports.getMessages = async (req, res) => {
                     select: "fullName avatar",
                 },
             })
+            .populate("readBy", "fullName avatar")
             .populate("likes", "fullName avatar slug");
 
         res.status(200).json(messages);
