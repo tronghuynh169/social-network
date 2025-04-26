@@ -152,15 +152,6 @@ const MessagePage = () => {
         }
     };
 
-    useEffect(() => {
-        if (conversationId && socket) {
-            socket.emit("markMessagesAsRead", {
-                conversationId,
-                userId: profile._id,
-            });
-        }
-    }, [conversationId, socket, profile._id]);
-
     return (
         <div className="flex h-screen w-full">
             {/* Sidebar */}

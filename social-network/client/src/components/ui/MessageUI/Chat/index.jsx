@@ -51,6 +51,15 @@ const ChatBox = ({
         };
     }, [socket, setMessages]);
 
+    useEffect(() => {
+        if (conversationId && socket && currentUserId) {
+            socket.emit("markMessagesAsRead", {
+                conversationId,
+                userId: currentUserId,
+            });
+        }
+    }, [conversationId, socket, currentUserId]);
+
     // Lắng nghe sự kiện "newMessage" để thêm tin nhắn mới
     useEffect(() => {
         if (!conversationId) return;
