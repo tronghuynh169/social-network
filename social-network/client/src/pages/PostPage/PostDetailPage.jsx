@@ -478,6 +478,7 @@ export default function PostDetailPage({ isModal = false }) {
                                 onDelete={handleDeleteComment} // Truyền hàm xóa vào đây
                                 showLikesModal={showCommentLikesModal}
                                 setShowLikesModal={setShowCommentLikesModal}
+                                level={0} // ➡️ comment gốc level 0
                             />
                         ))}
                 </div>

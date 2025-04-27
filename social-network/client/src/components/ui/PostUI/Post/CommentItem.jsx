@@ -11,15 +11,18 @@ const CommentItem = ({
     onLike,
     onDelete, // Hàm xóa bình luận
     isReply = false,
-    isDirectReply = false, // mới thêm
+    // isDirectReply = false, // mới thêm
+    level = 0, // ➡️ thêm level mặc định = 0
 }) => {
     const [showLikesModal, setShowLikesModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false); // State để mở modal xóa
-    const indentClass = isDirectReply ? "pl-12" : "";
+    
+    // const indentClass = isDirectReply ? `pl-${level * 6}` : "";
+    const indentClass = `pl-${level * 6}`; 
 
     const [showReplies, setShowReplies] = useState(false);
     const hasReplies = comment.replies && comment.replies.length > 0;
-    const allReplies = showReplies ? flattenReplies(comment.replies) : [];
+    // const allReplies = showReplies ? flattenReplies(comment.replies) : [];
 
     // Hàm xử lý xóa bình luận
     const handleDelete = () => {
@@ -28,119 +31,155 @@ const CommentItem = ({
     };
 
     return (
-        <div className={`w-full ${indentClass}`}>
-            <div className="flex items-start gap-3 w-full">
-                {/* Avatar */}
-                <img
-                    src={comment.userId?.avatar || "/default-avatar.png"}
-                    alt="Avatar"
-                    className="w-8 h-8 rounded-full object-cover"
-                />
+        <div className="relative">
+            {/* đường thẳng bên trái cho mọi reply */}
+      {level > 0 && (
+        <div
+          className="absolute left-0 top-0 bottom-0 w-px bg-gray-300"
+          aria-hidden
+        />
+      )}
 
-                {/* Nội dung */}
-                <div className="flex-1">
-                    <p className="text-sm leading-snug break-words break-all whitespace-pre-wrap">
-                        <span className="font-semibold">
-                            {comment.userId.fullName || comment.userId.username}
-                        </span>{" "}
-                        <span>{renderCommentText(comment.content)}</span>
-                    </p>
+      {/* móc nhỏ giống Facebook chỉ cho cấp 1 */}
+      {level === 1 && (
+        <div
+          className="absolute w-1 h-1 bg-white border-t border-l border-gray-300"
+          style={{
+            transform: "rotate(-45deg)",
+            left: "6px",
+            top: "18px",
+          }}
+          aria-hidden
+        />
+      )}
 
-                    <div className="flex items-center gap-4 mt-1 text-xs text-[var(--text-secondary-color)]">
-                        <span>{formatPostTime(comment.createdAt)}</span>
+            {/* Móc cho level > 1 (dành cho các reply cấp cao hơn) */}
+            {level > 1 && (
+            <div
+                className="absolute w-3 h-3 bg-gray-300"
+                style={{
+                left: `-${level * 6 + 6}px`, // Điều chỉnh left để các reply cấp cao hơn có khoảng cách.
+                top: "16px",                  // Điều chỉnh cho thẳng hàng với avatar/text.
+                transform: "rotate(45deg)",   // Xoay thành hình chóp vuông.
+                }}
+            />
+            )}
 
-                        {comment.likesCommentCount > 0 && (
+    {/* Nội dung chính */}
+            <div className="w-full" style={{ paddingLeft: `${getPaddingLeft(level)}px` }}>
+                <div className="flex items-start gap-3 w-full">
+                    {/* Avatar */}
+                    <img
+                        src={comment.userId?.avatar || "/default-avatar.png"}
+                        alt="Avatar"
+                        className="w-8 h-8 rounded-full object-cover"
+                    />
+    
+                    {/* Nội dung */}
+                    <div className="flex-1">
+                        <p className="text-sm leading-snug break-words break-all whitespace-pre-wrap">
+                            <span className="font-semibold">
+                                {comment.userId.fullName || comment.userId.username}
+                            </span>{" "}
+                            <span>{renderCommentText(comment.content)}</span>
+                        </p>
+    
+                        <div className="flex items-center gap-4 mt-1 text-xs text-[var(--text-secondary-color)]">
+                            <span>{formatPostTime(comment.createdAt)}</span>
+    
+                            {comment.likesCommentCount > 0 && (
+                                <span
+                                    onClick={() => setShowLikesModal(true)}
+                                    className="hover:underline cursor-pointer text-[var(--text-secondary-color)]"
+                                >
+                                    {comment.likesCommentCount} lượt thích
+                                </span>
+                            )}
+    
                             <span
-                                onClick={() => setShowLikesModal(true)}
-                                className="hover:underline cursor-pointer text-[var(--text-secondary-color)]"
+                                onClick={() =>
+                                    onReply(
+                                        comment._id,
+                                        comment.userId.fullName ||
+                                            comment.userId.username
+                                    )
+                                }
+                                className="cursor-pointer text-[var(--text-secondary-color)]"
                             >
-                                {comment.likesCommentCount} lượt thích
+                                Trả lời
                             </span>
-                        )}
-
-                        <span
-                            onClick={() =>
-                                onReply(
-                                    comment._id,
-                                    comment.userId.fullName ||
-                                        comment.userId.username
-                                )
-                            }
-                            className="cursor-pointer text-[var(--text-secondary-color)]"
-                        >
-                            Trả lời
-                        </span>
-
-                        {comment.userId._id === user.id && (
-                            <>
-                                <MoreHorizontal
-                                    className="w-4 h-4 cursor-pointer"
-                                    onClick={() => setShowDeleteModal(true)}
+    
+                            {comment.userId._id === user.id && (
+                                <>
+                                    <MoreHorizontal
+                                        className="w-4 h-4 cursor-pointer"
+                                        onClick={() => setShowDeleteModal(true)}
+                                    />
+                                    <DeleteCommentModal
+                                        isOpen={showDeleteModal}
+                                        onClose={() => setShowDeleteModal(false)}
+                                        onConfirm={() => {
+                                            onDelete(comment._id); // Gọi hàm xóa
+                                            setShowDeleteModal(false);
+                                        }}
+                                    />
+                                </>
+                            )}
+    
+                            {showLikesModal && (
+                                <LikesCommentModal
+                                    postId={comment.postId}
+                                    commentId={comment._id}
+                                    currentUserId={user.id}
+                                    onClose={() => setShowLikesModal(false)}
                                 />
-                                <DeleteCommentModal
-                                    isOpen={showDeleteModal}
-                                    onClose={() => setShowDeleteModal(false)}
-                                    onConfirm={() => {
-                                        onDelete(comment._id); // Gọi hàm xóa
-                                        setShowDeleteModal(false);
-                                    }}
-                                />
-                            </>
-                        )}
-
-                        {showLikesModal && (
-                            <LikesCommentModal
-                                postId={comment.postId}
-                                commentId={comment._id}
-                                currentUserId={user.id}
-                                onClose={() => setShowLikesModal(false)}
-                            />
+                            )}
+                        </div>
+    
+                        {/* Nút xem câu trả lời */}
+                        {!isReply && hasReplies && (
+                            <div className="flex items-center mt-4">
+                                <div className="h-[1px] w-[20px] bg-[var(--text-secondary-color)] inline-block "/>
+                                <button
+                                    onClick={() => setShowReplies((prev) => !prev)}
+                                    className="ml-2 text-[var(--text-secondary-color)] text-[12px] cursor-pointer"
+                                >
+                                    {showReplies
+                                        ? "Ẩn câu trả lời"
+                                        : `Xem câu trả lời (${countReplies(comment)})`}
+                                </button>
+                            </div>
                         )}
                     </div>
-
-                    {/* Nút xem câu trả lời */}
-                    {!isReply && hasReplies && (
-                        <div className="flex items-center mt-4">
-                            <div className="h-[1px] w-[20px] bg-[var(--text-secondary-color)] inline-block "/>
-                            <button
-                                onClick={() => setShowReplies((prev) => !prev)}
-                                className="ml-2 text-[var(--text-secondary-color)] text-[12px] cursor-pointer"
-                            >
-                                {showReplies
-                                    ? "Ẩn câu trả lời"
-                                    : `Xem câu trả lời (${countReplies(comment)})`}
-                            </button>
-                        </div>
-                    )}
+                    {/* Icon like */}
+                    <Heart
+                        className={`w-4 h-4 cursor-pointer mt-1 ${
+                            comment.isLikedComment
+                                ? "fill-current text-red-500"
+                                : "text-gray-500"
+                        }`}
+                        onClick={() => onLike(comment._id)}
+                    />
                 </div>
-                {/* Icon like */}
-                <Heart
-                    className={`w-4 h-4 cursor-pointer mt-1 ${
-                        comment.isLikedComment
-                            ? "fill-current text-red-500"
-                            : "text-gray-500"
-                    }`}
-                    onClick={() => onLike(comment._id)}
-                />
-            </div>
-            {/* Đệ quy hiển thị replies */}
-            {allReplies.length > 0 && (
+                {/* Đệ quy hiển thị replies */}
+                {/* {allReplies.length > 0 && ( */}
+                {hasReplies && (isReply || showReplies) && (
                 <div className="mt-4 space-y-4">
-                    {allReplies.map((reply) => (
-                        <CommentItem
-                            key={`${comment._id}-${reply._id}`}
-                            comment={reply}
-                            user={user}
-                            onReply={onReply}
-                            onLike={onLike}
-                            isReply={true} // Set isReply = true để xác định là reply
-                            isDirectReply={!isReply} // chỉ reply cấp 1 mới thụt
-                            showLikesModal={false}
-                            setShowLikesModal={() => {}}
-                        />
+                    {comment.replies.map((reply) => (
+                    <CommentItem
+                        key={reply._id}
+                        comment={reply}
+                        user={user}
+                        onReply={onReply}
+                        onLike={onLike}
+                        onDelete={onDelete}
+                        isReply={true}
+                        level={level + 1}
+                    />
                     ))}
                 </div>
-            )}
+                )}
+            </div>
         </div>
     );
 };
@@ -183,7 +222,12 @@ function renderCommentText(text) {
 }
 
 
-
+const getPaddingLeft = (level) => {
+    if (level === 1) {
+      return level * 12 + 12; // Level 1: cộng thêm 12px
+    }
+    return level * 12; // Các level khác
+  };
 
 
 // Hàm đếm tất cả replies ở mọi cấp (đệ quy)
@@ -196,14 +240,14 @@ const countReplies = (comment) => {
 };
 
 // Flatten đệ quy tất cả replies thành mảng phẳng
-const flattenReplies = (replies = []) =>
-    replies.reduce(
-      (acc, reply) => [
-        ...acc,
-        reply,
-        ...flattenReplies(reply.replies),
-      ],
-      []
-    );
+// const flattenReplies = (replies = []) =>
+//     replies.reduce(
+//       (acc, reply) => [
+//         ...acc,
+//         reply,
+//         ...flattenReplies(reply.replies),
+//       ],
+//       []
+//     );
 
-export default CommentItem;
+ export default CommentItem;
