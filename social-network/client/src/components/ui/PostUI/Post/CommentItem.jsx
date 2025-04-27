@@ -13,6 +13,7 @@ const CommentItem = ({
     isReply = false,
     // isDirectReply = false, // mới thêm
     level = 0, // ➡️ thêm level mặc định = 0
+    isLastReply 
 }) => {
     const [showLikesModal, setShowLikesModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false); // State để mở modal xóa
@@ -32,22 +33,30 @@ const CommentItem = ({
 
     return (
         <div className="relative">
-            {/* đường thẳng bên trái cho mọi reply */}
-      {level > 0 && (
-        <div
-          className="absolute left-0 top-0 bottom-0 w-px bg-gray-300"
-          aria-hidden
-        />
-      )}
+        {/* đường thẳng bên trái cho mọi reply */}
+        {/* Line dài nếu chưa phải reply cuối */}
+         {level > 0 && (
+            <div
+                className="absolute left-0 w-px bg-gray-300"
+                style={{
+                left: `${getPaddingLeft(level) - 20}px`,
+                top: 0,
+                // Nếu không phải reply cuối thì kéo dài thêm 1rem (khoảng space-y-4)
+                height: isLastReply 
+                ? '1.25rem'           /* h-5 bằng 1.25rem = 20px */ 
+                : 'calc(100% + 1rem)' /* 100% + 16px để nối qua gap */
+            }}
+            aria-hidden
+            />
+            )}
 
       {/* móc nhỏ giống Facebook chỉ cho cấp 1 */}
       {level === 1 && (
         <div
-          className="absolute w-1 h-1 bg-white border-t border-l border-gray-300"
+          className="absolute w-3 h-3 border-t border-gray-300 bg-transparent"
           style={{
-            transform: "rotate(-45deg)",
-            left: "6px",
-            top: "18px",
+            left: `${getPaddingLeft(level) - 20}px`,
+            top: "20px",
           }}
           aria-hidden
         />
@@ -56,11 +65,10 @@ const CommentItem = ({
             {/* Móc cho level > 1 (dành cho các reply cấp cao hơn) */}
             {level > 1 && (
             <div
-                className="absolute w-3 h-3 bg-gray-300"
+                className="absolute w-3 h-3 border-t border-l border-gray-300 bg-transparent"
                 style={{
-                left: `-${level * 6 + 6}px`, // Điều chỉnh left để các reply cấp cao hơn có khoảng cách.
-                top: "16px",                  // Điều chỉnh cho thẳng hàng với avatar/text.
-                transform: "rotate(45deg)",   // Xoay thành hình chóp vuông.
+                left: `${getPaddingLeft(level) - 20}px`,
+                top: "20px",
                 }}
             />
             )}
@@ -153,7 +161,7 @@ const CommentItem = ({
                     </div>
                     {/* Icon like */}
                     <Heart
-                        className={`w-4 h-4 cursor-pointer mt-1 ${
+                        className={`w-4 h-4 cursor-pointer mt-1 hover:opacity-70 ${
                             comment.isLikedComment
                                 ? "fill-current text-red-500"
                                 : "text-gray-500"
@@ -165,7 +173,7 @@ const CommentItem = ({
                 {/* {allReplies.length > 0 && ( */}
                 {hasReplies && (isReply || showReplies) && (
                 <div className="mt-4 space-y-4">
-                    {comment.replies.map((reply) => (
+                    {comment.replies.map((reply, index) => (
                     <CommentItem
                         key={reply._id}
                         comment={reply}
@@ -174,7 +182,8 @@ const CommentItem = ({
                         onLike={onLike}
                         onDelete={onDelete}
                         isReply={true}
-                        level={level + 1}
+                        level={isReply ? level : level + 1} // ✅ Sửa chỗ này
+                        isLastReply={index === comment.replies.length - 1} // 👈 Thêm dòng này
                     />
                     ))}
                 </div>
@@ -224,9 +233,9 @@ function renderCommentText(text) {
 
 const getPaddingLeft = (level) => {
     if (level === 1) {
-      return level * 12 + 12; // Level 1: cộng thêm 12px
+      return level * 20 + 20; // Level 1: cộng thêm 12px
     }
-    return level * 12; // Các level khác
+    return level * 20; // Các level khác
   };
 
 
