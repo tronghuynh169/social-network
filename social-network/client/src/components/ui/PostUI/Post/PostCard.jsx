@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Heart, MessageCircle, Send, ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
+import { Heart, MessageCircle, Send, ChevronLeft, ChevronRight, MoreHorizontal, Loader2  } from "lucide-react";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination } from 'swiper/modules';
 import 'swiper/css';
@@ -12,7 +12,8 @@ import {
   getPostDetails,
   deletePost,
   toggleCommentLike,
-  deleteComment
+  deleteComment,
+  addReply,
 } from "~/api/post";
 import {formatPostTime} from "~/components/utils/formatPostTime";
 import { motion } from 'framer-motion';
@@ -28,6 +29,7 @@ export default function PostCard({ post }) {
     const navigate = useNavigate(); 
     const { posts, updatePostLike, setPosts, updatePostData } = usePosts();  
     const postFromContext = posts.find(p => p._id === post._id); // Tìm bài viết trong context
+    const postId = postFromContext._id;
     const { user } = useUser();
     const [showFullCaption, setShowFullCaption] = useState(false);
     const [liked, setLiked] = useState(post.isLiked || false);
@@ -44,6 +46,21 @@ export default function PostCard({ post }) {
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editPostData, setEditPostData] = useState(null);
+    const [replyTo, setReplyTo] = useState(null);
+    const [replyToUser, setReplyToUser] = useState(null);
+    const [displayComment, setDisplayComment] = useState(""); // Chỉ hiện @Tên
+    const [isCommenting, setIsCommenting] = useState(false);
+
+    const fetchComment = async () => {
+      try {
+        const response = await getPostDetails(post._id);
+        const comments = response.data.comments || [];
+        setComments(comments); 
+        return response.data; 
+      } catch (error) {
+        console.error("Error fetching post details:", error);
+      }
+    };
 
     const handleLike = async () => {
       try {
@@ -91,7 +108,7 @@ export default function PostCard({ post }) {
     
         const updatedComments = updateCommentTree(comments);
         setComments(updatedComments); // ✅ chỉ set local thôi
-    
+        
       } catch (err) {
         console.error("Lỗi khi like comment:", err);
       }
@@ -144,6 +161,7 @@ export default function PostCard({ post }) {
       alert('📋 Đã sao chép liên kết!');
     };
 
+
     useEffect(() => {
       if (postFromContext?.comments) {
         setComments(postFromContext.comments);
@@ -157,31 +175,49 @@ export default function PostCard({ post }) {
       }
     }, [postFromContext]);  // Chạy lại khi context thay đổi
 
+    function addReplyToCommentList(commentList, replyToId, newReply) {
+      return commentList.map(comment => {
+        if (comment._id === replyToId) {
+          // Nếu tìm thấy comment cha
+          return {
+            ...comment,
+            replies: [...(comment.replies || []), newReply]
+          };
+        }
+        if (comment.replies && comment.replies.length > 0) {
+          // Nếu có replies thì tìm sâu hơn
+          return {
+            ...comment,
+            replies: addReplyToCommentList(comment.replies, replyToId, newReply)
+          };
+        }
+        return comment;
+      });
+    }
+
     const handleAddComment = async () => {
       if (!comment.trim()) return;
+      setIsCommenting(true);
+    
       try {
-        const newComment = await addComment(post._id, comment);
-        console.log(newComment.data);
-        // Lấy fullName
-        const profile = await getProfileByUserId(user.id);
+        const resp = replyTo
+          ? await addReply(post._id, replyTo, comment)
+          : await addComment(post._id, comment);
     
-        const fullComment = {
-          ...newComment.data,
-          content: comment,
-          userId: {
-            _id: user.id,
-            username: user.username,
-            fullName: profile.fullName, // thêm fullName
-            avatar: profile.avatar
-          },
-          isLikedComment: false, // 💥 Thêm mặc định
-          likesCommentCount: 0,   // 💥 Thêm mặc định
-        };
+        // Không tự chế comment ở client nữa ❌
     
-        setComments((prev) => [...prev, fullComment]);
+        // Xong thì fetch lại bài viết để lấy đúng dữ liệu server
+        await fetchComment();
+    
+        // Reset các input
         setComment("");
+        setDisplayComment("");
+        setReplyTo(null);
+        setReplyToUser(null);
       } catch (err) {
         console.error("Lỗi khi bình luận:", err);
+      } finally {
+        setIsCommenting(false);
       }
     };
 
@@ -441,8 +477,11 @@ export default function PostCard({ post }) {
                 key={c._id}
                 comment={c}
                 user={user}
-                onReply={(commentId, username) => {
-                  console.log("Reply to", commentId, username);
+                onReply={(id, name) => {
+                  setReplyTo(id);
+                  setReplyToUser(name);
+                  setComment(`@{${id}}|${name}  `);
+                  setDisplayComment(`@${name} `);
                 }}
                 onLike={handleCommentLike}
                 onDelete={handleDeleteComment}
@@ -454,16 +493,42 @@ export default function PostCard({ post }) {
         <input
           type="text"
           placeholder="Bình luận..."
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          className="flex-1 bg-black text-white text-sm outline-none"
-        />
-        {comment && <button
-          className="text-blue-500 text-sm font-medium"
-          onClick={handleAddComment}
-        >
-          Đăng
-        </button>}
+          disabled={isCommenting}
+          value={displayComment}
+          onChange={(e) => {
+              const newDisplayValue = e.target.value;
+              setDisplayComment(newDisplayValue);
+              
+              // Nếu đang reply và text bắt đầu bằng @Tên
+              if (replyTo && newDisplayValue.startsWith(`@${replyToUser}`)) {
+                setComment(`@{${replyTo}}|${replyToUser} ${newDisplayValue.slice(replyToUser.length + 1)}`);
+              } else {
+                setComment(newDisplayValue);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !isCommenting && displayComment.trim()) {
+                  e.preventDefault(); // tránh submit form nếu có
+                  handleAddComment();
+              }
+          }}
+          className="flex-1 text-white text-sm outline-none"
+      />
+      {
+          isCommenting ? (
+              <Loader2 className="animate-spin text-gray-400 w-4 h-4" />
+            ) : 
+            ( 
+              displayComment &&
+              <button
+                  className="text-[var(--text-enable-color)] text-sm font-medium cursor-pointer hover:text-[#c8d7e4]"
+                  onClick={handleAddComment}
+              >
+                  Đăng
+              </button>
+            
+          )
+      }
       </div>
     </div>
   );

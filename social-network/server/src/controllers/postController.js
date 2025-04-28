@@ -478,45 +478,68 @@ exports.getPostDetails = async (req, res) => {
 
 exports.deleteComment = async (req, res) => {
     const { commentId } = req.params;
-    console.log('🧪 ID nhận được để xóa comment:', commentId);
     try {
-        // Lấy tất cả các reply (mọi cấp) của comment
-        const allReplyIds = await getAllReplyIds(commentId);
+        // 1. Tìm comment cần xóa
+        const comment = await Comment.findById(commentId);
+        if (!comment) {
+            return res.status(404).json({ message: 'Comment không tồn tại.' });
+        }
 
-        // Xóa các reply con
-        await Comment.deleteMany({ _id: { $in: allReplyIds } });
+        // 2. Nếu là comment gốc
+        if (!comment.replyTo) {
+            // Lấy tất cả reply con mọi cấp
+            const allReplyIds = await getAllReplyIds(commentId);
+            // Xóa hết
+            await Comment.deleteMany({ _id: { $in: allReplyIds } });
+            await Comment.findByIdAndDelete(commentId);
+            return res.status(200).json({
+                message: 'Đã xóa bình luận và tất cả các phản hồi.',
+            });
+        }
 
-        // Xóa comment gốc
-        await Comment.findByIdAndDelete(commentId);
+        // 3. Nếu là reply
+        // Tìm parent (comment cha) để chuyển reply con sang
+        const parentId = comment.replyTo;
+        // Lấy các reply con trực tiếp của comment này
+        const childReplies = await Comment.find({ replyTo: commentId });
 
-        res.status(200).json({
-            message: 'Đã xóa bình luận và toàn bộ phản hồi.',
-        });
+        if (childReplies.length > 0) {
+            // Chuyển tất cả các reply con về parentId
+            await Comment.updateMany(
+                { replyTo: commentId },
+                { $set: { replyTo: parentId } }
+            );
+            // Xóa reply hiện tại
+            await Comment.findByIdAndDelete(commentId);
+            return res.status(200).json({
+                message: 'Đã xóa reply và giữ lại các reply con (đã reparent).',
+            });
+        } else {
+            // Nếu không có reply con, xóa thẳng
+            await Comment.findByIdAndDelete(commentId);
+            return res.status(200).json({ message: 'Đã xóa reply.' });
+        }
     } catch (err) {
         console.error('Lỗi khi xóa bình luận:', err);
         res.status(500).json({ message: 'Xóa bình luận thất bại.' });
     }
 };
 
+// Hàm lấy đệ quy tất cả reply của một comment gốc
 const getAllReplyIds = async (commentId, visited = new Set()) => {
-    let allReplyIds = [];
-
-    if (!commentId) return []; // 💥 Sửa lỗi commentId undefined
-
+    if (!commentId) return [];
     const key = commentId.toString();
     if (visited.has(key)) return [];
-
     visited.add(key);
 
     const replies = await Comment.find({ replyTo: commentId }).select('_id');
+    let allIds = replies.map((r) => r._id);
 
-    for (const reply of replies) {
-        allReplyIds.push(reply._id);
-        const nestedIds = await getAllReplyIds(reply._id, visited);
-        allReplyIds = allReplyIds.concat(nestedIds);
+    for (const r of replies) {
+        const nested = await getAllReplyIds(r._id, visited);
+        allIds = allIds.concat(nested);
     }
-
-    return allReplyIds;
+    return allIds;
 };
 
 // Hàm đệ quy lấy nested replies

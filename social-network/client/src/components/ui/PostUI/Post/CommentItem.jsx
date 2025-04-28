@@ -297,6 +297,17 @@ const CommentItem = ({
     // 2. state lưu các reply mới của chính user
     const [newReplies, setNewReplies] = useState([]);
 
+    function collectRepliesDeep(replies) {
+        let result = [];
+        for (const reply of replies) {
+          result.push(reply);
+          if (reply.replies && reply.replies.length > 0) {
+            result = result.concat(collectRepliesDeep(reply.replies));
+          }
+        }
+        return result;
+      }
+
     useEffect(() => {
         const fetchProfile = async () => {
             try {
@@ -322,6 +333,7 @@ const CommentItem = ({
       
         if (diff.length > 0) {
           setNewReplies(diff);  // gán hẳn
+        
           // cập nhật ref để lần sau không tính lại
           initialReplyIds.current = [
             ...initialReplyIds.current,
@@ -329,6 +341,12 @@ const CommentItem = ({
           ];
         }
       }, [comment.replies, user.id]);
+
+      useEffect(() => {
+        if (showReplies) {
+          setNewReplies([]);
+        }
+      }, [showReplies]);
 
 
     return (
@@ -437,7 +455,7 @@ const CommentItem = ({
                 />
             </div>
 
-            {!showReplies && newReplies.length > 0 && (
+        {!showReplies && newReplies.length > 0 && (
         <div className="mt-4 space-y-4">
           {newReplies.map(reply => (
             <CommentItem
