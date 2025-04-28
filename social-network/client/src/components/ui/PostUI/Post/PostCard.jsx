@@ -11,7 +11,8 @@ import {
   addComment,
   getPostDetails,
   deletePost,
-  toggleCommentLike 
+  toggleCommentLike,
+  deleteComment
 } from "~/api/post";
 import {formatPostTime} from "~/components/utils/formatPostTime";
 import { motion } from 'framer-motion';
@@ -97,28 +98,41 @@ export default function PostCard({ post }) {
     };
   
 
-    const handleDelete = () => {
-      setShowOptionModal(false);
-      setShowConfirmDeleteModal(true); // mở modal xác nhận
+      const handleDelete = () => {
+        setShowOptionModal(false);
+        setShowConfirmDeleteModal(true); // mở modal xác nhận
+    };
+
+    const confirmDelete = async () => {
+      try {
+          const postIdToDelete = post._id;
+          await deletePost(postIdToDelete);
+          setShowConfirmDeleteModal(false);
+          setPosts(prev => prev.filter(p => p._id !== postIdToDelete));
+          navigate('/');
+          console.log("Đã xóa bài viết");
+      } catch (err) {
+          console.error("Lỗi xoá bài viết:", err);
+      }
   };
 
-  const confirmDelete = async () => {
-    try {
-        const postIdToDelete = post._id;
-        await deletePost(postIdToDelete);
-        setShowConfirmDeleteModal(false);
-        setPosts(prev => prev.filter(p => p._id !== postIdToDelete));
-        navigate('/');
-        console.log("Đã xóa bài viết");
-    } catch (err) {
-        console.error("Lỗi xoá bài viết:", err);
-    }
-};
   
-  const handleEdit = () => {
-      setEditPostData(post); // post là bài viết đang hiển thị trong PostDetailPage
-      setShowOptionModal(false); // đóng menu tuỳ chọn
-      setShowEditModal(true);    // mở modal chỉnh sửa
+    const handleEdit = () => {
+        setEditPostData(post); // post là bài viết đang hiển thị trong PostDetailPage
+        setShowOptionModal(false); // đóng menu tuỳ chọn
+        setShowEditModal(true);    // mở modal chỉnh sửa
+    };
+
+    const handleDeleteComment = async (commentId) => {
+      setComments(prev => prev.filter(c => c._id !== commentId));
+
+      try {
+        // 2. Gọi API xóa
+        await deleteComment(post._id, commentId);
+      } catch (err) {
+        console.error("Lỗi xóa comment:", err);
+        setComments(postFromContext?.comments || []);
+      }
   };
 
     const handleGoToPost = () => {
@@ -421,7 +435,7 @@ export default function PostCard({ post }) {
           {comments
             .filter((c) => c.userId._id === user.id)
             .reverse()
-            .slice(0, 3)
+            .slice(0, 1)
             .map((c) => (
               <CommentItem
                 key={c._id}
@@ -431,9 +445,7 @@ export default function PostCard({ post }) {
                   console.log("Reply to", commentId, username);
                 }}
                 onLike={handleCommentLike}
-                onDelete={(commentId) => {
-                  console.log("Delete comment", commentId);
-                }}
+                onDelete={handleDeleteComment}
               />
           ))}
         </div>

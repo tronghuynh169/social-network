@@ -461,7 +461,12 @@ export default function PostDetailPage({ isModal = false }) {
                         .filter((c) => !c.replyTo) // Lọc các comment gốc
                         .sort(
                             (a, b) =>
-                                new Date(b.createdAt) - new Date(a.createdAt)
+                                {
+                                    // Đưa comment của bạn lên đầu
+                                    if (a.userId._id === user.id) return -1; // Nếu comment là của bạn, đặt lên đầu
+                                    if (b.userId._id === user.id) return 1;  // Nếu comment b là của bạn, đặt lên đầu
+                                    return new Date(b.createdAt) - new Date(a.createdAt); // Sắp xếp các comment còn lại theo thời gian
+                                }
                         )
                         .map((c) => (
                             <CommentItem

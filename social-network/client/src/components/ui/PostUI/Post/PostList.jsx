@@ -5,7 +5,6 @@ import { usePosts } from '~/context/PostContext';
 export default function PostList() {
   const { posts, setPosts } = usePosts();
 
-
   const handleLikeUpdate = (postId, update) => {
     setPosts(prevPosts => prevPosts.map(post => 
       post._id === postId ? {
@@ -15,6 +14,7 @@ export default function PostList() {
       } : post
     ));
   };
+
 
   useEffect(() => {
     console.log("Updated posts from context:", posts);

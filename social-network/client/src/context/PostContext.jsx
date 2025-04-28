@@ -1,10 +1,12 @@
 import { createContext, useContext, useState, useEffect  } from "react";
 import { getAllPosts } from '~/api/post';
+import { useUser } from "~/context/UserContext";
 
 const PostContext = createContext();
 
 export const PostProvider = ({ children }) => {
     const [posts, setPosts] = useState([]);
+    const { user } = useUser(); // Lấy user từ UserContext
 
     const updatePostLike = (postId, isLiked, likesCount) => {
         setPosts(prevPosts =>
@@ -59,7 +61,7 @@ export const PostProvider = ({ children }) => {
         }
       };
       fetchPosts();
-    }, []);
+    }, [user]);
 
   return (
     <PostContext.Provider value={{ posts, setPosts  ,updatePostLike , updatePostData   }}>
