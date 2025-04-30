@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams  } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import {
     getPostDetails,

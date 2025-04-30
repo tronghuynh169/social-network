@@ -24,9 +24,13 @@ import PostOptionsModal from "~/components/ui/PostUI/Post/PostOptionsModal";
 import ConfirmDeleteModal from "~/components/ui/PostUI/Post/ConfirmDeleteModal";
 import PostModal from "~/components/ui/PostUI/PostUpLoadUI/PostModal";
 import CommentItem from "~/components/ui/PostUI/Post/CommentItem";
+import CopyLinkModal from "~/components/ui/PostUI/Post/CopyLinkModal";
+
+
 
 export default function PostCard({ post }) {
     const navigate = useNavigate(); 
+    const location = useLocation();
     const { posts, updatePostLike, setPosts, updatePostData } = usePosts();  
     const postFromContext = posts.find(p => p._id === post._id); // Tìm bài viết trong context
     const postId = postFromContext._id;
@@ -50,6 +54,18 @@ export default function PostCard({ post }) {
     const [replyToUser, setReplyToUser] = useState(null);
     const [displayComment, setDisplayComment] = useState(""); // Chỉ hiện @Tên
     const [isCommenting, setIsCommenting] = useState(false);
+    const [isCopyModalVisible, setCopyModalVisible] = useState(false);
+
+    const handleNavigateToDetail = () => {
+      navigate(`/post/${post._id}`, {
+        state: {
+          backgroundLocation: {
+            pathname: location.pathname,
+            search: location.search,
+          },
+        },
+      });
+    };
 
     const fetchComment = async () => {
       try {
@@ -158,7 +174,13 @@ export default function PostCard({ post }) {
   
     const handleCopyLink = () => {
       navigator.clipboard.writeText(`${window.location.origin}/post/${post._id}`);
-      alert('📋 Đã sao chép liên kết!');
+      setShowOptionModal(false);
+      setCopyModalVisible(true);
+
+      // Ẩn modal sau 3 giây
+      setTimeout(() => {
+        setCopyModalVisible(false);
+      }, 3000);
     };
 
 
@@ -325,6 +347,11 @@ export default function PostCard({ post }) {
             onCancel={() => setShowConfirmDeleteModal(false)}
         />
         )}
+        {
+          isCopyModalVisible &&
+          <CopyLinkModal isVisible={isCopyModalVisible} onClose={() => setCopyModalVisible(false)} />
+        }
+        
         {showEditModal && (
             <PostModal
                 isOpen={showEditModal}
@@ -485,6 +512,7 @@ export default function PostCard({ post }) {
                 }}
                 onLike={handleCommentLike}
                 onDelete={handleDeleteComment}
+                onNavigateToDetail={handleNavigateToDetail}
               />
           ))}
         </div>

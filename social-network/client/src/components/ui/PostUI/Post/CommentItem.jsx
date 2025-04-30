@@ -277,6 +277,7 @@ const CommentItem = ({
     onDelete, // Hàm xóa bình luận
     isReply = false,
     isDirectReply = false, // mới thêm
+    onNavigateToDetail
 }) => {
     const [showLikesModal, setShowLikesModal] = useState(false);
     const [profile, setProfile] = useState();
@@ -297,16 +298,6 @@ const CommentItem = ({
     // 2. state lưu các reply mới của chính user
     const [newReplies, setNewReplies] = useState([]);
 
-    function collectRepliesDeep(replies) {
-        let result = [];
-        for (const reply of replies) {
-          result.push(reply);
-          if (reply.replies && reply.replies.length > 0) {
-            result = result.concat(collectRepliesDeep(reply.replies));
-          }
-        }
-        return result;
-      }
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -325,7 +316,7 @@ const CommentItem = ({
 
     // 3. Mỗi khi comment.replies thay đổi, tìm reply mới của chính user
     useEffect(() => {
-        const all = comment.replies || [];
+        const all = flattenReplies(comment.replies || []);
         // chỉ lọc những reply của user chưa nằm trong initialReplyIds
         const diff = all.filter(
           (r) => r.userId._id === user.id && !initialReplyIds.current.includes(r._id)
@@ -434,7 +425,13 @@ const CommentItem = ({
                                 </div>
                             )}
                             <button
-                                onClick={() => setShowReplies((prev) => !prev)}
+                                onClick={() => {
+                                    if (onNavigateToDetail) {
+                                        onNavigateToDetail(); 
+                                    } else {
+                                      setShowReplies((prev) => !prev); // Nếu không có thì toggle local
+                                    }
+                                  }}
                                 className="ml-2 text-[var(--text-secondary-color)] text-[12px] cursor-pointer"
                             >
                                 {showReplies

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 const PostOptionsModal = ({
     isOwner,
     onClose,
@@ -6,6 +7,8 @@ const PostOptionsModal = ({
     onGoToPost,
     onCopyLink,
   }) => {
+    
+
     return (
       <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center">
         <div className="bg-[#262626] rounded-lg overflow-hidden w-[380px] text-center text-sm">
