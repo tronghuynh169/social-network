@@ -143,7 +143,7 @@ const ChatBox = ({
                 showInfo={showInfo}
                 usersInfo={usersInfo}
             />
-            <ScrollArea className="flex-1 overflow-auto px-6 py-4 text-sm space-y-2">
+            <div className="flex-1 overflow-auto px-6 py-4 text-sm space-y-2">
                 <ChatMessages
                     messages={messages}
                     currentUserId={currentUserId}
@@ -158,7 +158,7 @@ const ChatBox = ({
                     setMessageId={setMessageId}
                 />
                 <div ref={bottomRef} />
-            </ScrollArea>
+            </div>
             <ChatInput
                 currentUserId={currentUserId}
                 message={message}

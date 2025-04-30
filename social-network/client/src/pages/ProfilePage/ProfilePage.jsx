@@ -103,13 +103,13 @@ const ProfilePage = ({ setAvatar }) => {
     // Hiển thị loading page hoàn toàn
     if (loading) {
         return (
-            <div className=" min-h-screen flex items-center justify-center"></div>
+            <div className="h-screen overflow-y-auto flex items-center justify-center"></div>
         );
     }
 
     if (error) {
         return (
-            <div className=" min-h-screen flex items-center justify-center">
+            <div className="h-screen overflow-y-auto flex items-center justify-center">
                 <p className="text-red-500">{error.message}</p>
             </div>
         );
@@ -117,7 +117,7 @@ const ProfilePage = ({ setAvatar }) => {
 
     // Chỉ render giao diện khi tất cả dữ liệu đã sẵn sàng
     return (
-        <div className=" min-h-screen flex flex-col items-center mt-3">
+        <div className="h-screen overflow-y-auto flex flex-col items-center">
             <div className="max-w-4xl p-6 flex items-center space-x-8 mx-auto">
                 {/* Avatar */}
                 <div className="relative group">
