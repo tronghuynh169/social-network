@@ -199,10 +199,8 @@ io.on("connection", (socket) => {
                 });
 
             // Phát sự kiện cập nhật tin nhắn đã đọc đến tất cả client trong phòng
-            io.to(conversationId).emit("messagesRead", {
-                conversationId,
-                messages,
-            });
+            // Gửi lại toàn bộ tin nhắn đã cập nhật readBy
+            io.to(conversationId).emit("messagesUpdated", messages);
         } catch (err) {
             console.error("❌ Error updating readBy:", err);
         }

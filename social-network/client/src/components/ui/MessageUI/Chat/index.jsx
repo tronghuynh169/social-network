@@ -20,8 +20,8 @@ const ChatBox = ({
     currentUserId,
     conversationId,
     avatar,
-    onToggleInfo = { onToggleInfo },
-    showInfo = { showInfo },
+    onToggleInfo,
+    showInfo,
     replyMessage,
     setReplyMessage,
     socket,
@@ -59,6 +59,18 @@ const ChatBox = ({
             });
         }
     }, [conversationId, socket, currentUserId]);
+
+    useEffect(() => {
+        const handleMessagesUpdated = (updatedMessages) => {
+            setMessages(updatedMessages); // Cập nhật toàn bộ danh sách tin nhắn
+        };
+
+        socket.on("messagesUpdated", handleMessagesUpdated);
+
+        return () => {
+            socket.off("messagesUpdated", handleMessagesUpdated);
+        };
+    }, [socket, setMessages]);
 
     // Lắng nghe sự kiện "newMessage" để thêm tin nhắn mới
     useEffect(() => {
