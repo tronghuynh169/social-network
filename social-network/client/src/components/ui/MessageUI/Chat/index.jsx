@@ -25,6 +25,7 @@ const ChatBox = ({
     replyMessage,
     setReplyMessage,
     socket,
+    usersInfo,
 }) => {
     const bottomRef = useRef(null);
     const inputRef = useRef(null);
@@ -140,6 +141,7 @@ const ChatBox = ({
                 admin={admin}
                 onToggleInfo={onToggleInfo}
                 showInfo={showInfo}
+                usersInfo={usersInfo}
             />
             <ScrollArea className="flex-1 overflow-auto px-6 py-4 text-sm space-y-2">
                 <ChatMessages

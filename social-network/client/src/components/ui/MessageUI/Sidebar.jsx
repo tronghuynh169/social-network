@@ -8,7 +8,12 @@ import SearchFriendModal from "~/components/ui/MessageUI/SearchFriendModal";
 import { useParams } from "react-router-dom";
 import socket from "~/socket";
 
-const Sidebar = ({ setNameGroupChat, messages, avatar }) => {
+const Sidebar = ({
+    setNameGroupChat,
+    messages,
+    avatar,
+    setUsersInfo: setUsersInfoProp,
+}) => {
     const { conversationId } = useParams();
     const { profile } = useUser();
     const [usersInfo, setUsersInfo] = useState([]);
@@ -72,6 +77,7 @@ const Sidebar = ({ setNameGroupChat, messages, avatar }) => {
                 });
 
                 setUsersInfo(merged);
+                setUsersInfoProp(merged);
             };
 
             fetchUsers();

@@ -26,6 +26,7 @@ const MessagePage = () => {
     const [avatar, setAvatar] = useState("");
     const [showInfo, setShowInfo] = useState(false);
     const [replyMessage, setReplyMessage] = useState(null);
+    const [usersInfo, setUsersInfo] = useState([]);
 
     useEffect(() => {
         const fetchMessages = async () => {
@@ -159,6 +160,7 @@ const MessagePage = () => {
                 setNameGroupChat={setNameGroupChat}
                 messages={messages}
                 avatar={avatar}
+                setUsersInfo={setUsersInfo} 
             />
 
             {/* Chat content */}
@@ -182,6 +184,7 @@ const MessagePage = () => {
                     replyMessage={replyMessage}
                     setReplyMessage={setReplyMessage}
                     socket={socket}
+                    usersInfo={usersInfo}
                 />
             ) : (
                 <div className="flex flex-col justify-center items-center flex-1">
