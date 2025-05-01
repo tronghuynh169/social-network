@@ -10,7 +10,6 @@ const ChatHeader = ({
     showInfo,
     usersInfo, // Nhận usersInfo từ props
 }) => {
-    console.log("usersInfo: " + usersInfo);
     const correctAvatar = isGroup
         ? avatar // Sử dụng avatar nhóm nếu là nhóm
         : usersInfo.find((user) => user.name === nameGroupChat)?.avatar ||

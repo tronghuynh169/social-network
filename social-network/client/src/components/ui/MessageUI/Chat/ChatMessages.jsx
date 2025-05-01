@@ -23,6 +23,27 @@ const ChatMessages = ({
 }) => {
     const [activeMessageId, setActiveMessageId] = useState(null);
     const wrapperRef = useRef();
+    const messageRefs = useRef({});
+
+    const scrollToMessage = (messageId) => {
+        const el = messageRefs.current[messageId];
+        if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+
+            // Thêm class Tailwind để highlight nền trắng + scale to
+            el.classList.add(
+                "bg-white",
+                "scale-105",
+                "transition",
+                "duration-500"
+            );
+
+            // Sau 0.5s, đưa về trạng thái ban đầu
+            setTimeout(() => {
+                el.classList.remove("bg-white", "scale-105");
+            }, 500);
+        }
+    };
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -66,7 +87,11 @@ const ChatMessages = ({
                 );
 
                 return (
-                    <div key={index}>
+                    <div
+                        key={msg._id}
+                        ref={(el) => (messageRefs.current[msg._id] = el)}
+                        className="transition duration-500"
+                    >
                         {showTime && (
                             <div className="text-center text-xs text-[var(--text-secondary-color)] my-4">
                                 {dayjs(msg.createdAt).format(
@@ -105,7 +130,10 @@ const ChatMessages = ({
                                     <div
                                         className={`mb-1 flex flex-col gap-1 ${
                                             isMe ? "items-end" : "items-start"
-                                        }`}
+                                        } cursor-pointer`}
+                                        onClick={() =>
+                                            scrollToMessage(msg.replyTo._id)
+                                        }
                                     >
                                         <div className="text-sm font-semibold flex items-center gap-1 text-[var(--text-secondary-color)]">
                                             <Reply size={16} />
