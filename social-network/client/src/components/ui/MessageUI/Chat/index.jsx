@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ScrollArea } from "~/components/ui/scroll-area";
 import ChatHeader from "./ChatHeader";
-import ChatMessages from "./ChatMessages";
+import ChatMessages from "./ChatMessages/ChatMessages";
 import ChatInput from "./ChatInput";
 import ImageModal from "./Modal/ImageModal";
 import LikeModal from "./Modal/LikeModal";
