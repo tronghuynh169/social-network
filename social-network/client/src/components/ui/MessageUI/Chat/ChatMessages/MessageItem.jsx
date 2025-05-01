@@ -30,16 +30,27 @@ const MessageItem = ({
         (user) => user._id !== currentUserId && lastSeenMap[user._id] === index
     );
 
+    // Xác định khoảng cách margin-bottom
+    const marginBottomClass =
+        msg.likes?.length > 0 && seenUsersHere?.length > 0
+            ? "mb-10" // Nếu có cả likes và seenUsersHere
+            : msg.likes?.length > 0 || seenUsersHere?.length > 0
+            ? "mb-4" // Nếu chỉ có một trong hai
+            : "mb-0"; // Nếu không có cả hai
+
     return (
         <div
             ref={(el) => (messageRefs.current[msg._id] = el)}
             className="transition duration-500"
         >
+            {/* Hiển thị thời gian */}
             {showTime && (
                 <div className="text-center text-xs text-[var(--text-secondary-color)] my-4">
                     {dayjs(msg.createdAt).format("HH:mm DD/MM/YYYY")}
                 </div>
             )}
+
+            {/* Tin nhắn */}
             <div
                 className={`mb-2 flex ${
                     isMe ? "justify-end" : "justify-start"
@@ -49,20 +60,16 @@ const MessageItem = ({
                 onClick={() => setActiveMessageId(msg._id)}
             >
                 <div
-                    className={`max-w-[50%] flex flex-col gap-2 relative ${
-                        msg.likes?.length > 0 && seenUsersHere?.length > 0
-                            ? "mb-10"
-                            : msg.likes?.length > 0 || seenUsersHere?.length > 0
-                            ? "mb-4"
-                            : "mb-0"
-                    }`}
+                    className={`max-w-[60%] flex flex-col gap-2 relative ${marginBottomClass}`}
                 >
+                    {/* Tên người gửi (nếu là nhóm) */}
                     {!isMe && isGroup && (
                         <div className="text-xs text-[var(--text-secondary-color)] mb-1">
                             {msg.senderName}
                         </div>
                     )}
 
+                    {/* Tin nhắn trả lời */}
                     {msg.replyTo && (
                         <ReplyPreview
                             msg={msg}
@@ -72,27 +79,39 @@ const MessageItem = ({
                         />
                     )}
 
+                    {/* Nội dung tin nhắn và hành động */}
                     <div
                         className={`flex gap-0.5 ${
                             isMe ? "flex-row-reverse" : ""
                         }`}
                     >
+                        {/* Nội dung tin nhắn */}
                         <MessageContent
                             msg={msg}
                             isMe={isMe}
                             setViewingImage={setViewingImage}
                             setIsImageModalOpen={setIsImageModalOpen}
                         />
+
+                        {/* Hành động (action) */}
                         {isActive && (
-                            <MessageActions
-                                msg={msg}
-                                socket={socket}
-                                currentUserId={currentUserId}
-                                setReplyMessage={setReplyMessage}
-                            />
+                            <div
+                                className={`absolute ${
+                                    isMe ? "-left-17 " : "-right-17"
+                                } top-1/2 transform -translate-y-1/2 message-actions-container`}
+                            >
+                                <MessageActions
+                                    msg={msg}
+                                    isMe={isMe}
+                                    socket={socket}
+                                    currentUserId={currentUserId}
+                                    setReplyMessage={setReplyMessage}
+                                />
+                            </div>
                         )}
                     </div>
 
+                    {/* Likes */}
                     {msg.likes?.length > 0 && (
                         <div
                             className={`absolute cursor-pointer ${
@@ -109,7 +128,11 @@ const MessageItem = ({
                         </div>
                     )}
 
-                    <SeenAvatars users={seenUsersHere} />
+                    {/* Seen Avatars */}
+                    <SeenAvatars
+                        users={seenUsersHere}
+                        hasLikes={msg.likes?.length > 0}
+                    />
                 </div>
             </div>
         </div>
