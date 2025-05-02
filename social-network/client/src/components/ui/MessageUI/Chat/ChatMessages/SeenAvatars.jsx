@@ -1,12 +1,12 @@
 import React from "react";
 
-const SeenAvatars = ({ users, hasLikes }) => {
+const SeenAvatars = ({ users, hasLikes, isMe }) => {
     if (!users?.length) return null;
     return (
         <div
             className={`absolute flex gap-1 items-center ${
                 hasLikes && users.length > 0 ? "-bottom-10" : "-bottom-6"
-            }`}
+            } ${isMe ? "right-0" : "left-0"}`}
         >
             {users.slice(0, 3).map((user, i) => (
                 <img

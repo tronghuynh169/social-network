@@ -8,51 +8,63 @@ const MessageContent = ({
 }) => {
     return (
         <>
-            {msg.text && (
+            {msg.isRecalled ? (
                 <div
-                    className={`break-words rounded-2xl px-3 py-2 whitespace-pre-wrap ${
-                        isMe
-                            ? "bg-[var(--text-me-message-color)]"
-                            : "bg-[var(--text-otther-message-color)]"
+                    className={`italic text-sm text-gray-500 px-3 py-2 rounded-2xl border ${
+                        isMe ? "ml-auto border-gray-300" : "border-gray-200"
                     }`}
                 >
-                    {msg.text}
+                    Tin nhắn đã được thu hồi
                 </div>
-            )}
-
-            {msg.files?.map((file, idx) => (
-                <div key={idx} className={isMe ? "ml-auto" : ""}>
-                    {file.type?.startsWith("image/") ? (
-                        <img
-                            src={file.url}
-                            alt={`chat-img-${idx}`}
-                            className="rounded-2xl max-w-[236px] object-cover cursor-pointer"
-                            onClick={() => {
-                                setViewingImage(file.url);
-                                setIsImageModalOpen(true);
-                            }}
-                        />
-                    ) : file.type?.startsWith("video/") ? (
-                        <video
-                            controls
-                            className="rounded-2xl max-w-[236px] max-h-[300px] object-contain"
+            ) : (
+                <>
+                    {msg.text && (
+                        <div
+                            className={`break-words rounded-2xl px-3 py-2 whitespace-pre-wrap ${
+                                isMe
+                                    ? "bg-[var(--text-me-message-color)]"
+                                    : "bg-[var(--text-otther-message-color)]"
+                            }`}
                         >
-                            <source src={file.url} type={file.type} />
-                        </video>
-                    ) : (
-                        <div className="px-3 py-2 rounded-lg bg-[var(--button-color)] w-fit">
-                            <a
-                                href={file.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="underline"
-                            >
-                                {file.name}
-                            </a>
+                            {msg.text}
                         </div>
                     )}
-                </div>
-            ))}
+
+                    {msg.files?.map((file, idx) => (
+                        <div key={idx} className={isMe ? "ml-auto" : ""}>
+                            {file.type?.startsWith("image/") ? (
+                                <img
+                                    src={file.url}
+                                    alt={`chat-img-${idx}`}
+                                    className="rounded-2xl max-w-[236px] object-cover cursor-pointer"
+                                    onClick={() => {
+                                        setViewingImage(file.url);
+                                        setIsImageModalOpen(true);
+                                    }}
+                                />
+                            ) : file.type?.startsWith("video/") ? (
+                                <video
+                                    controls
+                                    className="rounded-2xl max-w-[236px] max-h-[300px] object-contain"
+                                >
+                                    <source src={file.url} type={file.type} />
+                                </video>
+                            ) : (
+                                <div className="px-3 py-2 rounded-lg bg-[var(--button-color)] w-fit">
+                                    <a
+                                        href={file.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="underline"
+                                    >
+                                        {file.name}
+                                    </a>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </>
+            )}
         </>
     );
 };

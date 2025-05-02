@@ -37,6 +37,10 @@ const messageSchema = new mongoose.Schema(
             ref: "Message",
             default: null,
         },
+        isRecalled: {
+            type: Boolean,
+            default: false,
+        },
     },
     { timestamps: true }
 );

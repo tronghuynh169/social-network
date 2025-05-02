@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import socket from "~/socket";
 
 const MoreVerticalPopover = ({ msg, onClose, position, isMe }) => {
     useEffect(() => {
@@ -37,11 +38,11 @@ const MoreVerticalPopover = ({ msg, onClose, position, isMe }) => {
             <div
                 className="text-xs text-gray-500 px-4 py-2 hover:bg-gray-200 cursor-pointer"
                 onClick={() => {
-                    console.log("Xóa tin nhắn", msg);
+                    socket.emit("recallMessage", { messageId: msg._id });
                     onClose();
                 }}
             >
-                Xóa tin nhắn
+                Thu hồi tin nhắn
             </div>
         </div>
     );

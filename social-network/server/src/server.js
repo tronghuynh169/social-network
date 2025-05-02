@@ -205,6 +205,32 @@ io.on("connection", (socket) => {
             console.error("❌ Error updating readBy:", err);
         }
     });
+    
+    socket.on("recallMessage", async ({ messageId }) => {
+        try {
+            const message = await Message.findByIdAndUpdate(
+                messageId,
+                { isRecalled: true, text: "", files: [] },
+                { new: true }
+            )
+                .populate("sender", "fullName avatar")
+                .populate("likes", "fullName avatar slug")
+                .populate("readBy", "fullName avatar")
+                .populate({
+                    path: "replyTo",
+                    populate: { path: "sender", select: "fullName avatar" },
+                });
+
+            if (message) {
+                io.to(message.conversation.toString()).emit(
+                    "messageRecalled",
+                    message
+                );
+            }
+        } catch (error) {
+            console.error("❌ Lỗi thu hồi tin nhắn:", error);
+        }
+    });
 });
 
 // Start the server

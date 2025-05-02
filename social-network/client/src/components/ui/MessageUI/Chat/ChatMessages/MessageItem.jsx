@@ -70,12 +70,12 @@ const MessageItem = ({
                     )}
 
                     {/* Tin nhắn trả lời */}
-                    {msg.replyTo && (
+                    {msg.replyTo && !msg.replyTo.recalled && (
                         <ReplyPreview
                             msg={msg}
                             currentUserId={currentUserId}
                             scrollToMessage={scrollToMessage}
-                            isMe={isMe}
+                            isMe={msg.sender._id === currentUserId}
                         />
                     )}
 
@@ -132,6 +132,7 @@ const MessageItem = ({
                     <SeenAvatars
                         users={seenUsersHere}
                         hasLikes={msg.likes?.length > 0}
+                        isMe={isMe}
                     />
                 </div>
             </div>

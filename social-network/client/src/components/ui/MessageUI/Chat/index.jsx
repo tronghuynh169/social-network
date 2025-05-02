@@ -131,6 +131,22 @@ const ChatBox = ({
         );
     };
 
+    useEffect(() => {
+        const handleMessageRecalled = (recalledMsg) => {
+            setMessages((prev) =>
+                prev.map((msg) =>
+                    msg._id === recalledMsg._id ? recalledMsg : msg
+                )
+            );
+        };
+
+        socket.on("messageRecalled", handleMessageRecalled);
+
+        return () => {
+            socket.off("messageRecalled", handleMessageRecalled);
+        };
+    }, []);
+
     return (
         <div className="flex-1 relative flex flex-col">
             <ChatHeader
