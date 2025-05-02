@@ -70,7 +70,7 @@ const MessageItem = ({
                     )}
 
                     {/* Tin nhắn trả lời */}
-                    {msg.replyTo && !msg.replyTo.recalled && (
+                    {msg.replyTo && !msg.isRecalled && (
                         <ReplyPreview
                             msg={msg}
                             currentUserId={currentUserId}
@@ -94,21 +94,22 @@ const MessageItem = ({
                         />
 
                         {/* Hành động (action) */}
-                        {isActive && (
-                            <div
-                                className={`absolute ${
-                                    isMe ? "-left-17 " : "-right-17"
-                                } top-1/2 transform -translate-y-1/2 message-actions-container`}
-                            >
-                                <MessageActions
-                                    msg={msg}
-                                    isMe={isMe}
-                                    socket={socket}
-                                    currentUserId={currentUserId}
-                                    setReplyMessage={setReplyMessage}
-                                />
-                            </div>
-                        )}
+                        {isActive &&
+                            !msg.isRecalled && ( // Chỉ hiển thị nếu tin nhắn chưa bị thu hồi
+                                <div
+                                    className={`absolute ${
+                                        isMe ? "-left-17 " : "-right-17"
+                                    } top-1/2 transform -translate-y-1/2 message-actions-container`}
+                                >
+                                    <MessageActions
+                                        msg={msg}
+                                        isMe={isMe}
+                                        socket={socket}
+                                        currentUserId={currentUserId}
+                                        setReplyMessage={setReplyMessage}
+                                    />
+                                </div>
+                            )}
                     </div>
 
                     {/* Likes */}
