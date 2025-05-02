@@ -28,7 +28,7 @@ const MessageContent = ({
                             alt={`chat-img-${idx}`}
                             className="rounded-2xl max-w-[236px] object-cover cursor-pointer"
                             onClick={() => {
-                                setViewingImage();
+                                setViewingImage(file.url);
                                 setIsImageModalOpen(true);
                             }}
                         />
