@@ -8,6 +8,7 @@ const MessageActions = ({
     socket,
     setReplyMessage,
     isMe,
+    openChatRoomsModal,
 }) => {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false); // Trạng thái hiển thị popover
     const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
@@ -88,6 +89,8 @@ const MessageActions = ({
                     isMe={isMe}
                     onClose={handleClosePopover}
                     position={popoverPosition}
+                    currentUserId={currentUserId}
+                    openChatRoomsModal={openChatRoomsModal}
                 />
             )}
         </>

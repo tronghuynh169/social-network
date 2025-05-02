@@ -205,7 +205,7 @@ io.on("connection", (socket) => {
             console.error("❌ Error updating readBy:", err);
         }
     });
-    
+
     socket.on("recallMessage", async ({ messageId }) => {
         try {
             const message = await Message.findByIdAndUpdate(
@@ -231,6 +231,56 @@ io.on("connection", (socket) => {
             console.error("❌ Lỗi thu hồi tin nhắn:", error);
         }
     });
+
+    socket.on(
+        "forwardMessage",
+        async ({ messageId, conversationId, currentConversationId }) => {
+            try {
+                const originalMessage = await Message.findById(messageId);
+
+                if (!originalMessage) {
+                    return socket.emit("error", {
+                        message: "Tin nhắn không tồn tại.",
+                    });
+                }
+
+                const forwardedMessage = new Message({
+                    sender: originalMessage.sender,
+                    conversation: conversationId,
+                    text: originalMessage.text,
+                    files: originalMessage.files,
+                    replyTo: null, // Không cần replyTo
+                });
+
+                const savedMessage = await forwardedMessage.save().then((msg) =>
+                    msg.populate([
+                        { path: "sender", select: "fullName avatar" },
+                        { path: "conversation", select: "name" },
+                    ])
+                );
+
+                // Lấy thông tin tin nhắn từ database
+                const message = getMessageById(messageId);
+
+                if (!message) return;
+
+                // Gửi tin nhắn đến tất cả thành viên trong phòng
+                io.to(conversationId).emit("receiveMessage", savedMessage);
+
+                // Đảm bảo không gửi tin nhắn đến phòng chat hiện tại
+                if (currentConversationId !== conversationId) {
+                    io.to(currentConversationId).emit("messageUpdated", {
+                        messageId,
+                    });
+                }
+            } catch (error) {
+                console.error("❌ Lỗi khi chuyển tiếp tin nhắn:", error);
+                socket.emit("error", {
+                    message: "Lỗi khi chuyển tiếp tin nhắn.",
+                });
+            }
+        }
+    );
 });
 
 // Start the server

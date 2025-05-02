@@ -20,6 +20,7 @@ const ChatMessages = ({
     setLikes,
     socket,
     setMessageId,
+    openChatRoomsModal,
 }) => {
     const [activeMessageId, setActiveMessageId] = useState(null);
     const wrapperRef = useRef();
@@ -86,6 +87,7 @@ const ChatMessages = ({
                         setMessageId={setMessageId}
                         socket={socket}
                         lastSeenMap={lastSeenMap}
+                        openChatRoomsModal={openChatRoomsModal}
                     />
                 );
             })}

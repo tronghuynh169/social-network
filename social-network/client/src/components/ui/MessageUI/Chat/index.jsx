@@ -4,6 +4,7 @@ import ChatMessages from "./ChatMessages/ChatMessages";
 import ChatInput from "./ChatInput";
 import ImageModal from "./Modal/ImageModal";
 import LikeModal from "./Modal/LikeModal";
+import ChatRoomsModal from "./Modal/ChatRoomsModal";
 
 const ChatBox = ({
     messages,
@@ -31,8 +32,10 @@ const ChatBox = ({
     const [viewingImage, setViewingImage] = useState(null);
     const [isImageModalOpen, setIsImageModalOpen] = useState(false);
     const [isLikeModalOpen, setIsLikeModalOpen] = useState(false);
+    const [isChatRoomsModalOpen, setIsChatRoomsModalOpen] = useState(false); // New
     const [likes, setLikes] = useState([]);
     const [messageId, setMessageId] = useState([]);
+    const [selectedMessage, setSelectedMessage] = useState(null); // For ChatRoomsModal
 
     // Lắng nghe sự kiện "messageLiked" để cập nhật danh sách tin nhắn
     useEffect(() => {
@@ -147,6 +150,30 @@ const ChatBox = ({
         };
     }, []);
 
+    const openChatRoomsModal = (message) => {
+        setSelectedMessage(message);
+        setIsChatRoomsModalOpen(true);
+    };
+
+    const closeChatRoomsModal = () => {
+        setSelectedMessage(null);
+        setIsChatRoomsModalOpen(false);
+    };
+
+    const handleSelectRoom = (room) => {
+        console.log(
+            "Chuyển tiếp tin nhắn:",
+            selectedMessage,
+            "đến phòng:",
+            room
+        );
+        socket.emit("forwardMessage", {
+            messageId: selectedMessage._id,
+            conversationId: room._id,
+            currentConversationId: conversationId,
+        });
+    };
+
     return (
         <div className="flex-1 relative flex flex-col">
             <ChatHeader
@@ -171,6 +198,7 @@ const ChatBox = ({
                     setReplyMessage={setReplyMessage}
                     socket={socket}
                     setMessageId={setMessageId}
+                    openChatRoomsModal={openChatRoomsModal}
                 />
                 <div ref={bottomRef} />
             </div>
@@ -199,6 +227,12 @@ const ChatBox = ({
                 likes={likes}
                 onUnlike={handleUnlike} // Truyền hàm gỡ like
                 onClose={() => setIsLikeModalOpen(false)} // Đóng LikeModal
+            />
+            <ChatRoomsModal
+                open={isChatRoomsModalOpen}
+                onClose={closeChatRoomsModal}
+                onSelectRoom={handleSelectRoom}
+                userId={currentUserId}
             />
         </div>
     );

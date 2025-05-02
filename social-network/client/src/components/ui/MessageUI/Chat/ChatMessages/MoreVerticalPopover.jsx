@@ -1,7 +1,12 @@
 import React, { useEffect } from "react";
-import socket from "~/socket";
 
-const MoreVerticalPopover = ({ msg, onClose, position, isMe }) => {
+const MoreVerticalPopover = ({
+    msg,
+    onClose,
+    position,
+    isMe,
+    openChatRoomsModal, // New prop
+}) => {
     useEffect(() => {
         const handleOutsideClick = (e) => {
             if (!e.target.closest(".popover-container")) {
@@ -20,17 +25,17 @@ const MoreVerticalPopover = ({ msg, onClose, position, isMe }) => {
         <div
             className="popover-container absolute z-50 bg-white shadow-lg rounded-md w-48 py-2"
             style={{
-                top: `${position.top - 80}px`, // Căn giữa theo chiều dọc
+                top: `${position.top - 80}px`,
                 left: isMe
                     ? `${position.left - 180}px`
-                    : `${position.left + 50}px`, // Căn giữa theo chiều ngang
+                    : `${position.left + 50}px`,
             }}
         >
             <div
                 className="text-xs text-gray-500 px-4 py-2 hover:bg-gray-200 cursor-pointer"
                 onClick={() => {
-                    console.log("Chuyển tiếp tin nhắn", msg);
-                    onClose();
+                    openChatRoomsModal(msg); // Open ChatRoomsModal via callback
+                    onClose(); // Close popover
                 }}
             >
                 Chuyển tiếp
