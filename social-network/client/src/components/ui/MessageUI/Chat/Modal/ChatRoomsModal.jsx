@@ -2,10 +2,9 @@ import React, { useState, useEffect } from "react";
 import { getUserConversations } from "~/api/chat"; // Import hàm gọi API
 import { X } from "lucide-react";
 
-const ChatRoomsModal = ({ open, onClose, onSelectRoom, userId }) => {
+const ChatRoomsModal = ({ open, onClose, onSelectRoom, userId, usersInfo }) => {
     const [chatRooms, setChatRooms] = useState([]);
-    console.log(chatRooms);
-
+    console.log(usersInfo)
     useEffect(() => {
         if (open) {
             // Lấy danh sách các phòng chat từ API
@@ -40,7 +39,7 @@ const ChatRoomsModal = ({ open, onClose, onSelectRoom, userId }) => {
                     </button>
                 </div>
                 <ul className="max-h-64 overflow-y-auto">
-                    {chatRooms.map((room) => (
+                    {usersInfo.map((room) => (
                         <li
                             key={room._id}
                             className="flex items-center justify-between p-2 rounded hover:bg-[var(--button-color)] cursor-pointer"
@@ -49,14 +48,11 @@ const ChatRoomsModal = ({ open, onClose, onSelectRoom, userId }) => {
                             <img
                                 src={room.avatar || "/default-avatar.png"} // Đường dẫn avatar
                                 alt={room.name || "Avatar"}
-                                className="w-10 h-10 rounded-full mr-3"
+                                className="w-10 h-10 rounded-full mr-2"
                             />
                             {/* Tên phòng */}
                             <span className="truncate flex-1">
-                                {room.name ||
-                                    room.members
-                                        .map((m) => m.fullName)
-                                        .join(", ")}
+                                {room.name}
                             </span>
                             {/* Nút Send */}
                             <button

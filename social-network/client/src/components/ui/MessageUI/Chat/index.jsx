@@ -233,6 +233,7 @@ const ChatBox = ({
                 onClose={closeChatRoomsModal}
                 onSelectRoom={handleSelectRoom}
                 userId={currentUserId}
+                usersInfo={usersInfo}
             />
         </div>
     );
