@@ -259,11 +259,6 @@ io.on("connection", (socket) => {
                     ])
                 );
 
-                // Lấy thông tin tin nhắn từ database
-                const message = getMessageById(messageId);
-
-                if (!message) return;
-
                 // Gửi tin nhắn đến tất cả thành viên trong phòng
                 io.to(conversationId).emit("receiveMessage", savedMessage);
 
