@@ -24,6 +24,7 @@ const MessageItem = ({
     socket,
     lastSeenMap,
     openChatRoomsModal,
+    setEditMessage,
 }) => {
     const isMe = (msg.sender?._id || msg.sender) === currentUserId;
     const isActive = activeMessageId === msg._id;
@@ -109,6 +110,7 @@ const MessageItem = ({
                                         currentUserId={currentUserId}
                                         setReplyMessage={setReplyMessage}
                                         openChatRoomsModal={openChatRoomsModal}
+                                        setEditMessage={setEditMessage}
                                     />
                                 </div>
                             )}

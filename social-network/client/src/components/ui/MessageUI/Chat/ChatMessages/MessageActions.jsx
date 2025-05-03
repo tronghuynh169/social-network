@@ -9,14 +9,13 @@ const MessageActions = ({
     setReplyMessage,
     isMe,
     openChatRoomsModal,
+    setEditMessage,
 }) => {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false); // Trạng thái hiển thị popover
-    const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
+    const [popoverPosition, setPopoverPosition] = useState({ bottom: 0, left: 0 });
 
     const handleMoreVerticalClick = () => {
         setIsPopoverOpen(true);
-        const { top, left, height } = e.target.getBoundingClientRect();
-        setPopoverPosition({ top: top + height, left: left + window.scrollX });
     };
 
     const handleClosePopover = () => {
@@ -91,6 +90,7 @@ const MessageActions = ({
                     position={popoverPosition}
                     currentUserId={currentUserId}
                     openChatRoomsModal={openChatRoomsModal}
+                    setEditMessage={setEditMessage}
                 />
             )}
         </>

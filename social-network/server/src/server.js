@@ -276,6 +276,35 @@ io.on("connection", (socket) => {
             }
         }
     );
+
+    socket.on("editMessage", async ({ messageId, newText }) => {
+        try {
+            const updatedMessage = await Message.findByIdAndUpdate(
+                messageId,
+                {
+                    text: newText,
+                    isEdited: true, // Đánh dấu là đã chỉnh sửa
+                },
+                { new: true }
+            )
+                .populate("sender", "fullName avatar")
+                .populate("likes", "fullName avatar slug")
+                .populate("readBy", "fullName avatar")
+                .populate({
+                    path: "replyTo",
+                    populate: { path: "sender", select: "fullName avatar" },
+                });
+
+            if (updatedMessage) {
+                io.to(updatedMessage.conversation.toString()).emit(
+                    "messageEdited",
+                    updatedMessage
+                );
+            }
+        } catch (error) {
+            console.error("❌ Lỗi khi chỉnh sửa tin nhắn:", error);
+        }
+    });
 });
 
 // Start the server

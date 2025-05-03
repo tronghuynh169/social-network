@@ -21,10 +21,18 @@ const ChatMessages = ({
     socket,
     setMessageId,
     openChatRoomsModal,
+    setEditMessage,
 }) => {
     const [activeMessageId, setActiveMessageId] = useState(null);
     const wrapperRef = useRef();
     const messageRefs = useRef({});
+    const bottomRef = useRef(null);
+
+    useEffect(() => {
+        if (bottomRef.current) {
+            bottomRef.current.scrollIntoView({ behavior: "auto" }); // không mượt, nhảy ngay
+        }
+    }, [messages]);
 
     const scrollToMessage = (messageId) => {
         const el = messageRefs.current[messageId];
@@ -88,9 +96,11 @@ const ChatMessages = ({
                         socket={socket}
                         lastSeenMap={lastSeenMap}
                         openChatRoomsModal={openChatRoomsModal}
+                        setEditMessage={setEditMessage}
                     />
                 );
             })}
+            <div ref={bottomRef} /> {/* Cuộn tới đây */}
         </div>
     );
 };

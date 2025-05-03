@@ -36,6 +36,7 @@ const ChatBox = ({
     const [likes, setLikes] = useState([]);
     const [messageId, setMessageId] = useState([]);
     const [selectedMessage, setSelectedMessage] = useState(null); // For ChatRoomsModal
+    const [editMessage, setEditMessage] = useState(null);
 
     // Lắng nghe sự kiện "messageLiked" để cập nhật danh sách tin nhắn
     useEffect(() => {
@@ -135,6 +136,22 @@ const ChatBox = ({
     };
 
     useEffect(() => {
+        const handleMessageEdited = (editedMessage) => {
+            setMessages((prevMessages) =>
+                prevMessages.map((msg) =>
+                    msg._id === editedMessage._id ? editedMessage : msg
+                )
+            );
+        };
+
+        socket.on("messageEdited", handleMessageEdited);
+
+        return () => {
+            socket.off("messageEdited", handleMessageEdited);
+        };
+    }, [socket, setMessages]);
+
+    useEffect(() => {
         const handleMessageRecalled = (recalledMsg) => {
             setMessages((prev) =>
                 prev.map((msg) =>
@@ -199,6 +216,7 @@ const ChatBox = ({
                     socket={socket}
                     setMessageId={setMessageId}
                     openChatRoomsModal={openChatRoomsModal}
+                    setEditMessage={setEditMessage}
                 />
                 <div ref={bottomRef} />
             </div>
@@ -212,6 +230,8 @@ const ChatBox = ({
                 inputRef={inputRef}
                 replyMessage={replyMessage}
                 setReplyMessage={setReplyMessage}
+                editMessage={editMessage}
+                setEditMessage={setEditMessage}
             />
             <ImageModal
                 isOpen={isImageModalOpen}

@@ -4,7 +4,6 @@ import { X } from "lucide-react";
 
 const ChatRoomsModal = ({ open, onClose, onSelectRoom, userId, usersInfo }) => {
     const [chatRooms, setChatRooms] = useState([]);
-    console.log(usersInfo)
     useEffect(() => {
         if (open) {
             // Lấy danh sách các phòng chat từ API

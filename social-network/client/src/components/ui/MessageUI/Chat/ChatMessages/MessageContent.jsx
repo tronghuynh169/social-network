@@ -7,17 +7,31 @@ const MessageContent = ({
     setIsImageModalOpen,
 }) => {
     return (
-        <>
+        <div
+            className={`flex flex-col ${
+                isMe ? "items-end" : "items-start"
+            } space-y-1`}
+        >
             {msg.isRecalled ? (
                 <div
-                    className={`italic text-sm text-gray-500 px-3 py-2 rounded-2xl border ${
-                        isMe ? "ml-auto border-gray-300" : "border-gray-200"
+                    className={`italic text-sm text-[var(--text-secondary-color)] px-3 py-2 rounded-2xl border ${
+                        isMe ? "border-gray-300" : "border-gray-200"
                     }`}
                 >
                     Tin nhắn đã được thu hồi
                 </div>
             ) : (
                 <>
+                    {msg.isEdited && (
+                        <div
+                            className={`text-xs text-[var(--text-secondary-color)] ${
+                                isMe ? "text-right" : "text-left"
+                            }`}
+                        >
+                            (Đã chỉnh sửa)
+                        </div>
+                    )}
+
                     {msg.text && (
                         <div
                             className={`break-words rounded-2xl px-3 py-2 whitespace-pre-wrap ${
@@ -31,7 +45,7 @@ const MessageContent = ({
                     )}
 
                     {msg.files?.map((file, idx) => (
-                        <div key={idx} className={isMe ? "ml-auto" : ""}>
+                        <div key={idx} className="flex flex-col items-start">
                             {file.type?.startsWith("image/") ? (
                                 <img
                                     src={file.url}
@@ -65,7 +79,7 @@ const MessageContent = ({
                     ))}
                 </>
             )}
-        </>
+        </div>
     );
 };
 

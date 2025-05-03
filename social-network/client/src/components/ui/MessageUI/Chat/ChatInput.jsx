@@ -1,6 +1,7 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Smile, Mic, ImageIcon, Heart, X } from "lucide-react";
 import { Input } from "~/components/ui/input";
+import socket from "~/socket";
 
 const ChatInput = ({
     currentUserId,
@@ -12,7 +13,19 @@ const ChatInput = ({
     inputRef,
     replyMessage,
     setReplyMessage,
+    editMessage,
+    setEditMessage,
 }) => {
+    const [originalMessage, setOriginalMessage] = useState(""); // Lưu trữ nội dung gốc khi chỉnh sửa
+
+    useEffect(() => {
+        if (editMessage) {
+            setMessage(editMessage.text);
+            setOriginalMessage(editMessage.text); // Lưu văn bản gốc
+            inputRef.current?.focus();
+        }
+    }, [editMessage]);
+
     // Focus vào input khi có reply
     useEffect(() => {
         if (replyMessage) {
@@ -22,7 +35,18 @@ const ChatInput = ({
 
     const handleSendMessage = () => {
         if (message.trim() || selectedFiles.length > 0) {
-            onSend();
+            if (editMessage) {
+                // Gửi tin nhắn đã chỉnh sửa
+                socket.emit("editMessage", {
+                    messageId: editMessage._id,
+                    newText: message.trim(),
+                });
+                setEditMessage(null);
+                setOriginalMessage(""); // Xóa văn bản gốc sau khi gửi
+            } else {
+                onSend();
+            }
+            setMessage(""); // Clear input sau khi gửi/chỉnh
         }
     };
 
@@ -43,6 +67,33 @@ const ChatInput = ({
 
     const handleRemoveFile = (index) => {
         setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+        setTimeout(() => {
+            inputRef.current?.focus(); // Focus input
+        }, 0);
+    };
+
+    const isSendDisabled = () => {
+        if (editMessage) {
+            // Kiểm tra nếu đang chỉnh sửa và nội dung không thay đổi
+            return message.trim() === originalMessage.trim();
+        }
+        return !message.trim() && selectedFiles.length === 0;
+    };
+
+    const handleCancelEdit = () => {
+        setEditMessage(null); // Huỷ chỉnh sửa
+        setMessage(""); // Xoá nội dung message
+        setTimeout(() => {
+            inputRef.current?.focus(); // Focus input
+        }, 0);
+    };
+
+    const handleCancelReply = () => {
+        setReplyMessage(null); // Huỷ chỉnh sửa
+        setMessage(""); // Xoá nội dung message
+        setTimeout(() => {
+            inputRef.current?.focus(); // Focus input
+        }, 0);
     };
 
     return (
@@ -93,7 +144,7 @@ const ChatInput = ({
                             </span>
                         </div>
                         <button
-                            onClick={() => setReplyMessage(null)}
+                            onClick={handleCancelReply}
                             className="cursor-pointer"
                         >
                             <X size={18} />
@@ -134,6 +185,19 @@ const ChatInput = ({
                 id="upload-file"
                 onChange={handleFilesChange}
             />
+            {editMessage && (
+                <div className="rounded-lg mb-2 text-sm text-[var(--text-secondary-color)]">
+                    <div className="flex justify-between items-center">
+                        <span>Đang chỉnh sửa tin nhắn</span>
+                        <button
+                            onClick={handleCancelEdit}
+                            className="cursor-pointer"
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
+                </div>
+            )}
             <div className="flex items-center gap-3">
                 <Smile />
                 <Input
@@ -144,10 +208,16 @@ const ChatInput = ({
                     onKeyDown={handleKeyDown}
                     className="border-none focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
-                {message.trim() || selectedFiles.length > 0 ? (
+
+                {message.trim() && selectedFiles.length === 0 ? (
                     <button
-                        className="text-[var(--button-enable-color)] cursor-pointer hover:text-[var(--text-primary-color)]"
+                        className={`text-[var(--button-enable-color)] ${
+                            isSendDisabled()
+                                ? "cursor-not-allowed"
+                                : "cursor-pointer hover:text-[var(--text-primary-color)]"
+                        }`}
                         onClick={handleSendMessage}
+                        disabled={isSendDisabled()}
                     >
                         Send
                     </button>
