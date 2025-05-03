@@ -29,7 +29,20 @@ const ChatHeader = ({
                 )}
                 <div className="font-semibold">{nameGroupChat}</div>
             </div>
-            <div className="flex gap-4">{/* Các nút chức năng */}</div>
+            <div className="flex gap-4">
+                <Phone className="cursor-pointer" />
+                <Video className="cursor-pointer" />
+                <Info className="cursor-pointer" />
+                <Info
+                    className={`cursor-pointer rounded-full  ${
+                        showInfo
+                            ? "text-[var(--primary-color)] bg-[var(--text-primary-color)]"
+                            : ""
+                    }`} // Thêm điều kiện màu sắc
+                    onClick={onToggleInfo}
+                    isGroup={isGroup}
+                />
+            </div>
         </div>
     );
 };
