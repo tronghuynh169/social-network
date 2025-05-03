@@ -169,7 +169,7 @@ export default function PostCard({ post }) {
   };
 
     const handleGoToPost = () => {
-      window.location.href = `/post/${post._id}`;
+      navigate(`/post/${post._id}`, { replace: false });
     };
   
     const handleCopyLink = () => {
@@ -177,10 +177,10 @@ export default function PostCard({ post }) {
       setShowOptionModal(false);
       setCopyModalVisible(true);
 
-      // Ẩn modal sau 3 giây
+      // Ẩn modal sau 1.5 giây
       setTimeout(() => {
         setCopyModalVisible(false);
-      }, 3000);
+      }, 1500);
     };
 
 

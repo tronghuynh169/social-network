@@ -34,6 +34,8 @@ import CommentItem from "~/components/ui/PostUI/Post/CommentItem";
 import { usePosts } from '~/context/PostContext';
 import PostModal from "~/components/ui/PostUI/PostUpLoadUI/PostModal";
 import LikesModal from "~/components/ui/PostUI/Post/LikesModal";
+import CopyLinkModal from "~/components/ui/PostUI/Post/CopyLinkModal";
+import PostDetailSkeleton from "~/components/ui/PostUI/Post/PostDetailSkeleton";
 
 export default function PostDetailPage({ isModal = false }) {
     const { updatePostLike, setPosts, posts, updatePostData } = usePosts(); // trong PostDetailPage
@@ -60,7 +62,9 @@ export default function PostDetailPage({ isModal = false }) {
     const [likeAnimationTrigger, setLikeAnimationTrigger] = useState(false);
     const [showLikesModal, setShowLikesModal] = useState(false);
     const commentInputRef = useRef(null);
-
+    const [isCopyModalVisible, setCopyModalVisible] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    
     const handleDelete = () => {
         setShowOptionModal(false);
         setShowConfirmDeleteModal(true); // mở modal xác nhận
@@ -86,13 +90,19 @@ export default function PostDetailPage({ isModal = false }) {
 
     
     
-      const handleGoToPost = () => {
-        window.location.href = `/post/${post._id}`;
+    const handleGoToPost = () => {
+        navigate(`/post/${postDetails.post._id}`, { replace: false });
       };
     
       const handleCopyLink = () => {
-        navigator.clipboard.writeText(`${window.location.origin}/post/${post._id}`);
-        alert('📋 Đã sao chép liên kết!');
+        navigator.clipboard.writeText(`${window.location.origin}/post/${postDetails.post._id}`);
+        setShowOptionModal(false);
+        setCopyModalVisible(true);
+  
+        // Ẩn modal sau 1.5 giây
+        setTimeout(() => {
+          setCopyModalVisible(false);
+        }, 1500);
       };
 
     const handleSlideChange = (swiper) => {
@@ -255,6 +265,7 @@ export default function PostDetailPage({ isModal = false }) {
     };
 
     const fetchPostDetails = async () => {
+        setIsLoading(true); // Bắt đầu loading
         try {
             const response = await getPostDetails(postId);
             const post = response.data.post;
@@ -265,8 +276,12 @@ export default function PostDetailPage({ isModal = false }) {
             return response.data; // ✨ thêm dòng này để return dữ liệu
         } catch (error) {
             console.error("Error fetching post details:", error);
-        }
+        } finally {
+            setIsLoading(false); // Kết thúc loading dù thành công hay thất bại
+          }
     };
+
+    
 
     useEffect(() => {
         fetchPostDetails();
@@ -291,18 +306,24 @@ export default function PostDetailPage({ isModal = false }) {
         }
     }, [isModal]);
 
-    if (!postDetails) {
-        return <div className="text-white p-4">Loading...</div>;
-    }
+    if (!postDetails && !isModal) {
+        return <PostDetailSkeleton />
+      }
+
+    // if (isLoading) {
+    //     return <PostDetailSkeleton />;
+    // }
 
     // Tính isOwner sau khi đã có postDetails
     const isOwner = user && postDetails?.post?.userId._id === user.id;
     const hasMedia = postDetails?.post?.media?.length > 0;
     const isSingleVideo =
-        postDetails.post.media?.length === 1 &&
-        postDetails.post.media[0].type === "video";
+        postDetails?.post.media?.length === 1 &&
+        postDetails?.post.media[0].type === "video";
 
-    const modalContent = (
+    const modalContent = !postDetails ? (
+        <PostDetailSkeleton isModal={isModal} />
+      ) : (
         <div
             className={`bg-[var(--primary-color)] h-[90vh] w-full overflow-hidden flex
                 ${
@@ -320,9 +341,10 @@ export default function PostDetailPage({ isModal = false }) {
                     <X className="w-6 h-6" />
                 </button>
             )}
-            {/* Left: Media */}
-            {/* Media */}
-            {hasMedia && (
+            
+                {/* Left: Media */}
+                {/* Media */}
+                {hasMedia && (
                 <div className="md:w-1/2 flex items-center justify-center bg-black relative">
                     <Swiper
                         modules={[Pagination]}
@@ -430,6 +452,10 @@ export default function PostDetailPage({ isModal = false }) {
                             onCancel={() => setShowConfirmDeleteModal(false)}
                         />
                         )}
+                        {
+                        isCopyModalVisible &&
+                        <CopyLinkModal isVisible={isCopyModalVisible} onClose={() => setCopyModalVisible(false)} />
+                        }
                     </div>
 
                     {/* Caption */}
@@ -595,7 +621,7 @@ export default function PostDetailPage({ isModal = false }) {
             </div>
         </div>
     ) : (
-        <div className="min-h-screen bg-black text-white flex justify-center items-start">
+        <div className="min-h-screen bg-black text-white flex justify-center items-center">
             <div className="w-full max-w-5xl flex flex-col md:flex-row">
                 {modalContent}
             </div>
