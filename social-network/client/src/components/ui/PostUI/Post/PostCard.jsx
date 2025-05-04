@@ -25,6 +25,7 @@ import ConfirmDeleteModal from "~/components/ui/PostUI/Post/ConfirmDeleteModal";
 import PostModal from "~/components/ui/PostUI/PostUpLoadUI/PostModal";
 import CommentItem from "~/components/ui/PostUI/Post/CommentItem";
 import CopyLinkModal from "~/components/ui/PostUI/Post/CopyLinkModal";
+import UserHoverCard from "~/components/ui/PostUI/Post/UserHoverCard";
 
 
 
@@ -56,6 +57,7 @@ export default function PostCard({ post }) {
     const [isCommenting, setIsCommenting] = useState(false);
     const [isCopyModalVisible, setCopyModalVisible] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
+    const [hoverSource, setHoverSource] = useState(null); // 'avatar' or 'name'
 
     const handleNavigateToDetail = () => {
       navigate(`/post/${post._id}`, {
@@ -318,26 +320,48 @@ export default function PostCard({ post }) {
   return (
     <div className="max-w-md mx-auto bg-black text-[var(--text-primary-color)] border-b border-[var(--border-color)] p-4 space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between space-x-3">
-        <div className="flex items-center space-x-3">
-          <img
-            src={info?.avatar || "/default-avatar.png"}
-            alt="Avatar"
-            className="w-10 h-10 rounded-full cursor-pointer hover:opacity-80"
-            onClick={handleGoToProfile}
-          />
-          <div>
-            <p onClick={handleGoToProfile} className="font-semibold text-sm cursor-pointer">{info?.fullName}</p>
-            <p className="text-xs text-gray-400">
-              {formatPostTime(post.createdAt)}
-          </p>
+        <div className="flex items-center justify-between space-x-3">
+          <div className="relative" onMouseEnter={() => setIsHovered(true)}
+                                  onMouseLeave={() => {
+                                    setIsHovered(false);
+                                    setHoverSource(null);
+                                  }}>
+            <div className="flex items-center space-x-3">
+              <div onMouseEnter={() => {
+                setHoverSource('avatar');
+                setIsHovered(true);
+              }}>
+                <img
+                  src={info?.avatar || "/default-avatar.png"}
+                  alt="Avatar"
+                  className="w-10 h-10 rounded-full cursor-pointer hover:opacity-80"
+                  onClick={handleGoToProfile}
+                />
+              </div>
+    
+              <div onMouseEnter={() => {
+                  setHoverSource('name');
+                  setIsHovered(true);
+                }}>
+                <p onClick={handleGoToProfile} 
+                  className="font-semibold text-sm cursor-pointer">
+                  {info?.fullName}
+                </p>
+                <p className="text-xs text-gray-400">
+                  {formatPostTime(post.createdAt)}
+              </p>
+              </div>
+              {/* Modal */}
+              {isHovered && <UserHoverCard info={info} />
+              }
           </div>
         </div>
         <MoreHorizontal
             className="w-4 h-4 cursor-pointer"
             onClick={() => setShowOptionModal(true)}
         />
-        {showOptionModal && (
+      </div>
+      {showOptionModal && (
             <PostOptionsModal
             showGoToPostButton={true}
             isOwner={isOwner}
@@ -383,8 +407,6 @@ export default function PostCard({ post }) {
                 }}
             />
         )}
-      </div>
-
       {/* Media */}
       {post.media?.length > 0 && (
       <div className="w-full rounded-xl relative">

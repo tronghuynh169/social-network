@@ -1,54 +1,64 @@
-import React, { useState } from 'react';
+import { useUser } from "~/context/UserContext";
+import { MessageCircle  } from "lucide-react";
 
-const UserHoverCard = () => {
-  const [isHovered, setIsHovered] = useState(false);
-
-  return (
-    <div className="relative inline-block">
-      {/* Khu vực hover */}
-      <div
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        className="cursor-pointer flex items-center space-x-2"
-      >
-        <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
-        <span className="font-semibold text-white">cristiano</span>
-      </div>
-
-      {/* Popup hiển thị khi hover */}
-      {isHovered && (
-        <div
-          className="absolute z-50 top-12 left-0 bg-neutral-900 text-white rounded-xl p-4 shadow-xl w-72"
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-        >
-          <h3 className="text-lg font-bold">Cristiano Ronaldo</h3>
-          <div className="flex justify-between text-sm mt-2">
-            <div className="text-center">
-              <p className="font-bold">3.880</p>
-              <p>bài viết</p>
-            </div>
-            <div className="text-center">
-              <p className="font-bold">653 Tr</p>
-              <p>người theo dõi</p>
-            </div>
-            <div className="text-center">
-              <p className="font-bold">602</p>
-              <p>đang theo dõi</p>
-            </div>
-          </div>
-          <div className="flex justify-between mt-4 space-x-2">
-            <button className="bg-white text-black font-semibold px-4 py-1 rounded-lg w-full">
-              Nhắn tin
-            </button>
-            <button className="bg-neutral-800 text-white font-semibold px-4 py-1 rounded-lg w-full">
-              Đang theo dõi
-            </button>
+const UserHoverCard = ({ info }) => {
+    const { user } = useUser();
+    const isUser = user.id === info.userId;
+    return (
+      <div className="absolute z-50 top-[40px] left-0 w-80 bg-[var(--primary-color)] text-white rounded-md p-4 shadow-xl border border-[var(--border-color)]">
+        {/* Avatar + tên */}
+        <div className="flex items-center space-x-3">
+          <img
+            src={info.avatar || "/default-avatar.png"}
+            alt="avatar"
+            className="w-14 h-14 rounded-full"
+          />
+          <div>
+            <p className="flex items-center gap-1 font-semibold text-base">
+            {info.fullName}
+            </p>
           </div>
         </div>
-      )}
-    </div>
-  );
-};
+  
+        {/* Stats */}
+        <div className="flex justify-between text-sm mt-4 border-b border-[var(--border-color)] pb-4">
+          <div className="text-center">
+            <p className="font-bold text-white">1</p>
+            <p className="text-gray-400">bài viết</p>
+          </div>
+          <div className="text-center">
+            <p className="font-bold text-white">1</p>
+            <p className="text-gray-400">người theo dõi</p>
+          </div>
+          <div className="text-center">
+            <p className="font-bold text-white">1</p>
+            <p className="text-gray-400">đang theo dõi</p>
+          </div>
+        </div>
+  
+        {/* Buttons */}
+        <div className="flex justify-between mt-4 space-x-2">
+            {
+                isUser ? ( <button className="flex-1 bg-[var(--button-color)] text-[var(--text-primary-color)] text-sm font-semibold py-2 rounded-lg hover:bg-neutral-700">
+                            Trang cá nhân
+                        </button> ) :
+                (
+                    <>
+                        <div className="flex-1 flex items-center justify-center bg-[var(--button-enable-color)] text-[var(--text-primary-color)] text-sm font-semibold py-0 rounded-lg hover:opacity-90">
+                            <MessageCircle className="w-6 h-6 mr-1"/>
+                            <button className="">
+                                Nhắn tin
+                            </button>
+                        </div>
+                        <button className="flex-1 bg-[var(--button-color)] text-[var(--text-primary-color)] text-sm font-semibold py-2 rounded-lg hover:bg-neutral-700">
+                            Đang theo dõi
+                        </button>
+                    </>
+                )
+            }
+        </div>
+      </div>
+    );
+  };
 
-export default UserHoverCard;
+  export default UserHoverCard
