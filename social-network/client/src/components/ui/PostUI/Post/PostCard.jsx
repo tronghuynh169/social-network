@@ -55,6 +55,7 @@ export default function PostCard({ post }) {
     const [displayComment, setDisplayComment] = useState(""); // Chỉ hiện @Tên
     const [isCommenting, setIsCommenting] = useState(false);
     const [isCopyModalVisible, setCopyModalVisible] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
 
     const handleNavigateToDetail = () => {
       navigate(`/post/${post._id}`, {
@@ -170,6 +171,10 @@ export default function PostCard({ post }) {
 
     const handleGoToPost = () => {
       navigate(`/post/${post._id}`, { replace: false });
+    };
+
+    const handleGoToProfile = () => {
+      navigate(`/${info.slug}`, { replace: false });
     };
   
     const handleCopyLink = () => {
@@ -318,10 +323,11 @@ export default function PostCard({ post }) {
           <img
             src={info?.avatar || "/default-avatar.png"}
             alt="Avatar"
-            className="w-10 h-10 rounded-full"
+            className="w-10 h-10 rounded-full cursor-pointer hover:opacity-80"
+            onClick={handleGoToProfile}
           />
           <div>
-            <p className="font-semibold text-sm">{info?.fullName}</p>
+            <p onClick={handleGoToProfile} className="font-semibold text-sm cursor-pointer">{info?.fullName}</p>
             <p className="text-xs text-gray-400">
               {formatPostTime(post.createdAt)}
           </p>
@@ -333,6 +339,7 @@ export default function PostCard({ post }) {
         />
         {showOptionModal && (
             <PostOptionsModal
+            showGoToPostButton={true}
             isOwner={isOwner}
             onClose={() => setShowOptionModal(false)}
             onDelete={handleDelete}

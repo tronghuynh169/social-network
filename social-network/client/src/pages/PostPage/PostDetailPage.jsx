@@ -92,18 +92,22 @@ export default function PostDetailPage({ isModal = false }) {
     
     const handleGoToPost = () => {
         navigate(`/post/${postDetails.post._id}`, { replace: false });
-      };
+    };
+
+    const handleGoToProfile = () => {
+        navigate(`/${info.slug}`, { replace: false });
+    };
     
-      const handleCopyLink = () => {
-        navigator.clipboard.writeText(`${window.location.origin}/post/${postDetails.post._id}`);
-        setShowOptionModal(false);
-        setCopyModalVisible(true);
-  
-        // Ẩn modal sau 1.5 giây
-        setTimeout(() => {
-          setCopyModalVisible(false);
-        }, 1500);
-      };
+    const handleCopyLink = () => {
+    navigator.clipboard.writeText(`${window.location.origin}/post/${postDetails.post._id}`);
+    setShowOptionModal(false);
+    setCopyModalVisible(true);
+
+    // Ẩn modal sau 1.5 giây
+    setTimeout(() => {
+        setCopyModalVisible(false);
+    }, 1500);
+    };
 
     const handleSlideChange = (swiper) => {
         setAtStart(swiper.isBeginning);
@@ -196,7 +200,7 @@ export default function PostDetailPage({ isModal = false }) {
             }
 
             const profile = await getProfileByUserId(user.id);
-
+            console.log(profile)
             const fullComment = {
                 ...newComment,
                 content: comment,
@@ -205,6 +209,7 @@ export default function PostDetailPage({ isModal = false }) {
                     username: user.username,
                     fullName: profile.fullName,
                     avatar: profile.avatar,
+                    slug: profile.slug,
                 },
                 createdAt: new Date().toISOString(),
                 isLikedComment: false,
@@ -412,10 +417,11 @@ export default function PostDetailPage({ isModal = false }) {
                             <img
                                 src={info?.avatar || "/default-avatar.png"}
                                 alt="Avatar"
-                                className="w-10 h-10 rounded-full"
+                                className="w-10 h-10 rounded-full cursor-pointer hover:opacity-80"
+                                onClick={handleGoToProfile}
                             />
                             <div>
-                                <p className="font-semibold text-sm">
+                                <p onClick={handleGoToProfile} className="font-semibold text-sm cursor-pointer">
                                     {info?.fullName}
                                 </p>
                                 <p className="text-xs text-gray-400">
@@ -429,6 +435,7 @@ export default function PostDetailPage({ isModal = false }) {
                         />
                         {showOptionModal && (
                             <PostOptionsModal
+                            showGoToPostButton={isModal}
                             isOwner={isOwner}
                             onClose={() => setShowOptionModal(false)}
                             onDelete={handleDelete}

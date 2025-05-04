@@ -268,6 +268,7 @@ import LikesCommentModal from "./LikesCommentModal"; // import đúng đường 
 import { formatPostTime } from "~/components/utils/formatPostTime";
 import DeleteCommentModal from "./DeleteCommentModal";
 import { getProfileByUserId } from "~/api/profile";
+import { useNavigate } from "react-router-dom";
 
 const CommentItem = ({
     comment,
@@ -279,6 +280,7 @@ const CommentItem = ({
     isDirectReply = false, // mới thêm
     onNavigateToDetail
 }) => {
+    const navigate = useNavigate();
     const [showLikesModal, setShowLikesModal] = useState(false);
     const [profile, setProfile] = useState();
     const [showDeleteModal, setShowDeleteModal] = useState(false); // State để mở modal xóa
@@ -339,6 +341,13 @@ const CommentItem = ({
         }
       }, [showReplies]);
 
+      const handleGoToProfile = async () => {
+        const info = await getProfileByUserId(comment.userId._id);
+        if (info) {
+          navigate(`/${info.slug}`);
+        }
+      };
+
 
     return (
         <div className={`w-full ${indentClass}`}>
@@ -347,13 +356,14 @@ const CommentItem = ({
                 <img
                     src={comment.userId?.avatar || "/default-avatar.png"}
                     alt="Avatar"
-                    className="w-8 h-8 rounded-full object-cover"
+                    className="w-8 h-8 rounded-full object-cover cursor-pointer hover:opacity-80"
+                    onClick={handleGoToProfile}
                 />
 
                 {/* Nội dung */}
                 <div className="flex-1">
                     <p className="text-sm leading-snug break-words break-all whitespace-pre-wrap">
-                        <span className="font-semibold">
+                        <span className="font-semibold cursor-pointer" onClick={handleGoToProfile}>
                             {comment.userId.fullName || comment.userId.username}
                         </span>{" "}
                         <span>{renderCommentText(comment.content)}</span>

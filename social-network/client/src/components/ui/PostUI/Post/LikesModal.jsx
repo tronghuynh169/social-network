@@ -7,8 +7,10 @@ import {
     followUser,
     unfollowUser,
 } from "~/api/profile";
+import { useNavigate } from "react-router-dom";
 
 const LikesModal = ({ postId, currentUserId, onClose }) => {
+    const navigate = useNavigate(); 
     const [likesUsers, setLikesUsers] = useState([]);
     const [followingList, setFollowingList] = useState(new Set());
     const [loading, setLoading] = useState(true);
@@ -126,6 +128,10 @@ const LikesModal = ({ postId, currentUserId, onClose }) => {
         }
     };
 
+    const handleGoToProfile = (slug) => {
+        navigate(`/${slug}`, { replace: false });
+      };
+
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (modalRef.current && !modalRef.current.contains(event.target)) {
@@ -155,6 +161,7 @@ const LikesModal = ({ postId, currentUserId, onClose }) => {
                     exit={{ scale: 0.8, opacity: 0 }}
                     transition={{ duration: 0.2 }}
                 >
+                    {console.log(likesUsers)}
                     {/* Header */}
                     <div className="flex items-center justify-between px-4 py-1 border-b border-neutral-700">
                         <div className="flex-1 text-center">
@@ -197,11 +204,13 @@ const LikesModal = ({ postId, currentUserId, onClose }) => {
                                                     "/default-avatar.png"
                                                 }
                                                 alt={user.fullName}
-                                                className="w-10 h-10 rounded-full object-cover"
+                                                className="w-10 h-10 rounded-full object-cover cursor-pointer hover:opacity-80"
+                                                onClick={() => handleGoToProfile(user.slug)}
                                             />
                                             <div>
                                                 {user.fullName && (
-                                                    <p className="text-[var(--text-primary-color)]-400 text-sm">
+                                                    <p className="text-[var(--text-primary-color)]-400 text-sm cursor-pointer"
+                                                     onClick={() => handleGoToProfile(user.slug)}>
                                                         {user.fullName}
                                                     </p>
                                                 )}

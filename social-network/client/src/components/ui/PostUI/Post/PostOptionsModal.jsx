@@ -1,5 +1,7 @@
 import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 const PostOptionsModal = ({
+    showGoToPostButton,
     isOwner,
     onClose,
     onDelete,
@@ -7,6 +9,8 @@ const PostOptionsModal = ({
     onGoToPost,
     onCopyLink,
   }) => {
+    const location = useLocation();
+    const isInPageView = location.pathname.includes("/page"); // tùy vào path bạn muốn chặn
     
 
     return (
@@ -28,12 +32,14 @@ const PostOptionsModal = ({
               </button>
             </>
           )}
-          <button
-            onClick={onGoToPost}
-            className="w-full py-3 text-[var(--text-primary-color)] hover:bg-[#333] border-b border-[var(--border-color)] cursor-pointer"
-          >
-            Đi đến bài viết
-          </button>
+          { showGoToPostButton &&
+            <button
+              onClick={onGoToPost}
+              className="w-full py-3 text-[var(--text-primary-color)] hover:bg-[#333] border-b border-[var(--border-color)] cursor-pointer"
+            >
+              Đi đến bài viết
+            </button>
+          }
           <button
             onClick={onCopyLink}
             className="w-full py-3 text-[var(--text-primary-color)] hover:bg-[#333] border-b border-[var(--border-color)] cursor-pointer"

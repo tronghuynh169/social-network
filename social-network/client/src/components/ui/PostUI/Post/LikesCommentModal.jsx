@@ -7,8 +7,10 @@ import {
     followUser,
     unfollowUser,
 } from "~/api/profile";
+import { useNavigate } from "react-router-dom";
 
 const LikesCommentModal = ({ postId,commentId ,currentUserId, onClose }) => {
+    const navigate = useNavigate(); 
     const [likesUsers, setLikesUsers] = useState([]);
     const [followingList, setFollowingList] = useState(new Set());
     const [loading, setLoading] = useState(true);
@@ -126,6 +128,10 @@ const LikesCommentModal = ({ postId,commentId ,currentUserId, onClose }) => {
         }
     };
 
+    const handleGoToProfile = (slug) => {
+        navigate(`/${slug}`, { replace: false });
+      };
+
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (modalRef.current && !modalRef.current.contains(event.target)) {
@@ -197,11 +203,12 @@ const LikesCommentModal = ({ postId,commentId ,currentUserId, onClose }) => {
                                                     "/default-avatar.png"
                                                 }
                                                 alt={user.fullName}
-                                                className="w-10 h-10 rounded-full object-cover"
+                                                className="w-10 h-10 rounded-full object-cover cursor-pointer hover:opacity-80"
+                                                onClick={() => handleGoToProfile(user.slug)}
                                             />
                                             <div>
                                                 {user.fullName && (
-                                                    <p className="text-[var(--text-primary-color)]-400 text-sm">
+                                                    <p onClick={() => handleGoToProfile(user.slug)} className="text-[var(--text-primary-color)]-400 text-sm cursor-pointer">
                                                         {user.fullName}
                                                     </p>
                                                 )}
