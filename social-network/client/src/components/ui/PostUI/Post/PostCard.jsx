@@ -25,8 +25,7 @@ import ConfirmDeleteModal from "~/components/ui/PostUI/Post/ConfirmDeleteModal";
 import PostModal from "~/components/ui/PostUI/PostUpLoadUI/PostModal";
 import CommentItem from "~/components/ui/PostUI/Post/CommentItem";
 import CopyLinkModal from "~/components/ui/PostUI/Post/CopyLinkModal";
-import UserHoverCard from "~/components/ui/PostUI/Post/UserHoverCard";
-
+import UserHoverCard from "~/components/ui/UserHoverCard/UserHoverCard";
 
 
 export default function PostCard({ post }) {
@@ -322,7 +321,7 @@ export default function PostCard({ post }) {
       {/* Header */}
         <div className="flex items-center justify-between space-x-3">
           <div className="relative" onMouseEnter={() => setIsHovered(true)}
-                                  onMouseLeave={() => {
+                                    onMouseLeave={() => {
                                     setIsHovered(false);
                                     setHoverSource(null);
                                   }}>
