@@ -91,3 +91,14 @@ export const getCommentLikes = async (postId, commentId) => {
 export const deleteComment = async (postId, commentId) => {
     return await api.delete(`/${postId}/comments/${commentId}`);
 };
+
+// Lấy số lượng bài viết của một user cụ thể
+export const getUserPostCount = async (userId) => {
+    try {
+        const response = await api.get(`/user/${userId}/count`);
+        return response.data.count; // Trả về số lượng
+    } catch (error) {
+        console.error('Error fetching post count:', error);
+        throw error.response?.data || error;
+    }
+};

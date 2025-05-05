@@ -417,7 +417,7 @@ export default function PostDetailPage({ isModal = false }) {
                             <img
                                 src={info?.avatar || "/default-avatar.png"}
                                 alt="Avatar"
-                                className="w-10 h-10 rounded-full cursor-pointer hover:opacity-80"
+                                className="w-10 h-10 rounded-full cursor-pointer hover:opacity-90"
                                 onClick={handleGoToProfile}
                             />
                             <div>

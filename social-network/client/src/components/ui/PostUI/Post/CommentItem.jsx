@@ -356,7 +356,7 @@ const CommentItem = ({
                 <img
                     src={comment.userId?.avatar || "/default-avatar.png"}
                     alt="Avatar"
-                    className="w-8 h-8 rounded-full object-cover cursor-pointer hover:opacity-80"
+                    className="w-8 h-8 rounded-full object-cover cursor-pointer hover:opacity-90"
                     onClick={handleGoToProfile}
                 />
 

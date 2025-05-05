@@ -135,6 +135,16 @@ exports.getUserPosts = async (req, res) => {
     }
 };
 
+exports.getUserPostCount = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const count = await Post.countDocuments({ userId });
+        res.json({ count });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
 // Lấy tất cả bài viết (chỉ hiện bài của mình và người mình follow)
 exports.getAllPosts = async (req, res) => {
     try {

@@ -15,6 +15,7 @@ const {
     deleteComment,
     deletePost,
     updatePost,
+    getUserPostCount,
 } = require('../controllers/postController');
 const auth = require('../middlewares/authMiddleware');
 const upload = require('../middlewares/uploadMiddleware');
@@ -33,6 +34,7 @@ router.post(
 ); // Cho phép tối đa 10 ảnh
 router.get('/', auth, getAllPosts); // API lấy bài viết của mình và người mình follow
 router.get('/user/:id', auth, getUserPosts); // API lấy bài viết của một user
+router.get('/user/:id/count', auth, getUserPostCount);
 router.delete('/:postId', auth, deletePost);
 router.put(
     '/:postId',

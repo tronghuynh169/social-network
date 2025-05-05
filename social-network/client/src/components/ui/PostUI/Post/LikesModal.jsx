@@ -204,7 +204,7 @@ const LikesModal = ({ postId, currentUserId, onClose }) => {
                                                     "/default-avatar.png"
                                                 }
                                                 alt={user.fullName}
-                                                className="w-10 h-10 rounded-full object-cover cursor-pointer hover:opacity-80"
+                                                className="w-10 h-10 rounded-full object-cover cursor-pointer hover:opacity-90"
                                                 onClick={() => handleGoToProfile(user.slug)}
                                             />
                                             <div>

@@ -16,7 +16,7 @@ import {
   addReply,
 } from "~/api/post";
 import {formatPostTime} from "~/components/utils/formatPostTime";
-import { motion } from 'framer-motion';
+import { hover, motion } from 'framer-motion';
 import LikesModal from "./LikesModal";
 import { useUser } from "~/context/UserContext";
 import { usePosts } from "~/context/PostContext";
@@ -334,7 +334,7 @@ export default function PostCard({ post }) {
                 <img
                   src={info?.avatar || "/default-avatar.png"}
                   alt="Avatar"
-                  className="w-10 h-10 rounded-full cursor-pointer hover:opacity-80"
+                  className="w-10 h-10 rounded-full cursor-pointer hover:opacity-90"
                   onClick={handleGoToProfile}
                 />
               </div>
@@ -352,7 +352,7 @@ export default function PostCard({ post }) {
               </p>
               </div>
               {/* Modal */}
-              {isHovered && <UserHoverCard info={info} />
+              {isHovered && <UserHoverCard info={info} hoverPosition={hoverSource} />
               }
           </div>
         </div>
