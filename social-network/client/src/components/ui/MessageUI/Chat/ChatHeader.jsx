@@ -32,7 +32,6 @@ const ChatHeader = ({
             <div className="flex gap-4">
                 <Phone className="cursor-pointer" />
                 <Video className="cursor-pointer" />
-                <Info className="cursor-pointer" />
                 <Info
                     className={`cursor-pointer rounded-full  ${
                         showInfo
