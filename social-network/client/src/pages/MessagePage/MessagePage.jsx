@@ -249,6 +249,7 @@ const MessagePage = () => {
 
             {showAddMemberModal && (
                 <AddMemberModal
+                    membersInfo={conversation?.members}
                     open={showAddMemberModal}
                     onClose={() => setShowAddMemberModal(false)}
                 />

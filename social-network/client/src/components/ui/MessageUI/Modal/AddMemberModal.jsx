@@ -3,7 +3,7 @@ import { X, Search, Check } from "lucide-react";
 import unidecode from "unidecode";
 import { getAllProfiles } from "~/api/profile"; // Giả sử hàm getAllProfiles được xuất từ tệp api.js
 
-const AddMemberModal = ({ open, onClose, onSelect }) => {
+const AddMemberModal = ({ open, onClose, onSelect, membersInfo }) => {
     const [searchValue, setSearchValue] = useState("");
     const [allProfiles, setAllProfiles] = useState([]);
     const [results, setResults] = useState([]);
@@ -14,15 +14,22 @@ const AddMemberModal = ({ open, onClose, onSelect }) => {
             const fetchProfiles = async () => {
                 try {
                     const data = await getAllProfiles();
-                    setAllProfiles(data);
-                    setResults(data); // Hiển thị toàn bộ danh sách ban đầu
+                    // Lọc bỏ những người đã có trong membersInfo
+                    const filteredData = data.filter(
+                        (profile) =>
+                            !membersInfo.some(
+                                (member) => member._id === profile._id
+                            )
+                    );
+                    setAllProfiles(filteredData);
+                    setResults(filteredData); // Hiển thị danh sách ban đầu
                 } catch (error) {
                     console.error("Lỗi khi lấy danh sách profile:", error);
                 }
             };
             fetchProfiles();
         }
-    }, [open]);
+    }, [open, membersInfo]);
 
     useEffect(() => {
         if (!open) {
