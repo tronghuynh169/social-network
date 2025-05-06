@@ -36,6 +36,8 @@ import PostModal from "~/components/ui/PostUI/PostUpLoadUI/PostModal";
 import LikesModal from "~/components/ui/PostUI/Post/LikesModal";
 import CopyLinkModal from "~/components/ui/PostUI/Post/CopyLinkModal";
 import PostDetailSkeleton from "~/components/ui/PostUI/Post/PostDetailSkeleton";
+import UserHoverCard from "~/components/ui/UserHoverCard/UserHoverCard";
+
 
 export default function PostDetailPage({ isModal = false }) {
     const { updatePostLike, setPosts, posts, updatePostData } = usePosts(); // trong PostDetailPage
@@ -64,6 +66,8 @@ export default function PostDetailPage({ isModal = false }) {
     const commentInputRef = useRef(null);
     const [isCopyModalVisible, setCopyModalVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [isHovered, setIsHovered] = useState(false);
+    const [hoverSource, setHoverSource] = useState(null); // 'avatar' or 'name'
     
     const handleDelete = () => {
         setShowOptionModal(false);
@@ -413,22 +417,42 @@ export default function PostDetailPage({ isModal = false }) {
                 {/* Caption + Info */}
                 <div className="border-b-2 pb-2 border-[var(--border-color)]">
                     <div className="flex items-center justify-between">
+                    <div className="relative" 
+                        onMouseEnter={() => setIsHovered(true)}
+                        onMouseLeave={() => {
+                        setIsHovered(false);
+                        setHoverSource(null);
+                    }}>
                         <div className="flex items-center space-x-3">
+                        <div onMouseEnter={() => {
+                            setHoverSource('avatar');
+                            setIsHovered(true);
+                        }}>
                             <img
-                                src={info?.avatar || "/default-avatar.png"}
-                                alt="Avatar"
-                                className="w-10 h-10 rounded-full cursor-pointer hover:opacity-90"
-                                onClick={handleGoToProfile}
+                            src={info?.avatar || "/default-avatar.png"}
+                            alt="Avatar"
+                            className="w-10 h-10 rounded-full cursor-pointer hover:opacity-90"
+                            onClick={handleGoToProfile}
                             />
-                            <div>
-                                <p onClick={handleGoToProfile} className="font-semibold text-sm cursor-pointer">
-                                    {info?.fullName}
-                                </p>
-                                <p className="text-xs text-gray-400">
-                                    {formatPostTime(postDetails.post.createdAt)}
-                                </p>
-                            </div>
                         </div>
+                
+                        <div onMouseEnter={() => {
+                            setHoverSource('name');
+                            setIsHovered(true);
+                            }}>
+                            <p onClick={handleGoToProfile} 
+                            className="font-semibold text-sm cursor-pointer">
+                            {info?.fullName}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                            {formatPostTime(postDetails.post.createdAt)}
+                        </p>
+                        </div>
+                        {/* Modal */}
+                        {isHovered && <UserHoverCard info={info} hoverPosition={hoverSource} />
+                        }
+                    </div>
+                    </div>
                         <MoreHorizontal
                             className="w-4 h-4 cursor-pointer"
                             onClick={() => setShowOptionModal(true)}

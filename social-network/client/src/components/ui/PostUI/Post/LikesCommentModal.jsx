@@ -8,6 +8,7 @@ import {
     unfollowUser,
 } from "~/api/profile";
 import { useNavigate } from "react-router-dom";
+import UserHoverCardPortal from "~/components/ui/UserHoverCard/UserHoverCardPortal";
 
 const LikesCommentModal = ({ postId,commentId ,currentUserId, onClose }) => {
     const navigate = useNavigate(); 
@@ -16,8 +17,13 @@ const LikesCommentModal = ({ postId,commentId ,currentUserId, onClose }) => {
     const [loading, setLoading] = useState(true);
     const [followingLoading, setFollowingLoading] = useState({});
     const [currentProfileId, setCurrentProfileId] = useState(null);
+    const [isHovered, setIsHovered] = useState(false);
+    const [hoverSource, setHoverSource] = useState(null); // 'avatar' or 'name'
 
     const modalRef = useRef(null);
+    const userRefs = useRef({});
+    const hoverTimeoutRef = useRef(null);
+    const hoverCardRef = useRef(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -132,11 +138,36 @@ const LikesCommentModal = ({ postId,commentId ,currentUserId, onClose }) => {
         navigate(`/${slug}`, { replace: false });
       };
 
+      // 1. thêm hàm này ngay trong component
+    const handleHoverCardFollowChange = (userId, isNowFollowing) => {
+        setFollowingList(prev => {
+        const next = new Set(prev);
+        if (isNowFollowing) next.add(userId);
+        else next.delete(userId);
+        return next;
+        });
+        // nếu bạn muốn resort lại thứ tự trong likesUsers, cũng làm ở đây:
+        setLikesUsers(prev => 
+        [...prev].sort((a, b) => {
+            const aFollow = followingList.has(a.userId) || (a.userId === currentUserId);
+            const bFollow = followingList.has(b.userId) || (b.userId === currentUserId);
+            if (a.userId === currentUserId) return 1;
+            if (b.userId === currentUserId) return -1;
+            if (aFollow === bFollow) return 0;
+            return aFollow ? -1 : 1;
+        })
+        );
+    };
+
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (modalRef.current && !modalRef.current.contains(event.target)) {
+            if (
+                modalRef.current &&
+                !modalRef.current.contains(event.target) &&
+                (!hoverCardRef.current || !hoverCardRef.current.contains(event.target))
+              ) {
                 onClose();
-            }
+              }
         };
 
         document.addEventListener("mousedown", handleClickOutside);
@@ -195,6 +226,7 @@ const LikesCommentModal = ({ postId,commentId ,currentUserId, onClose }) => {
                                     <div
                                         key={user.userId}
                                         className="flex items-center justify-between px-4 py-3 hover:bg-neutral-800 transition"
+                                        ref={(el) => (userRefs.current[user.userId] = el)}
                                     >
                                         <div className="flex items-center gap-3">
                                             <img
@@ -205,10 +237,32 @@ const LikesCommentModal = ({ postId,commentId ,currentUserId, onClose }) => {
                                                 alt={user.fullName}
                                                 className="w-10 h-10 rounded-full object-cover cursor-pointer hover:opacity-90"
                                                 onClick={() => handleGoToProfile(user.slug)}
+                                                onMouseEnter={() => {
+                                                    setIsHovered(user.userId);
+                                                    setHoverSource("avatar");
+                                                }}
+                                                onMouseLeave={() => {
+                                                    hoverTimeoutRef.current = setTimeout(() => {
+                                                        setIsHovered(false);
+                                                        setHoverSource(null);
+                                                    }, 100); // chờ 100ms để xem chuột có vào UserHoverCard không
+                                                }}
                                             />
                                             <div>
                                                 {user.fullName && (
-                                                    <p onClick={() => handleGoToProfile(user.slug)} className="text-[var(--text-primary-color)]-400 text-sm cursor-pointer">
+                                                    <p 
+                                                    onClick={() => handleGoToProfile(user.slug)} 
+                                                    onMouseEnter={() => {
+                                                        setIsHovered(user.userId);
+                                                        setHoverSource("name");
+                                                    }}
+                                                    onMouseLeave={() => {
+                                                        hoverTimeoutRef.current = setTimeout(() => {
+                                                            setIsHovered(false);
+                                                            setHoverSource(null);
+                                                        }, 100); // chờ 100ms để xem chuột có vào UserHoverCard không
+                                                    }}
+                                                    className="text-[var(--text-primary-color)]-400 text-sm cursor-pointer">
                                                         {user.fullName}
                                                     </p>
                                                 )}
@@ -237,6 +291,22 @@ const LikesCommentModal = ({ postId,commentId ,currentUserId, onClose }) => {
                                                     ? "Đang theo dõi"
                                                     : "Theo dõi"}
                                             </button>
+                                        )}
+                                        {isHovered === user.userId && (
+                                            <UserHoverCardPortal
+                                                targetRef={{ current: userRefs.current[user.userId] }}
+                                                user={user}
+                                                hoverPosition={hoverSource}
+                                                onMouseEnter={() => {
+                                                    clearTimeout(hoverTimeoutRef.current);
+                                                }}
+                                                onMouseLeave={() => {
+                                                    setIsHovered(false);
+                                                    setHoverSource(null);
+                                                }}
+                                                hoverCardRef={hoverCardRef} // 👈 truyền ref
+                                                onFollowChange={handleHoverCardFollowChange}
+                                            />
                                         )}
                                     </div>
                                 );

@@ -269,6 +269,8 @@ import { formatPostTime } from "~/components/utils/formatPostTime";
 import DeleteCommentModal from "./DeleteCommentModal";
 import { getProfileByUserId } from "~/api/profile";
 import { useNavigate } from "react-router-dom";
+import UserHoverCardPortal from "~/components/ui/UserHoverCard/UserHoverCardPortal";
+
 
 const CommentItem = ({
     comment,
@@ -286,6 +288,12 @@ const CommentItem = ({
     const [showDeleteModal, setShowDeleteModal] = useState(false); // State để mở modal xóa
     const indentClass = isDirectReply ? "pl-12" : "";
     const [showReplies, setShowReplies] = useState(false);
+    const [showHoverCard, setShowHoverCard] = useState(false);
+    const [hoverInfo, setHoverInfo] = useState(null);
+    const [hoverPosition, setHoverPosition] = useState("avatar"); // hoặc 'name'
+
+    const avatarRef = useRef(null);
+    const nameRef = useRef(null);
 
     const hasReplies = comment.replies && comment.replies.length > 0;
     // Check xem user hiện tại có từng reply comment này không
@@ -348,22 +356,48 @@ const CommentItem = ({
         }
       };
 
+    // Hàm fetch info khi hover
+    const handleMouseEnter = async (position) => {
+        setHoverPosition(position);
+        try {
+        const info = await getProfileByUserId(comment.userId._id);
+        setHoverInfo(info);
+        setShowHoverCard(true);
+        } catch (err) {
+        console.error("Lỗi fetch hover info:", err);
+        }
+    };
+
+    const handleMouseLeave = () => {
+        setShowHoverCard(false);
+        // giữ hoverInfo để tránh re-fetch nếu cần
+    };
+
 
     return (
         <div className={`w-full ${indentClass}`}>
-            <div className="flex items-start gap-3 w-full">
+            <div className="flex items-start gap-3 w-full relative">
                 {/* Avatar */}
                 <img
+                    ref={avatarRef}
                     src={comment.userId?.avatar || "/default-avatar.png"}
                     alt="Avatar"
                     className="w-8 h-8 rounded-full object-cover cursor-pointer hover:opacity-90"
                     onClick={handleGoToProfile}
+                    onMouseEnter={() => handleMouseEnter("avatar")}
+                    onMouseLeave={handleMouseLeave}
                 />
 
                 {/* Nội dung */}
                 <div className="flex-1">
                     <p className="text-sm leading-snug break-words break-all whitespace-pre-wrap">
-                        <span className="font-semibold cursor-pointer" onClick={handleGoToProfile}>
+                        <span 
+                            ref={nameRef}
+                            className="font-semibold cursor-pointer"
+                            onMouseEnter={() => handleMouseEnter("name")}
+                            onMouseLeave={handleMouseLeave}
+                            onClick={handleGoToProfile}
+                        >
                             {comment.userId.fullName || comment.userId.username}
                         </span>{" "}
                         <span>{renderCommentText(comment.content)}</span>
@@ -461,6 +495,18 @@ const CommentItem = ({
                     onClick={() => onLike(comment._id)}
                 />
             </div>
+
+        {/* Hiển thị hover card */}
+        {showHoverCard && hoverInfo && (
+            <UserHoverCardPortal
+                targetRef={hoverPosition === "avatar" ? avatarRef : nameRef}
+                user={hoverInfo}
+                hoverPosition={hoverPosition}
+                onMouseEnter={() => setShowHoverCard(true)}
+                onMouseLeave={() => setShowHoverCard(false)}
+                onFollowChange={() => {}} // hoặc hàm xử lý follow nếu có
+            />
+        )}
 
         {!showReplies && newReplies.length > 0 && (
         <div className="mt-4 space-y-4">

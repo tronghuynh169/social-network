@@ -10,9 +10,10 @@ const UserHoverCardPortal = ({ targetRef, user, hoverPosition, onMouseEnter, onM
   useEffect(() => {
     if (targetRef.current) {
       const rect = targetRef.current.getBoundingClientRect();
+      console.log("Rect:", rect);
       setCoords({
-        top: rect.top + 12,
-        left: rect.left + 10,
+        top: rect.top + window.scrollY + 12,
+        left: rect.left + window.scrollX + 10,
       });
     }
   }, [targetRef]);

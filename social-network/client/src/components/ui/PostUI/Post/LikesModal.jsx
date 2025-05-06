@@ -251,8 +251,8 @@ const LikesModal = ({ postId, currentUserId, onClose }) => {
                                             <div>
                                                 {user.fullName && (
                                                     <p className="text-[var(--text-primary-color)]-400 text-sm cursor-pointer"
-                                                     onClick={() => handleGoToProfile(user.slug)}
-                                                     onMouseEnter={() => {
+                                                    onClick={() => handleGoToProfile(user.slug)}
+                                                    onMouseEnter={() => {
                                                         setIsHovered(user.userId);
                                                         setHoverSource("name");
                                                     }}
