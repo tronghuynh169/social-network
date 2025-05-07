@@ -1,19 +1,32 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import UserHoverCard from "./UserHoverCard"; // nhớ điều chỉnh path nếu khác
 import { getProfileByUserId } from "~/api/profile";
 
-const UserHoverCardPortal = ({ targetRef, user, hoverPosition, onMouseEnter, onMouseLeave, hoverCardRef, onFollowChange}) => {
+const UserHoverCardPortal = ({ targetRef, user, hoverPosition, onMouseEnter, onMouseLeave, hoverCardRef, onFollowChange, source }) => {
   const [coords, setCoords] = useState({ top: 0, left: 0 });
   const [info, setInfo] = useState();
 
   useEffect(() => {
     if (targetRef.current) {
       const rect = targetRef.current.getBoundingClientRect();
-      console.log("Rect:", rect);
+      let newTop = rect.top + 12;
+      let newLeft = rect.left + 12; // Giá trị left mặc định
+
+      if (source === "CommentItem") {
+        if( hoverPosition === 'avatar'){
+          newTop = rect.top - 6;
+          newLeft = rect.left - 6; // Điều chỉnh left nếu là CommentItem
+        }
+        else {
+          newTop = rect.top - 8;
+          newLeft = rect.left - 52; // Điều chỉnh left nếu là CommentItem
+        }
+      }
+
       setCoords({
-        top: rect.top + window.scrollY + 12,
-        left: rect.left + window.scrollX + 10,
+        top: newTop,
+        left: newLeft,
       });
     }
   }, [targetRef]);

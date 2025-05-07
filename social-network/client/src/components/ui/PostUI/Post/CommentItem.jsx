@@ -294,6 +294,8 @@ const CommentItem = ({
 
     const avatarRef = useRef(null);
     const nameRef = useRef(null);
+    const hoverCardRef = useRef(null); // Thêm dòng này để khai báo hoverCardRef
+    const hoverTimeoutRef = useRef(null);
 
     const hasReplies = comment.replies && comment.replies.length > 0;
     // Check xem user hiện tại có từng reply comment này không
@@ -368,9 +370,30 @@ const CommentItem = ({
         }
     };
 
-    const handleMouseLeave = () => {
+    const handleMouseLeave = (event) => {
+        const toElement = event.relatedTarget;
+    
+        if (!toElement) {
+            hideHoverCard();
+            return;
+        }
+    
+        const allowedRefs = [avatarRef, nameRef, hoverCardRef];
+    
+        const stillInside = allowedRefs.some(ref =>
+            ref.current && ref.current.contains(toElement)
+        );
+    
+        if (!stillInside) {
+            hoverTimeoutRef.current = setTimeout(() => {
+                hideHoverCard();
+            }, 50); // nhỏ delay để tránh nhấp nháy
+        }
+    };
+    
+    const hideHoverCard = () => {
+        setHoverPosition(null);
         setShowHoverCard(false);
-        // giữ hoverInfo để tránh re-fetch nếu cần
     };
 
 
@@ -502,9 +525,13 @@ const CommentItem = ({
                 targetRef={hoverPosition === "avatar" ? avatarRef : nameRef}
                 user={hoverInfo}
                 hoverPosition={hoverPosition}
-                onMouseEnter={() => setShowHoverCard(true)}
-                onMouseLeave={() => setShowHoverCard(false)}
+                onMouseEnter={() => {
+                    clearTimeout(hoverTimeoutRef.current);
+                }}
+                onMouseLeave={handleMouseLeave} // 👈 dùng chung hàm handleMouseLeave
                 onFollowChange={() => {}} // hoặc hàm xử lý follow nếu có
+                source="CommentItem"
+                ref={hoverCardRef}
             />
         )}
 

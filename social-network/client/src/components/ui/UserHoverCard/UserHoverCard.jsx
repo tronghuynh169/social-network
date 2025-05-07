@@ -113,7 +113,7 @@ const UserHoverCard = ({ info, hoverPosition, onFollowChange }) => {
           hover:shadow-[0_6px_24px_rgba(255,255,255,0.3)] 
           transition-shadow duration-300 
           border border-[var(--border-color)] 
-          ${hoverPosition == 'avatar' ? "top-[40px] left-0" : "top-[40px] left-[48px]"}`}
+          ${hoverPosition == 'avatar' ? "top-[40px] left-0" : "top-[30px] left-[50px]"}`}
       >
         {/* Avatar + tên */}
         <div className="flex items-center space-x-3">

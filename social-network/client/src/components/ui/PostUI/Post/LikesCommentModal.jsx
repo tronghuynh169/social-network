@@ -245,7 +245,7 @@ const LikesCommentModal = ({ postId,commentId ,currentUserId, onClose }) => {
                                                     hoverTimeoutRef.current = setTimeout(() => {
                                                         setIsHovered(false);
                                                         setHoverSource(null);
-                                                    }, 100); // chờ 100ms để xem chuột có vào UserHoverCard không
+                                                    }, 50); // chờ 100ms để xem chuột có vào UserHoverCard không
                                                 }}
                                             />
                                             <div>
@@ -260,7 +260,7 @@ const LikesCommentModal = ({ postId,commentId ,currentUserId, onClose }) => {
                                                         hoverTimeoutRef.current = setTimeout(() => {
                                                             setIsHovered(false);
                                                             setHoverSource(null);
-                                                        }, 100); // chờ 100ms để xem chuột có vào UserHoverCard không
+                                                        }, 50); // chờ 100ms để xem chuột có vào UserHoverCard không
                                                     }}
                                                     className="text-[var(--text-primary-color)]-400 text-sm cursor-pointer">
                                                         {user.fullName}

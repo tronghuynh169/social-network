@@ -245,7 +245,7 @@ const LikesModal = ({ postId, currentUserId, onClose }) => {
                                                     hoverTimeoutRef.current = setTimeout(() => {
                                                         setIsHovered(false);
                                                         setHoverSource(null);
-                                                    }, 100); // chờ 100ms để xem chuột có vào UserHoverCard không
+                                                    }, 50); // chờ 10ms để xem chuột có vào UserHoverCard không
                                                 }}
                                             />
                                             <div>
@@ -260,7 +260,7 @@ const LikesModal = ({ postId, currentUserId, onClose }) => {
                                                         hoverTimeoutRef.current = setTimeout(() => {
                                                             setIsHovered(false);
                                                             setHoverSource(null);
-                                                        }, 100); // chờ 100ms để xem chuột có vào UserHoverCard không
+                                                        }, 50); // chờ 10ms để xem chuột có vào UserHoverCard không
                                                     }}
                                                     >
                                                         {user.fullName}
@@ -306,6 +306,7 @@ const LikesModal = ({ postId, currentUserId, onClose }) => {
                                                 }}
                                                 hoverCardRef={hoverCardRef} // 👈 truyền ref
                                                 onFollowChange={handleHoverCardFollowChange}
+                                                source="LikeModal"
                                             />
                                         )}
                                     </div>
