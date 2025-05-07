@@ -8,6 +8,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getMessages, getConversationById, uploadImage } from "~/api/chat";
 import { getProfileById } from "~/api/profile";
 import { io } from "socket.io-client";
+import AddMemberModal from "../../components/ui/MessageUI/Modal/AddMemberModal";
 
 const socket = io(import.meta.env.VITE_API_URL || "http://localhost:5000");
 
@@ -22,6 +23,7 @@ const MessagePage = () => {
     const [nameGroupChat, setNameGroupChat] = useState("");
     const [admin, setAdmin] = useState({});
     const [showModal, setShowModal] = useState(false);
+    const [showAddMemberModal, setShowAddMemberModal] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [avatar, setAvatar] = useState("");
     const [showInfo, setShowInfo] = useState(false);
@@ -153,6 +155,13 @@ const MessagePage = () => {
         }
     };
 
+    // Đoạn useEffect để đóng Chat Info nếu không có đoạn chat
+    useEffect(() => {
+        if (!conversationId) {
+            setShowInfo(false); // Đóng Chat Info
+        }
+    }, [conversationId]);
+
     return (
         <div className="flex h-screen w-full">
             {/* Sidebar */}
@@ -160,7 +169,7 @@ const MessagePage = () => {
                 setNameGroupChat={setNameGroupChat}
                 messages={messages}
                 avatar={avatar}
-                setUsersInfo={setUsersInfo} 
+                setUsersInfo={setUsersInfo}
             />
 
             {/* Chat content */}
@@ -216,8 +225,16 @@ const MessagePage = () => {
             {showInfo && (
                 <ChatInfo
                     nameGroupChat={nameGroupChat}
+                    setNameGroupChat={setNameGroupChat}
                     admin={admin}
-                    onClose={() => setShowInfo(false)}
+                    onClose={() => false}
+                    isGroup={conversation?.isGroup}
+                    membersInfo={conversation?.members}
+                    conversationId={conversationId}
+                    myProfileId={profile._id}
+                    avatar={avatar}
+                    usersInfo={usersInfo}
+                    setShowAddMemberModal={setShowAddMemberModal}
                 />
             )}
 
@@ -227,6 +244,14 @@ const MessagePage = () => {
                     open={showModal}
                     onClose={() => setShowModal(false)}
                     profileId={profile._id}
+                />
+            )}
+
+            {showAddMemberModal && (
+                <AddMemberModal
+                    membersInfo={conversation?.members}
+                    open={showAddMemberModal}
+                    onClose={() => setShowAddMemberModal(false)}
                 />
             )}
         </div>

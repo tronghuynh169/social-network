@@ -6,6 +6,7 @@ const {
 } = require("../controllers/profileController");
 const auth = require("../middlewares/authMiddleware");
 const {
+    getAllProfiles,
     getProfileBySlug,
     checkFollowingStatus,
     followUser,
@@ -18,6 +19,7 @@ const {
 } = require("../controllers/profileController");
 
 // 1️⃣ Route đặc biệt (có prefix rõ ràng)
+router.get("/profile", auth, getAllProfiles);
 router.get("/user/:userId", auth, getProfileByUserId); // /api/profile/user/123
 router.get("/username/:username", auth, getProfileByUsername); // /api/profile/username/bfngoc
 router.get("/fullname/:fullname", auth, getProfileByFullName); // /api/profile/fullname/Nguyen Van A

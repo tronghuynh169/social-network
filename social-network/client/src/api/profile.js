@@ -21,6 +21,16 @@ apiClient.interceptors.request.use((config) => {
     return config;
 });
 
+export const getAllProfiles = async () => {
+    try {
+        const response = await apiClient.get("/profile");
+        return response.data;
+    } catch (error) {
+        console.error("❌ Lỗi khi lấy tất cả profiles:", error);
+        return [];
+    }
+};
+
 export const getProfileBySlug = async (slug) => {
     try {
         const response = await apiClient.get(`/${slug}`);
