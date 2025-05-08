@@ -208,8 +208,7 @@ const ChatInput = ({
                     onKeyDown={handleKeyDown}
                     className="border-none focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
-
-                {message.trim() && selectedFiles.length === 0 ? (
+                {message.trim() || selectedFiles.length > 0 ? (
                     <button
                         className={`text-[var(--button-enable-color)] ${
                             isSendDisabled()

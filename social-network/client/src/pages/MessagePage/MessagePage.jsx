@@ -112,6 +112,7 @@ const MessagePage = () => {
                       }
                     : null,
             };
+
             socket.emit("sendMessage", textMessage);
             setMessage("");
             setReplyMessage(null);

@@ -30,8 +30,12 @@ const Sidebar = ({
 
         const updateConversations = (convs) => {
             const sortedConvs = convs.sort((a, b) => {
-                const dateA = new Date(a.lastMessage?.createdAt || a.createdAt);
-                const dateB = new Date(b.lastMessage?.createdAt || b.createdAt);
+                const dateA = new Date(
+                    a.latestMessage?.createdAt || a.createdAt
+                );
+                const dateB = new Date(
+                    b.latestMessage?.createdAt || b.createdAt
+                );
                 return dateB - dateA;
             });
 
@@ -53,7 +57,6 @@ const Sidebar = ({
                 users.forEach((user) => {
                     userMap[user._id] = user;
                 });
-
                 const merged = sortedConvs.map((conv) => {
                     const otherUsers = conv.members
                         .filter((id) => id !== profile._id)
@@ -61,18 +64,20 @@ const Sidebar = ({
                         .filter(Boolean);
 
                     const isGroup = conv.isGroup;
-
                     return {
                         conversationId: conv._id,
                         name: isGroup
                             ? conv.name
                             : otherUsers.length === 1
                             ? otherUsers[0]?.fullName
-                            : "Đối thoại riêng", // fallback
+                            : "Đối thoại riêng",
                         avatar: isGroup
                             ? conv.avatar
-                            : otherUsers[0]?.avatar || "",
+                            : otherUsers.length > 0
+                            ? otherUsers[0]?.avatar
+                            : "http://localhost:5173/images/avatar-default-user.png",
                         members: otherUsers,
+                        latestMessage: conv.latestMessage,
                     };
                 });
 
@@ -86,9 +91,59 @@ const Sidebar = ({
         // Gọi ngay khi component mount
         fetchConversations();
 
-        // Lắng nghe tin nhắn mới qua socket
-        socket.on("receiveMessage", () => {
-            fetchConversations();
+        // Lắng nghe sự kiện 'receiveMessage'
+        socket.on("receiveMessage", (newMessage) => {
+            setUsersInfo((prev) => {
+                const updated = prev.map((conv) =>
+                    conv.conversationId === newMessage.conversation
+                        ? { ...conv, latestMessage: newMessage }
+                        : conv
+                );
+                return updated.sort(
+                    (a, b) =>
+                        new Date(b.latestMessage?.createdAt || 0) -
+                        new Date(a.latestMessage?.createdAt || 0)
+                );
+            });
+        });
+
+        socket.on("conversationUpdated", (conv) => {
+            setUsersInfo((prev) => {
+                const exists = prev.some((c) => c.conversationId === conv._id);
+                let updated = [];
+                if (exists) {
+                    updated = prev.map((c) =>
+                        c.conversationId === conv._id
+                            ? { ...c, latestMessage: conv.latestMessage }
+                            : c
+                    );
+                } else {
+                    const name = conv.isGroup
+                        ? conv.name
+                        : conv.members.find((m) => m._id !== profile._id)
+                              ?.fullName || "Đối thoại riêng";
+                    const av = conv.isGroup
+                        ? conv.avatar
+                        : conv.members.find((m) => m._id !== profile._id)
+                              ?.avatar || "";
+                    updated = [
+                        {
+                            conversationId: conv._id,
+                            isGroup: conv.isGroup,
+                            name,
+                            avatar: av,
+                            members: conv.members,
+                            latestMessage: conv.latestMessage,
+                        },
+                        ...prev,
+                    ];
+                }
+                return updated.sort(
+                    (a, b) =>
+                        new Date(b.latestMessage?.createdAt || 0) -
+                        new Date(a.latestMessage?.createdAt || 0)
+                );
+            });
         });
 
         // Lắng nghe sự kiện tạo nhóm mới
@@ -98,6 +153,7 @@ const Sidebar = ({
 
         return () => {
             socket.off("receiveMessage");
+            socket.off("conversationUpdated");
             socket.off("newGroupCreated");
         };
     }, [profile]);
@@ -143,8 +199,24 @@ const Sidebar = ({
                                     alt="avatar"
                                     className="w-14 h-14 rounded-full object-cover"
                                 />
-                                <div className="max-w-[80%] line-clamp-1">
-                                    {info.name}
+                                <div className="max-w-[80%]">
+                                    <p className="line-clamp-1 font-semibold">
+                                        {info.name}
+                                    </p>
+                                    {info.latestMessage && (
+                                        <p className="text-sm text-gray-500 line-clamp-1">
+                                            {info.latestMessage.sender?._id ===
+                                            profile._id
+                                                ? "Bạn: "
+                                                : `${
+                                                      info.latestMessage.sender
+                                                          ?.fullName ||
+                                                      "Ẩn danh"
+                                                  }: `}
+                                            {info.latestMessage.text ||
+                                                "[Đã gửi tệp]"}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         );
