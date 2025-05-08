@@ -121,7 +121,7 @@ const AddMemberModal = ({ open, onClose, onSelect, membersInfo }) => {
                             );
                             return (
                                 <div
-                                    key={user.id}
+                                    key={user._id}
                                     className="flex items-center justify-between p-2 rounded hover:bg-[var(--button-color)] cursor-pointer"
                                     onClick={() => toggleSelect(user)}
                                 >

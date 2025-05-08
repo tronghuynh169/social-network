@@ -231,3 +231,33 @@ exports.downloadFile = (req, res) => {
         res.status(404).json({ error: "File không tồn tại" });
     }
 };
+
+// Thêm thành viên vào conversation
+exports.addMembers = async (req, res) => {
+    const { conversationId } = req.params;
+    const { newMembers } = req.body;
+
+    try {
+        const updated = await Conversation.findByIdAndUpdate(
+            conversationId,
+            { $addToSet: { members: { $each: newMembers } } },
+            { new: true }
+        )
+            .populate({
+                path: "latestMessage",
+                populate: { path: "sender", select: "fullName avatar" },
+            })
+            .populate("members", "fullName avatar");
+
+        if (!updated) {
+            return res
+                .status(404)
+                .json({ error: "Cuộc trò chuyện không tồn tại" });
+        }
+
+        return res.status(200).json(updated);
+    } catch (err) {
+        console.error("Lỗi thêm thành viên:", err);
+        return res.status(500).json({ error: "Không thể thêm thành viên" });
+    }
+};

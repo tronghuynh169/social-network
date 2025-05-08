@@ -26,9 +26,9 @@ const ChatBox = ({
     setReplyMessage,
     socket,
     usersInfo,
+    inputRef,
 }) => {
     const bottomRef = useRef(null);
-    const inputRef = useRef(null);
     const [viewingImage, setViewingImage] = useState(null);
     const [isImageModalOpen, setIsImageModalOpen] = useState(false);
     const [isLikeModalOpen, setIsLikeModalOpen] = useState(false);

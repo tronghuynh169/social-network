@@ -13,12 +13,27 @@ const Sidebar = ({
     messages,
     avatar,
     setUsersInfo: setUsersInfoProp,
+    inputRef,
 }) => {
     const { conversationId } = useParams();
     const { profile } = useUser();
     const [usersInfo, setUsersInfo] = useState([]);
     const navigate = useNavigate();
     const [showModal, setShowModal] = useState(false);
+
+    const handleSelectChat = (conversationId, name) => {
+        setNameGroupChat(name);
+        navigate(`/message/${conversationId}`);
+        inputRef.current?.focus();
+    };
+
+    const sortConversations = (conversations) => {
+        return conversations.sort(
+            (a, b) =>
+                new Date(b.latestMessage?.createdAt || b.createdAt) -
+                new Date(a.latestMessage?.createdAt || a.createdAt)
+        );
+    };
 
     useEffect(() => {
         if (!profile?._id) return;
@@ -29,17 +44,9 @@ const Sidebar = ({
         };
 
         const updateConversations = (convs) => {
-            const sortedConvs = convs.sort((a, b) => {
-                const dateA = new Date(
-                    a.latestMessage?.createdAt || a.createdAt
-                );
-                const dateB = new Date(
-                    b.latestMessage?.createdAt || b.createdAt
-                );
-                return dateB - dateA;
-            });
+            const sortedConvs = sortConversations(convs);
 
-            // Lấy thông tin người dùng
+            // Lấy thông tin người dùng từ các cuộc trò chuyện
             const userIdSet = new Set();
             sortedConvs.forEach((conv) => {
                 conv.members.forEach((id) => {
@@ -47,6 +54,7 @@ const Sidebar = ({
                 });
             });
 
+            // Lấy danh sách thông tin người dùng
             const uniqueUserIds = Array.from(userIdSet);
             const fetchUsers = async () => {
                 const users = await Promise.all(
@@ -57,6 +65,8 @@ const Sidebar = ({
                 users.forEach((user) => {
                     userMap[user._id] = user;
                 });
+
+                // Gộp thông tin người dùng vào danh sách cuộc trò chuyện
                 const merged = sortedConvs.map((conv) => {
                     const otherUsers = conv.members
                         .filter((id) => id !== profile._id)
@@ -99,11 +109,7 @@ const Sidebar = ({
                         ? { ...conv, latestMessage: newMessage }
                         : conv
                 );
-                return updated.sort(
-                    (a, b) =>
-                        new Date(b.latestMessage?.createdAt || 0) -
-                        new Date(a.latestMessage?.createdAt || 0)
-                );
+                return sortConversations(updated);
             });
         });
 
@@ -138,11 +144,7 @@ const Sidebar = ({
                         ...prev,
                     ];
                 }
-                return updated.sort(
-                    (a, b) =>
-                        new Date(b.latestMessage?.createdAt || 0) -
-                        new Date(a.latestMessage?.createdAt || 0)
-                );
+                return sortConversations(updated);
             });
         });
 
@@ -155,6 +157,68 @@ const Sidebar = ({
             socket.off("receiveMessage");
             socket.off("conversationUpdated");
             socket.off("newGroupCreated");
+        };
+    }, [profile]);
+
+    useEffect(() => {
+        const handleConversationUpdated = (updatedConv) => {
+            console.log("📢 Received conversationUpdated event:", updatedConv);
+
+            setUsersInfo((prev) => {
+                const exists = prev.some(
+                    (c) => c.conversationId === updatedConv._id
+                );
+
+                let updated = [];
+                if (exists) {
+                    // Nếu cuộc trò chuyện đã tồn tại, cập nhật thông tin
+                    updated = prev.map((c) =>
+                        c.conversationId === updatedConv._id
+                            ? {
+                                  ...c,
+                                  latestMessage: updatedConv.latestMessage,
+                                  members: updatedConv.members,
+                              }
+                            : c
+                    );
+                } else {
+                    // Nếu cuộc trò chuyện chưa tồn tại (thành viên mới), thêm vào danh sách
+                    const name = updatedConv.isGroup
+                        ? updatedConv.name
+                        : updatedConv.members.find((m) => m._id !== profile._id)
+                              ?.fullName || "Đối thoại riêng";
+                    const avatar = updatedConv.isGroup
+                        ? updatedConv.avatar
+                        : updatedConv.members.find((m) => m._id !== profile._id)
+                              ?.avatar ||
+                          "http://localhost:5173/images/avatar-default-user.png";
+
+                    updated = [
+                        {
+                            conversationId: updatedConv._id,
+                            isGroup: updatedConv.isGroup,
+                            name,
+                            avatar,
+                            members: updatedConv.members,
+                            latestMessage: updatedConv.latestMessage,
+                        },
+                        ...prev,
+                    ];
+                }
+
+                return updated.sort(
+                    (a, b) =>
+                        new Date(b.latestMessage?.createdAt || b.createdAt) -
+                        new Date(a.latestMessage?.createdAt || a.createdAt)
+                );
+            });
+        };
+
+        // Lắng nghe sự kiện từ server
+        socket.on("conversationUpdated", handleConversationUpdated);
+
+        return () => {
+            socket.off("conversationUpdated", handleConversationUpdated);
         };
     }, [profile]);
 
@@ -181,8 +245,10 @@ const Sidebar = ({
                             <div
                                 key={info.conversationId || idx}
                                 onClick={() => {
-                                    setNameGroupChat(info.name); // Chỉ gọi khi click
-                                    navigate(`/message/${info.conversationId}`);
+                                    handleSelectChat(
+                                        info.conversationId,
+                                        info.name
+                                    );
                                 }}
                                 className={`cursor-pointer flex items-center gap-3 px-6 py-2 ${
                                     info.conversationId === conversationId

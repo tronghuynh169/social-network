@@ -105,3 +105,16 @@ export const uploadImage = async (formData) => {
         throw error;
     }
 };
+
+export const addMembersToConversation = async (conversationId, newMembers) => {
+    try {
+        const response = await apiClient.post(
+            `/conversation/${conversationId}/members`,
+            { newMembers }
+        );
+        return response.data;
+    } catch (error) {
+        console.error("❌ Lỗi thêm thành viên:", error);
+        throw error; // để caller có thể catch và xử lý
+    }
+};
