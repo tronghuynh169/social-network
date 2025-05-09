@@ -4,6 +4,7 @@ import LikesCommentModal from "./LikesCommentModal"; // import đúng đường 
 import { formatPostTime } from "~/components/utils/formatPostTime";
 import DeleteCommentModal from "./DeleteCommentModal";
 import { getProfileByUserId } from "~/api/profile";
+import { getReplyProfile } from "~/api/post";
 import { useNavigate, Link  } from "react-router-dom";
 import UserHoverCardPortal from "~/components/ui/UserHoverCard/UserHoverCardPortal";
 
@@ -27,7 +28,8 @@ const CommentItem = ({
     const [showHoverCard, setShowHoverCard] = useState(false);
     const [hoverInfo, setHoverInfo] = useState(null);
     const [hoverPosition, setHoverPosition] = useState("avatar"); // hoặc 'name'
-    const [slugs, setSlugs] = useState();
+
+    const [replyToUser, setReplyToUser] = useState(null);
 
     const avatarRef = useRef(null);
     const nameRef = useRef(null);
@@ -47,37 +49,6 @@ const CommentItem = ({
     // 2. state lưu các reply mới của chính user
     const [newReplies, setNewReplies] = useState([]);
 
-    const extractAllUserIds = (text) => {
-        const regex = /@\{([a-f\d]{24})\}\|/gi;
-        const matches = [...text.matchAll(regex)];
-        return matches.map(match => match[1]); // Mảng các userId
-      };
-
-    useEffect(() => {
-        const fetchSlug = async () => {
-            const userIds = extractAllUserIds(comment.content);
-            console.log("comement user id tag:",userIds);
-            if (userIds.length > 0) {
-                const profiles = await Promise.all(
-                  userIds.map(id => getProfileByUserId(id))
-                );
-          
-                // Tạo map { userId: slug }
-                const slugMap = {};
-                profiles.forEach((profile, index) => {
-                  slugMap[userIds[index]] = profile.slug;
-                });
-          
-                setSlugs(slugMap); // set vào state
-              }
-        };
-        fetchSlug();
-      }, [comment]);
-
-      
-      useEffect(() => {
-        console.log("Updated slugs:", slugs); // Log khi slugs thay đổi
-    }, [slugs]); // Chạy khi slugs thay đổi
 
 
     useEffect(() => {
@@ -165,6 +136,24 @@ const CommentItem = ({
         setShowHoverCard(false);
     };
 
+    const handleReply = async (commentId) => {
+        try {
+            const response = await fetch(`/api/comments/reply-profile/${commentId}`);
+            const data = await response.json();
+    
+            if (response.ok) {
+                setReplyToUser({
+                    name: data.profile.fullName || data.profile.username,
+                    slug: data.profile.slug,
+                });
+            } else {
+                console.error(data.message);
+            }
+        } catch (error) {
+            console.error("Lỗi khi lấy thông tin người được trả lời:", error);
+        }
+    };
+
 
     return (
         <div className={`w-full ${indentClass}`}>
@@ -192,7 +181,7 @@ const CommentItem = ({
                         >
                             {comment.userId.fullName || comment.userId.username}
                         </span>{" "}
-                        {renderCommentText(comment.content, slugs)}
+                        {renderCommentText(comment.content)}
                     </p>
 
                     <div className="flex items-center gap-4 mt-1 text-xs text-[var(--text-secondary-color)]">
@@ -284,7 +273,16 @@ const CommentItem = ({
                             ? "fill-current text-red-500"
                             : "text-gray-500"
                     }`}
-                    onClick={() => onLike(comment._id)}
+                    onClick={() => {
+                        onLike(comment._id)
+                        setNewReplies(prev =>
+                            prev.map(r =>
+                              r._id === comment._id
+                                ? { ...r, isLikedComment: !r.isLikedComment, likesCommentCount: r.likesCommentCount + 1 }
+                                : r
+                            )
+                          );
+                    }}
                 />
             </div>
 
@@ -305,6 +303,7 @@ const CommentItem = ({
         )}
         {!showReplies && newReplies.length > 0 && (
         <div className="mt-4 space-y-4">
+            {console.log("newReplies", newReplies)}
           {newReplies.map(reply => (
             <CommentItem
               key={reply._id}
@@ -344,7 +343,7 @@ const CommentItem = ({
 
 
 // 🔍 Chuyển @Tên -> <a>
-function renderCommentText(text, slugs) {
+ function renderCommentText(text) {
     // Regex cải tiến để xử lý chính xác mọi trường hợp
     const regex = /@(?:\{([^}]+)\}\|)?([\p{Lu}][\p{L}'-]*(?: [\p{Lu}][\p{L}'-]*)*)(?=\s|$|@)/gu;
   
@@ -362,12 +361,12 @@ function renderCommentText(text, slugs) {
           <span key={lastIndex}>{text.slice(lastIndex, start)}</span>
         );
       }
-      
-      // Thêm link mention
+
+      // Thêm link mention 
       parts.push(
         <Link
           key={`${userId}-${start}`} // Sử dụng cả userId và vị trí làm key
-          to={`/${slugs}`}
+          to={`/${userId}`}
           className="text-[#c8d7e4] hover:underline"
         >
           @{fullName.trim()}

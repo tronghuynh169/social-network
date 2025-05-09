@@ -5,7 +5,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/pagination';
-import { getProfileByUserId, getFollowing } from "~/api/profile";
+import { getProfileByUserId, getFollowing, getProfileById  } from "~/api/profile";
 import {
   toggleLike,
   addComment,
@@ -58,6 +58,7 @@ export default function PostCard({ post }) {
     const [isHovered, setIsHovered] = useState(false);
     const [hoverSource, setHoverSource] = useState(null); // 'avatar' or 'name'
 
+
     // --- BEGIN AUTOCOMPLETE STATES ---
     const [followings, setFollowings] = useState([]);
     const [mentionSuggestions, setMentionSuggestions] = useState([]);
@@ -102,10 +103,11 @@ export default function PostCard({ post }) {
     }, [user.id]);
 
     const handleSelectMention = (user) => {
+      console.log(user)
       // 1. text hiển thị dạng @Full Name
       const mentionDisplay = `@${user.fullName} `;
       // 2. text internal dạng @{id}|Full Name
-      const mentionMarkup  = `@{${user._id}}|${user.fullName} `;
+      const mentionMarkup  = `@{${user.slug}}|${user.fullName} `;
     
       // 3. Thay phần "@..." cuối chuỗi displayComment
       //    \p{L} là mọi chữ (có dấu), space là khoảng trắng, * nghĩa là nhiều hay ít

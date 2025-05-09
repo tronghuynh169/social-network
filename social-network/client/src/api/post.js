@@ -102,3 +102,14 @@ export const getUserPostCount = async (userId) => {
         throw error.response?.data || error;
     }
 };
+
+// 🔗 Lấy profile của người bị reply trong comment
+export const getReplyProfile = async (commentId) => {
+    try {
+        const response = await api.get(`/comments/${commentId}/reply-profile`);
+        return response.data.profile;
+    } catch (error) {
+        console.error('Lỗi khi lấy reply profile:', error);
+        throw error.response?.data || error;
+    }
+};

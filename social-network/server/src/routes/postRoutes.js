@@ -16,6 +16,7 @@ const {
     deletePost,
     updatePost,
     getUserPostCount,
+    getReplyProfile,
 } = require('../controllers/postController');
 const auth = require('../middlewares/authMiddleware');
 const upload = require('../middlewares/uploadMiddleware');
@@ -46,6 +47,7 @@ router.put(
     },
     updatePost
 );
+router.get('/comments/:replyId/reply-profile', auth, getReplyProfile);
 router.post('/:postId/like', auth, toggleLike);
 router.get('/:postId/likes', getPostLikes);
 router.get('/:postId/comments/:commentId/likes', getCommentLikes);
@@ -54,5 +56,4 @@ router.post('/:postId/comments/:commentId/replies', auth, addReply);
 router.post('/:postId/comments/:commentId/like', auth, toggleCommentLike);
 router.get('/:postId/details', auth, getPostDetails);
 router.delete('/:postId/comments/:commentId', deleteComment);
-
 module.exports = router;
