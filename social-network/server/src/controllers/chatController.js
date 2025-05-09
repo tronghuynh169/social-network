@@ -105,6 +105,11 @@ exports.sendMessage = (req, res) => {
                 replyTo: replyTo || null,
             });
 
+            await Conversation.findByIdAndUpdate(conversationId, {
+                latestMessage: message._id,
+                updatedAt: new Date(),
+            });
+
             res.status(201).json({
                 success: true,
                 message: "Gửi tin nhắn thành công",
@@ -149,10 +154,18 @@ exports.getMessages = async (req, res) => {
 exports.getUserConversations = async (req, res) => {
     const { userId } = req.params;
     try {
-        const objectUserId = new mongoose.Types.ObjectId(userId); // ép kiểu
+        const objectUserId = new mongoose.Types.ObjectId(userId);
+
         const conversations = await Conversation.find({
             members: objectUserId,
-        });
+        })
+            .populate({
+                path: "latestMessage",
+                select: "text createdAt sender", // Chỉ lấy các trường cần thiết
+                populate: { path: "sender", select: "fullName avatar" }, // Populate thông tin người gửi
+            })
+            .sort({ updatedAt: -1 }); // Sắp xếp theo thời gian cập nhật mới nhất
+
         res.status(200).json(conversations);
     } catch (err) {
         console.error("Lỗi khi lấy conversation:", err);
@@ -216,5 +229,35 @@ exports.downloadFile = (req, res) => {
         fs.createReadStream(filePath).pipe(res);
     } else {
         res.status(404).json({ error: "File không tồn tại" });
+    }
+};
+
+// Thêm thành viên vào conversation
+exports.addMembers = async (req, res) => {
+    const { conversationId } = req.params;
+    const { newMembers } = req.body;
+
+    try {
+        const updated = await Conversation.findByIdAndUpdate(
+            conversationId,
+            { $addToSet: { members: { $each: newMembers } } },
+            { new: true }
+        )
+            .populate({
+                path: "latestMessage",
+                populate: { path: "sender", select: "fullName avatar" },
+            })
+            .populate("members", "fullName avatar");
+
+        if (!updated) {
+            return res
+                .status(404)
+                .json({ error: "Cuộc trò chuyện không tồn tại" });
+        }
+
+        return res.status(200).json(updated);
+    } catch (err) {
+        console.error("Lỗi thêm thành viên:", err);
+        return res.status(500).json({ error: "Không thể thêm thành viên" });
     }
 };

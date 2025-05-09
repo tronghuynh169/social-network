@@ -4,6 +4,12 @@ const auth = require("../middlewares/authMiddleware");
 const chatController = require("../controllers/chatController");
 const uploadMessageFiles = require("../middlewares/uploadMessageFiles");
 
+router.post(
+    "/conversation/:conversationId/members",
+    auth,
+    chatController.addMembers
+);
+
 router.post("/conversation", auth, chatController.createConversation);
 router.get(
     "/conversation/id/:conversationId",

@@ -13,12 +13,27 @@ const Sidebar = ({
     messages,
     avatar,
     setUsersInfo: setUsersInfoProp,
+    inputRef,
 }) => {
     const { conversationId } = useParams();
     const { profile } = useUser();
     const [usersInfo, setUsersInfo] = useState([]);
     const navigate = useNavigate();
     const [showModal, setShowModal] = useState(false);
+
+    const handleSelectChat = (conversationId, name) => {
+        setNameGroupChat(name);
+        navigate(`/message/${conversationId}`);
+        inputRef.current?.focus();
+    };
+
+    const sortConversations = (conversations) => {
+        return conversations.sort(
+            (a, b) =>
+                new Date(b.latestMessage?.createdAt || b.createdAt) -
+                new Date(a.latestMessage?.createdAt || a.createdAt)
+        );
+    };
 
     useEffect(() => {
         if (!profile?._id) return;
@@ -29,13 +44,9 @@ const Sidebar = ({
         };
 
         const updateConversations = (convs) => {
-            const sortedConvs = convs.sort((a, b) => {
-                const dateA = new Date(a.lastMessage?.createdAt || a.createdAt);
-                const dateB = new Date(b.lastMessage?.createdAt || b.createdAt);
-                return dateB - dateA;
-            });
+            const sortedConvs = sortConversations(convs);
 
-            // Lấy thông tin người dùng
+            // Lấy thông tin người dùng từ các cuộc trò chuyện
             const userIdSet = new Set();
             sortedConvs.forEach((conv) => {
                 conv.members.forEach((id) => {
@@ -43,6 +54,7 @@ const Sidebar = ({
                 });
             });
 
+            // Lấy danh sách thông tin người dùng
             const uniqueUserIds = Array.from(userIdSet);
             const fetchUsers = async () => {
                 const users = await Promise.all(
@@ -54,6 +66,7 @@ const Sidebar = ({
                     userMap[user._id] = user;
                 });
 
+                // Gộp thông tin người dùng vào danh sách cuộc trò chuyện
                 const merged = sortedConvs.map((conv) => {
                     const otherUsers = conv.members
                         .filter((id) => id !== profile._id)
@@ -61,18 +74,20 @@ const Sidebar = ({
                         .filter(Boolean);
 
                     const isGroup = conv.isGroup;
-
                     return {
                         conversationId: conv._id,
                         name: isGroup
                             ? conv.name
                             : otherUsers.length === 1
                             ? otherUsers[0]?.fullName
-                            : "Đối thoại riêng", // fallback
+                            : "Đối thoại riêng",
                         avatar: isGroup
                             ? conv.avatar
-                            : otherUsers[0]?.avatar || "",
+                            : otherUsers.length > 0
+                            ? otherUsers[0]?.avatar
+                            : "http://localhost:5173/images/avatar-default-user.png",
                         members: otherUsers,
+                        latestMessage: conv.latestMessage,
                     };
                 });
 
@@ -86,9 +101,51 @@ const Sidebar = ({
         // Gọi ngay khi component mount
         fetchConversations();
 
-        // Lắng nghe tin nhắn mới qua socket
-        socket.on("receiveMessage", () => {
-            fetchConversations();
+        // Lắng nghe sự kiện 'receiveMessage'
+        socket.on("receiveMessage", (newMessage) => {
+            setUsersInfo((prev) => {
+                const updated = prev.map((conv) =>
+                    conv.conversationId === newMessage.conversation
+                        ? { ...conv, latestMessage: newMessage }
+                        : conv
+                );
+                return sortConversations(updated);
+            });
+        });
+
+        socket.on("conversationUpdated", (conv) => {
+            setUsersInfo((prev) => {
+                const exists = prev.some((c) => c.conversationId === conv._id);
+                let updated = [];
+                if (exists) {
+                    updated = prev.map((c) =>
+                        c.conversationId === conv._id
+                            ? { ...c, latestMessage: conv.latestMessage }
+                            : c
+                    );
+                } else {
+                    const name = conv.isGroup
+                        ? conv.name
+                        : conv.members.find((m) => m._id !== profile._id)
+                              ?.fullName || "Đối thoại riêng";
+                    const av = conv.isGroup
+                        ? conv.avatar
+                        : conv.members.find((m) => m._id !== profile._id)
+                              ?.avatar || "";
+                    updated = [
+                        {
+                            conversationId: conv._id,
+                            isGroup: conv.isGroup,
+                            name,
+                            avatar: av,
+                            members: conv.members,
+                            latestMessage: conv.latestMessage,
+                        },
+                        ...prev,
+                    ];
+                }
+                return sortConversations(updated);
+            });
         });
 
         // Lắng nghe sự kiện tạo nhóm mới
@@ -98,7 +155,70 @@ const Sidebar = ({
 
         return () => {
             socket.off("receiveMessage");
+            socket.off("conversationUpdated");
             socket.off("newGroupCreated");
+        };
+    }, [profile]);
+
+    useEffect(() => {
+        const handleConversationUpdated = (updatedConv) => {
+            console.log("📢 Received conversationUpdated event:", updatedConv);
+
+            setUsersInfo((prev) => {
+                const exists = prev.some(
+                    (c) => c.conversationId === updatedConv._id
+                );
+
+                let updated = [];
+                if (exists) {
+                    // Nếu cuộc trò chuyện đã tồn tại, cập nhật thông tin
+                    updated = prev.map((c) =>
+                        c.conversationId === updatedConv._id
+                            ? {
+                                  ...c,
+                                  latestMessage: updatedConv.latestMessage,
+                                  members: updatedConv.members,
+                              }
+                            : c
+                    );
+                } else {
+                    // Nếu cuộc trò chuyện chưa tồn tại (thành viên mới), thêm vào danh sách
+                    const name = updatedConv.isGroup
+                        ? updatedConv.name
+                        : updatedConv.members.find((m) => m._id !== profile._id)
+                              ?.fullName || "Đối thoại riêng";
+                    const avatar = updatedConv.isGroup
+                        ? updatedConv.avatar
+                        : updatedConv.members.find((m) => m._id !== profile._id)
+                              ?.avatar ||
+                          "http://localhost:5173/images/avatar-default-user.png";
+
+                    updated = [
+                        {
+                            conversationId: updatedConv._id,
+                            isGroup: updatedConv.isGroup,
+                            name,
+                            avatar,
+                            members: updatedConv.members,
+                            latestMessage: updatedConv.latestMessage,
+                        },
+                        ...prev,
+                    ];
+                }
+
+                return updated.sort(
+                    (a, b) =>
+                        new Date(b.latestMessage?.createdAt || b.createdAt) -
+                        new Date(a.latestMessage?.createdAt || a.createdAt)
+                );
+            });
+        };
+
+        // Lắng nghe sự kiện từ server
+        socket.on("conversationUpdated", handleConversationUpdated);
+
+        return () => {
+            socket.off("conversationUpdated", handleConversationUpdated);
         };
     }, [profile]);
 
@@ -125,8 +245,10 @@ const Sidebar = ({
                             <div
                                 key={info.conversationId || idx}
                                 onClick={() => {
-                                    setNameGroupChat(info.name); // Chỉ gọi khi click
-                                    navigate(`/message/${info.conversationId}`);
+                                    handleSelectChat(
+                                        info.conversationId,
+                                        info.name
+                                    );
                                 }}
                                 className={`cursor-pointer flex items-center gap-3 px-6 py-2 ${
                                     info.conversationId === conversationId
@@ -143,8 +265,24 @@ const Sidebar = ({
                                     alt="avatar"
                                     className="w-14 h-14 rounded-full object-cover"
                                 />
-                                <div className="max-w-[80%] line-clamp-1">
-                                    {info.name}
+                                <div className="max-w-[80%]">
+                                    <p className="line-clamp-1 font-semibold">
+                                        {info.name}
+                                    </p>
+                                    {info.latestMessage && (
+                                        <p className="text-sm text-gray-500 line-clamp-1">
+                                            {info.latestMessage.sender?._id ===
+                                            profile._id
+                                                ? "Bạn: "
+                                                : `${
+                                                      info.latestMessage.sender
+                                                          ?.fullName ||
+                                                      "Ẩn danh"
+                                                  }: `}
+                                            {info.latestMessage.text ||
+                                                "[Đã gửi tệp]"}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         );

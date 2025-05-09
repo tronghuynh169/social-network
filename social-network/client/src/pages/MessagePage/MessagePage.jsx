@@ -1,11 +1,17 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import SearchFriendModal from "~/components/ui/MessageUI/SearchFriendModal";
 import { useUser } from "~/context/UserContext";
 import Sidebar from "~/components/ui/MessageUI/Sidebar";
 import ChatBox from "~/components/ui/MessageUI/chat";
 import ChatInfo from "~/components/ui/MessageUI/ChatInfo";
 import { useParams, useNavigate } from "react-router-dom";
-import { getMessages, getConversationById, uploadImage } from "~/api/chat";
+import {
+    getMessages,
+    getConversationById,
+    uploadImage,
+    addMembersToConversation,
+    getUserConversations,
+} from "~/api/chat";
 import { getProfileById } from "~/api/profile";
 import { io } from "socket.io-client";
 import AddMemberModal from "../../components/ui/MessageUI/Modal/AddMemberModal";
@@ -17,6 +23,7 @@ const MessagePage = () => {
     const { conversationId } = useParams();
     const navigate = useNavigate();
 
+    const inputRef = useRef(null);
     const [message, setMessage] = useState("");
     const [messages, setMessages] = useState([]);
     const [conversation, setConversation] = useState([]);
@@ -112,6 +119,7 @@ const MessagePage = () => {
                       }
                     : null,
             };
+
             socket.emit("sendMessage", textMessage);
             setMessage("");
             setReplyMessage(null);
@@ -162,6 +170,119 @@ const MessagePage = () => {
         }
     }, [conversationId]);
 
+    const handleAddMembers = async (selectedUsers) => {
+        const newIds = selectedUsers.map((u) => u._id);
+        try {
+            // 1. Gửi request lên server để thêm thành viên
+            const updatedConv = await addMembersToConversation(
+                conversationId,
+                newIds
+            );
+
+            if (!updatedConv) {
+                console.error(
+                    "Failed to add members: No updated conversation returned."
+                );
+                return;
+            }
+
+            // 2. Phát sự kiện qua Socket.IO để thông báo tới tất cả thành viên
+            socket.emit("conversationUpdated", updatedConv);
+
+            // 3. Cập nhật thông tin cuộc trò chuyện hiện tại trên giao diện
+            setConversation(updatedConv);
+
+            // 4. Lấy lại danh sách cuộc trò chuyện từ server để cập nhật Sidebar
+            const updatedConversations = await getUserConversations(
+                profile._id
+            );
+            updateSidebar(updatedConversations);
+
+            // 5. Đóng modal thêm thành viên
+            setShowAddMemberModal(false);
+        } catch (err) {
+            console.error("Error adding members:", err);
+            alert("Không thể thêm thành viên. Vui lòng thử lại.");
+        }
+    };
+
+    const updateSidebar = (updatedConversations) => {
+        const sortedConvs = updatedConversations.sort((a, b) => {
+            const dateA = new Date(a.latestMessage?.createdAt || a.createdAt);
+            const dateB = new Date(b.latestMessage?.createdAt || b.createdAt);
+            return dateB - dateA;
+        });
+
+        // Lấy thông tin người dùng
+        const userIdSet = new Set();
+        sortedConvs.forEach((conv) => {
+            conv.members.forEach((id) => {
+                if (id !== profile._id) userIdSet.add(id);
+            });
+        });
+
+        const uniqueUserIds = Array.from(userIdSet);
+        const fetchUsers = async () => {
+            const users = await Promise.all(
+                uniqueUserIds.map((id) => getProfileById(id))
+            );
+
+            const userMap = {};
+            users.forEach((user) => {
+                userMap[user._id] = user;
+            });
+            const merged = sortedConvs.map((conv) => {
+                const otherUsers = conv.members
+                    .filter((id) => id !== profile._id)
+                    .map((id) => userMap[id])
+                    .filter(Boolean);
+
+                const isGroup = conv.isGroup;
+                return {
+                    conversationId: conv._id,
+                    name: isGroup
+                        ? conv.name
+                        : otherUsers.length === 1
+                        ? otherUsers[0]?.fullName
+                        : "Đối thoại riêng",
+                    avatar: isGroup
+                        ? conv.avatar
+                        : otherUsers.length > 0
+                        ? otherUsers[0]?.avatar
+                        : "http://localhost:5173/images/avatar-default-user.png",
+                    members: otherUsers,
+                    latestMessage: conv.latestMessage,
+                };
+            });
+
+            setUsersInfo(merged);
+        };
+
+        fetchUsers();
+    };
+
+    useEffect(() => {
+        const handleConversationUpdated = (updatedConv) => {
+            if (updatedConv._id === conversationId) {
+                setConversation(updatedConv);
+                setUsersInfo((prev) =>
+                    prev.map((c) =>
+                        c.conversationId === conversationId
+                            ? { ...c, members: updatedConv.members }
+                            : c
+                    )
+                );
+            }
+        };
+
+        // Listen for conversation updates
+        socket.on("conversationUpdated", handleConversationUpdated);
+
+        return () => {
+            socket.off("conversationUpdated", handleConversationUpdated);
+        };
+    }, [conversationId]);
+
     return (
         <div className="flex h-screen w-full">
             {/* Sidebar */}
@@ -170,6 +291,7 @@ const MessagePage = () => {
                 messages={messages}
                 avatar={avatar}
                 setUsersInfo={setUsersInfo}
+                inputRef={inputRef}
             />
 
             {/* Chat content */}
@@ -194,6 +316,7 @@ const MessagePage = () => {
                     setReplyMessage={setReplyMessage}
                     socket={socket}
                     usersInfo={usersInfo}
+                    inputRef={inputRef}
                 />
             ) : (
                 <div className="flex flex-col justify-center items-center flex-1">
@@ -249,9 +372,10 @@ const MessagePage = () => {
 
             {showAddMemberModal && (
                 <AddMemberModal
-                    membersInfo={conversation?.members}
                     open={showAddMemberModal}
                     onClose={() => setShowAddMemberModal(false)}
+                    membersInfo={conversation?.members}
+                    onSelect={handleAddMembers}
                 />
             )}
         </div>

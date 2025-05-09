@@ -8,7 +8,7 @@ const conversationSchema = new mongoose.Schema(
         members: [
             {
                 type: mongoose.Schema.Types.ObjectId,
-                ref: "User",
+                ref: "Profile",
             },
         ],
         latestMessage: {
@@ -17,7 +17,7 @@ const conversationSchema = new mongoose.Schema(
         },
         admin: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "User", // Admin nhóm (tuỳ chọn)
+            ref: "Profile", // Admin nhóm (tuỳ chọn)
         },
     },
     { timestamps: true }

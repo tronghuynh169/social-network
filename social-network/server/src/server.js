@@ -67,7 +67,6 @@ io.on("connection", (socket) => {
             }
 
             io.emit("newGroupCreated", newGroup); // Phát sự kiện đến tất cả client
-            console.log("✅ Group created:", newGroup);
         } catch (error) {
             console.error("❌ Error handling new group creation:", error);
         }
@@ -86,7 +85,7 @@ io.on("connection", (socket) => {
                 sender: data.sender,
                 conversation: data.conversationId,
                 text: data.text || "",
-                files: parsedFiles, // đảm bảo là mảng object
+                files: parsedFiles,
                 replyTo: data.replyTo || null,
             });
 
@@ -100,16 +99,62 @@ io.on("connection", (socket) => {
                 ])
             );
 
-            io.to(data.conversationId).emit("receiveMessage", savedMessage); // ✅ GỬI ĐẦY ĐỦ
+            // ✅ Cập nhật latestMessage trong conversation
+            await Conversation.findByIdAndUpdate(data.conversationId, {
+                latestMessage: savedMessage._id,
+            });
 
-            const conversation = await Conversation.findById(
+            // ✅ Gửi tin nhắn mới về client
+            io.to(data.conversationId).emit("receiveMessage", savedMessage);
+
+            // ✅ Lấy lại conversation đã populate để emit lên
+            const updatedConversation = await Conversation.findById(
                 data.conversationId
-            ).populate("members", "fullName");
-            if (conversation) {
-                io.emit("conversationUpdated", conversation);
-            }
+            )
+                .populate({
+                    path: "latestMessage",
+                    select: "text createdAt sender", // Chỉ lấy các trường cần thiết
+                    populate: { path: "sender", select: "fullName avatar" }, // Populate thông tin người gửi
+                })
+                .populate("members", "fullName avatar");
+
+            io.emit("conversationUpdated", updatedConversation);
         } catch (error) {
             console.error("❌ Lỗi khi lưu tin nhắn:", error);
+        }
+    });
+
+    socket.on("conversationUpdated", async (updatedConv) => {
+        try {
+            // Kiểm tra nếu `members` chưa tồn tại hoặc rỗng, thì truy vấn lại từ MongoDB
+            if (!updatedConv.members || updatedConv.members.length === 0) {
+                updatedConv = await Conversation.findById(updatedConv._id)
+                    .populate("members", "fullName avatar") // Populate thông tin thành viên
+                    .populate({
+                        path: "latestMessage",
+                        select: "text createdAt sender",
+                        populate: { path: "sender", select: "fullName avatar" },
+                    });
+
+                if (!updatedConv) {
+                    console.error("❌ Conversation not found in database.");
+                    return;
+                }
+            }
+
+            console.log(
+                "📢 Sending conversationUpdated event with populated members:",
+                updatedConv
+            );
+
+            // Phát sự kiện tới tất cả các thành viên
+            updatedConv.members.forEach((member) => {
+                socket
+                    .to(member._id.toString())
+                    .emit("conversationUpdated", updatedConv);
+            });
+        } catch (error) {
+            console.error("❌ Error handling conversationUpdated:", error);
         }
     });
 
