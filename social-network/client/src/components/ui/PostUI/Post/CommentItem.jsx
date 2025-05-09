@@ -46,7 +46,16 @@ const CommentItem = ({
     // 1. Khởi tạo state từ localStorage (lazy initializer)
     const [newReplyIds, setNewReplyIds] = useState([]);
     const hasMounted = useRef(false);
-    const [isRepliesViewed, setIsRepliesViewed] = useState(false);
+
+    const initialOwnReplyIds = useRef([]);
+
+    useEffect(() => {
+    const all = flattenReplies(comment.replies || []);
+    initialOwnReplyIds.current = all
+        .filter(r => r.userId._id === user.id)
+        .map(r => r._id);
+    }, [comment._id]);
+
     useEffect(() => {
         const fetchProfile = async () => {
             try {
@@ -62,31 +71,35 @@ const CommentItem = ({
         }
     }, [user.id]); 
 
+    
+   // 0. On mount: clear any leftover newReplies (state + localStorage)
+   useEffect(() => {
+     const key = `newReplies-${comment._id}`;
+     // Xóa localStorage nếu có
+     localStorage.removeItem(key);
+     // Reset state
+     setNewReplyIds([]);
+   }, [comment._id]);
+
      // 2. Khi comment.replies thay đổi, cập nhật cả state và localStorage
      useEffect(() => {
         if (!hasMounted.current) {
             hasMounted.current = true;
             return;
         }
-    
-        const key = `newReplies-${comment._id}`;
-        const seenKey = `seenReplies-${comment._id}`;
-        const isSeen = localStorage.getItem(seenKey);
-    
-        // Nếu đã xem rồi thì bỏ qua
-        if (isSeen === "true") return;
-    
+
+        // Lần update thứ 2+ khi comment.replies thay đổi:
         const all = flattenReplies(comment.replies || []);
         const myReplies = all.filter(r => r.userId._id === user.id);
         if (myReplies.length === 0) return;
-    
+
         const idsFromReplies = myReplies.map(r => r._id);
-        const existing = JSON.parse(localStorage.getItem(key) || "[]");
-        const merged = Array.from(new Set([...existing, ...idsFromReplies]));
-    
-        localStorage.setItem(key, JSON.stringify(merged));
-        setNewReplyIds(merged);
-    }, [comment.replies, user.id, comment._id]);
+        // Lấy current state, gộp vào
+        setNewReplyIds(prev => {
+            const merged = Array.from(new Set([...prev, ...idsFromReplies]));
+            return merged;
+        });
+        }, [comment.replies, user.id, comment._id]);
 
       const handleGoToProfile = async () => {
         const info = await getProfileByUserId(comment.userId._id);
@@ -152,7 +165,11 @@ const CommentItem = ({
     };
 
     const newRepliesToRender = flattenReplies(comment.replies || []).filter(
-    (r) => newReplyIds.includes(r._id)
+    r =>
+        // chỉ lấy những reply do mình tạo
+        r.userId._id === user.id &&
+        // và mà không có trong snapshot ban đầu
+        !initialOwnReplyIds.current.includes(r._id)
     );
 
 
@@ -252,18 +269,20 @@ const CommentItem = ({
                             )}
                             <button
                                 onClick={() => {
-                                    const key = `newReplies-${comment._id}`;
-                                    const seenKey = `seenReplies-${comment._id}`;
-                                    
-                                    localStorage.removeItem(key);
-                                    localStorage.setItem(seenKey, "true"); // ghi lại cờ đã xem
-                                    setNewReplyIds([]);
                                     if (onNavigateToDetail) {
-                                      onNavigateToDetail();
+                                    onNavigateToDetail();
                                     } else {
-                                      setShowReplies(prev => !prev);
+                                    if (showReplies) {
+                                        // CHÚ Ý: chuẩn bị ẩn, cập nhật snapshot baseline
+                                        const all = flattenReplies(comment.replies || []);
+                                        initialOwnReplyIds.current = all
+                                        .filter(r => r.userId._id === user.id)
+                                        .map(r => r._id);
                                     }
-                                  }}
+                                    // ẩn hoặc show
+                                    setShowReplies(prev => !prev);
+                                    }
+                                }}
                                 className="ml-2 text-[var(--text-secondary-color)] text-[12px] cursor-pointer"
                             >
                                 {showReplies
@@ -301,7 +320,6 @@ const CommentItem = ({
         )}
         {!isReply && !showReplies && newRepliesToRender.length > 0 && (
         <div className="mt-4 space-y-4">
-            {console.log("newRepliesToRender", newRepliesToRender)} 
           {newRepliesToRender.map((reply) => (
             <CommentItem
                 key={reply._id}
@@ -361,6 +379,7 @@ const CommentItem = ({
           <span key={lastIndex}>{text.slice(lastIndex, start)}</span>
         );
       }
+      console.log("userId", userId);
 
       // Thêm link mention 
       parts.push(
