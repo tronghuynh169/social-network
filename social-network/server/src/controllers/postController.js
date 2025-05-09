@@ -658,52 +658,35 @@ exports.getCommentLikes = async (req, res) => {
 
 exports.getReplyProfile = async (req, res) => {
     try {
-        const commentId = req.params.replyId;
+        const { replyToId } = req.params; // đây chính là ID của comment gốc (ví dụ: 1)
 
-        // 1. Tìm comment gốc
-        const comment = await Comment.findById(commentId).exec();
-        if (!comment) {
-            return res.status(404).json({ message: 'Comment không tồn tại' });
-        }
-
-        // 2. Kiểm tra xem comment có phải reply hay không
-        const replyToCommentId = comment.replyTo;
-        if (!replyToCommentId) {
-            return res
-                .status(400)
-                .json({ message: 'Comment này không phải reply', comment });
-        }
-
-        // 3. Lấy comment được reply
-        const repliedComment = await Comment.findById(replyToCommentId).exec();
-        if (!repliedComment) {
+        // 1. Tìm comment gốc (mà người ta đang reply tới)
+        const originalComment = await Comment.findById(replyToId).exec();
+        if (!originalComment) {
             return res
                 .status(404)
-                .json({ message: 'Comment bị reply không tìm thấy' });
+                .json({ message: 'Comment gốc không tồn tại' });
         }
 
-        // 4. Lấy userId của comment bị reply
-        const repliedUserId = repliedComment.userId;
-        if (!repliedUserId) {
-            return res
-                .status(500)
-                .json({ message: 'Comment bị reply chưa có userId' });
-        }
-
-        // 5. Lấy profile tương ứng
-        const profile = await Profile.findOne({ userId: repliedUserId })
+        // 2. Tìm profile của user đã viết comment gốc
+        const profile = await Profile.findOne({
+            userId: originalComment.userId,
+        })
             .select('username fullName slug avatar bio')
             .exec();
+
         if (!profile) {
             return res
                 .status(404)
-                .json({ message: 'Profile của user bị reply không tìm thấy' });
+                .json({
+                    message: 'Không tìm thấy profile của user viết comment gốc',
+                });
         }
 
-        // 6. Trả về profile
-        res.json({ profile });
+        // 3. Trả về profile
+        return res.json({ profile });
     } catch (err) {
-        console.error('Lỗi khi lấy profile của replyTo:', err);
-        res.status(500).json({ message: 'Lỗi server' });
+        console.error('Lỗi khi lấy profile user từ replyTo:', err);
+        return res.status(500).json({ message: 'Lỗi server' });
     }
 };

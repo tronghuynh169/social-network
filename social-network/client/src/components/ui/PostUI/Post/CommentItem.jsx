@@ -7,7 +7,7 @@ import { getProfileByUserId } from "~/api/profile";
 import { getReplyProfile } from "~/api/post";
 import { useNavigate, Link  } from "react-router-dom";
 import UserHoverCardPortal from "~/components/ui/UserHoverCard/UserHoverCardPortal";
-
+import Mention from "./Mention"; // đường dẫn tương ứng
 
 const CommentItem = ({
     comment,
@@ -380,17 +380,30 @@ const CommentItem = ({
         );
       }
       console.log("userId", userId);
+      // Kiểm tra userId: 24 hex → ObjectId, ngược lại slug
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(userId);
 
-      // Thêm link mention 
+    if (isObjectId) {
+      // ObjectId → dùng Mention để fetch profile và lấy slug
+      parts.push(
+        <Mention
+          key={`${userId}-${start}`}
+          commentId={userId}
+          fallbackName={fullName.trim()}
+        />
+      );
+    } else {
+      // Đã là slug → render Link thẳng, không gọi API
       parts.push(
         <Link
-          key={`${userId}-${start}`} // Sử dụng cả userId và vị trí làm key
+          key={`${userId}-${start}`}
           to={`/${userId}`}
           className="text-[#c8d7e4] hover:underline"
         >
           @{fullName.trim()}
         </Link>
       );
+    }
   
       lastIndex = start + fullMatch.length;
     }

@@ -47,7 +47,7 @@ router.put(
     },
     updatePost
 );
-router.get('/comments/:replyId/reply-profile', auth, getReplyProfile);
+router.get('/comments/:replyToId/reply-profile', auth, getReplyProfile);
 router.post('/:postId/like', auth, toggleLike);
 router.get('/:postId/likes', getPostLikes);
 router.get('/:postId/comments/:commentId/likes', getCommentLikes);
