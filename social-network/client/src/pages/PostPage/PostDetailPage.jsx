@@ -24,7 +24,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
-import { getProfileByUserId } from "~/api/profile";
+import { getProfileByUserId, getFollowing  } from "~/api/profile";
 import { formatPostTime } from "~/components/utils/formatPostTime";
 import { useUser } from "~/context/UserContext";
 import { motion } from "framer-motion";
@@ -68,6 +68,74 @@ export default function PostDetailPage({ isModal = false }) {
     const [isLoading, setIsLoading] = useState(true);
     const [isHovered, setIsHovered] = useState(false);
     const [hoverSource, setHoverSource] = useState(null); // 'avatar' or 'name'
+
+    // --- BEGIN AUTOCOMPLETE STATES ---
+    const [followings, setFollowings] = useState([]);
+    const [mentionSuggestions, setMentionSuggestions] = useState([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [cursorPosition, setCursorPosition] = useState(0);
+    // NEW: index của item đang được chọn bằng phím
+    const [activeIndex, setActiveIndex] = useState(-1);
+    
+    // 1. Ref cho wrapper chứa cả input + dropdown
+    const wrapperRef = useRef(null);
+
+    // 2. Dùng useEffect để lắng nghe click ngoài
+    useEffect(() => {
+      function handleClickOutside(event) {
+        // Nếu click không nằm trong wrapperRef, ẩn dropdown
+        if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+          setShowSuggestions(false);
+        }
+      }
+
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('touchstart', handleClickOutside);
+      };
+    }, []);
+
+    useEffect(() => {
+        const fetchFollowings = async () => {
+          try {
+            const profile = await getProfileByUserId(user.id);
+            const fullFollowings = await getFollowing(profile._id); 
+            setFollowings(fullFollowings); // loại bỏ null nếu có lỗi
+          } catch (err) {
+            console.error("Lỗi khi lấy danh sách follow:", err);
+          }
+        };
+      
+        fetchFollowings();
+      }, [user.id]);
+  
+      const handleSelectMention = (user) => {
+        console.log(user)
+        // 1. text hiển thị dạng @Full Name
+        const mentionDisplay = `@${user.fullName} `;
+        // 2. text internal dạng @{id}|Full Name
+        const mentionMarkup  = `@{${user.slug}}|${user.fullName} `;
+      
+        // 3. Thay phần "@..." cuối chuỗi displayComment
+        //    \p{L} là mọi chữ (có dấu), space là khoảng trắng, * nghĩa là nhiều hay ít
+        const newDisplay = displayComment.replace(/@[\p{L} ]*$/u, mentionDisplay);
+        setDisplayComment(newDisplay);
+      
+        // 4. Thay phần "@..." cuối chuỗi comment
+        //    (?:\{[^}]*\}\|)? để bỏ qua trường hợp cũ đã có @{...}|  
+        const newComment = comment.replace(/@(?:\{[^}]*\}\|)?[\p{L} ]*$/u, mentionMarkup);
+        setComment(newComment);
+      
+        // 5. Ẩn dropdown
+        setShowSuggestions(false);
+      
+        // 6. (Tuỳ chọn) di con trỏ về cuối nếu cần, ví dụ:
+        //    const newPos = newDisplay.length;
+        //    setCursorPosition(newPos);
+      };
     
     const handleDelete = () => {
         setShowOptionModal(false);
@@ -590,7 +658,7 @@ export default function PostDetailPage({ isModal = false }) {
                     )}
                     
                     {/* Input placeholder */}
-                    <div className="flex items-center space-x-2 pt-3">
+                    <div className="flex items-center space-x-2 pt-3 relative" ref={wrapperRef}>
                         <input
                             type="text"
                             ref={commentInputRef}
@@ -607,8 +675,52 @@ export default function PostDetailPage({ isModal = false }) {
                                 } else {
                                   setComment(newDisplayValue);
                                 }
+
+                                const cursorPos = e.target.selectionStart;
+                                setCursorPosition(cursorPos);
+
+                                const textBeforeCursor = newDisplayValue.slice(0, cursorPos);
+                                const atMatch = textBeforeCursor.match(/@(\w*)$/);
+
+                                if (atMatch) {
+                                    const query = atMatch[1].toLowerCase();
+
+                                    // ✅ Nếu user chỉ mới gõ "@" (chưa có ký tự gì thêm)
+                                    if (query === "") {
+                                    console.log("Hiển toàn bộ danh sách:", followings);
+                                    setMentionSuggestions(followings); // hiện toàn bộ danh sách
+                                    } else {
+                                    const matches = followings.filter((u) =>
+                                        u.username.toLowerCase().startsWith(query)
+                                    );
+                                    setMentionSuggestions(matches);
+                                    }
+                                    setShowSuggestions(true);
+                                } else {
+                                    setShowSuggestions(false);
+                                }
                               }}
                               onKeyDown={(e) => {
+                                if (showSuggestions) {
+                                    if (e.key === 'ArrowDown') {
+                                      e.preventDefault();
+                                      setActiveIndex(i =>
+                                        i < mentionSuggestions.length - 1 ? i + 1 : 0
+                                      );
+                                    } else if (e.key === 'ArrowUp') {
+                                      e.preventDefault();
+                                      setActiveIndex(i =>
+                                        i > 0 ? i - 1 : mentionSuggestions.length - 1
+                                      );
+                                    } else if (e.key === 'Enter' && activeIndex >= 0) {
+                                      e.preventDefault();
+                                      handleSelectMention(mentionSuggestions[activeIndex]);
+                                    } else if (e.key === 'Escape') {
+                                      setShowSuggestions(false);
+                                    }
+                                    return;
+                                  }
+
                                 if (e.key === "Enter" && !isCommenting && displayComment.trim()) {
                                     e.preventDefault(); // tránh submit form nếu có
                                     handleAddComment();
@@ -631,6 +743,26 @@ export default function PostDetailPage({ isModal = false }) {
                              
                             )
                         }
+                        {showSuggestions && mentionSuggestions.length > 0 && (
+                        <div className="absolute z-50 bg-[var(--primary-color)] bottom-full left-0 mb-1 w-[250px] max-h-60 overflow-y-auto">
+                            {mentionSuggestions.map((user, idx) => (
+                            <div
+                                key={user._id}
+                                className={`flex items-center gap-2 px-3 py-2 hover:bg-[var(--secondary-color)] cursor-pointer border-b border-[var(--border-color)] ${idx === activeIndex ? "bg-[var(--secondary-color)]" : ""}`}
+                                onClick={() => handleSelectMention(user)}
+                            >
+                                <img
+                                src={user.avatar || "/default-avatar.png"}
+                                alt={user.username}
+                                className="w-8 h-8 rounded-full object-cover"
+                                />
+                                <div className="flex flex-col">
+                                <span className="text-[primary-color] text-xs">{user.fullName}</span>
+                                </div>
+                            </div>
+                            ))}
+                        </div>
+                        )}
                     </div>
                 </div>
             </div>

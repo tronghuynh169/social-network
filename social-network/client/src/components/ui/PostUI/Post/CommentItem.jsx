@@ -43,14 +43,10 @@ const CommentItem = ({
     );
     const allReplies = showReplies ? flattenReplies(comment.replies) : [];
 
-    // 1. lưu ID replies ban đầu
-    const initialReplyIds = useRef((comment.replies || []).map(r => r._id));
-
-    // 2. state lưu các reply mới của chính user
-    const [newReplies, setNewReplies] = useState([]);
-
-
-
+    // 1. Khởi tạo state từ localStorage (lazy initializer)
+    const [newReplyIds, setNewReplyIds] = useState([]);
+    const hasMounted = useRef(false);
+    const [isRepliesViewed, setIsRepliesViewed] = useState(false);
     useEffect(() => {
         const fetchProfile = async () => {
             try {
@@ -66,30 +62,31 @@ const CommentItem = ({
         }
     }, [user.id]); 
 
-    // 3. Mỗi khi comment.replies thay đổi, tìm reply mới của chính user
-    useEffect(() => {
+     // 2. Khi comment.replies thay đổi, cập nhật cả state và localStorage
+     useEffect(() => {
+        if (!hasMounted.current) {
+            hasMounted.current = true;
+            return;
+        }
+    
+        const key = `newReplies-${comment._id}`;
+        const seenKey = `seenReplies-${comment._id}`;
+        const isSeen = localStorage.getItem(seenKey);
+    
+        // Nếu đã xem rồi thì bỏ qua
+        if (isSeen === "true") return;
+    
         const all = flattenReplies(comment.replies || []);
-        // chỉ lọc những reply của user chưa nằm trong initialReplyIds
-        const diff = all.filter(
-          (r) => r.userId._id === user.id && !initialReplyIds.current.includes(r._id)
-        );
-      
-        if (diff.length > 0) {
-          setNewReplies(diff);  // gán hẳn
-        
-          // cập nhật ref để lần sau không tính lại
-          initialReplyIds.current = [
-            ...initialReplyIds.current,
-            ...diff.map((r) => r._id),
-          ];
-        }
-      }, [comment.replies, user.id]);
-
-      useEffect(() => {
-        if (showReplies) {
-          setNewReplies([]);
-        }
-      }, [showReplies]);
+        const myReplies = all.filter(r => r.userId._id === user.id);
+        if (myReplies.length === 0) return;
+    
+        const idsFromReplies = myReplies.map(r => r._id);
+        const existing = JSON.parse(localStorage.getItem(key) || "[]");
+        const merged = Array.from(new Set([...existing, ...idsFromReplies]));
+    
+        localStorage.setItem(key, JSON.stringify(merged));
+        setNewReplyIds(merged);
+    }, [comment.replies, user.id, comment._id]);
 
       const handleGoToProfile = async () => {
         const info = await getProfileByUserId(comment.userId._id);
@@ -153,6 +150,10 @@ const CommentItem = ({
             console.error("Lỗi khi lấy thông tin người được trả lời:", error);
         }
     };
+
+    const newRepliesToRender = flattenReplies(comment.replies || []).filter(
+    (r) => newReplyIds.includes(r._id)
+    );
 
 
     return (
@@ -251,10 +252,16 @@ const CommentItem = ({
                             )}
                             <button
                                 onClick={() => {
+                                    const key = `newReplies-${comment._id}`;
+                                    const seenKey = `seenReplies-${comment._id}`;
+                                    
+                                    localStorage.removeItem(key);
+                                    localStorage.setItem(seenKey, "true"); // ghi lại cờ đã xem
+                                    setNewReplyIds([]);
                                     if (onNavigateToDetail) {
-                                        onNavigateToDetail(); 
+                                      onNavigateToDetail();
                                     } else {
-                                      setShowReplies((prev) => !prev); // Nếu không có thì toggle local
+                                      setShowReplies(prev => !prev);
                                     }
                                   }}
                                 className="ml-2 text-[var(--text-secondary-color)] text-[12px] cursor-pointer"
@@ -273,16 +280,7 @@ const CommentItem = ({
                             ? "fill-current text-red-500"
                             : "text-gray-500"
                     }`}
-                    onClick={() => {
-                        onLike(comment._id)
-                        setNewReplies(prev =>
-                            prev.map(r =>
-                              r._id === comment._id
-                                ? { ...r, isLikedComment: !r.isLikedComment, likesCommentCount: r.likesCommentCount + 1 }
-                                : r
-                            )
-                          );
-                    }}
+                    onClick={() =>onLike(comment._id)}
                 />
             </div>
 
@@ -301,21 +299,23 @@ const CommentItem = ({
                 ref={hoverCardRef}
             />
         )}
-        {!showReplies && newReplies.length > 0 && (
+        {!isReply && !showReplies && newRepliesToRender.length > 0 && (
         <div className="mt-4 space-y-4">
-            {console.log("newReplies", newReplies)}
-          {newReplies.map(reply => (
+            {console.log("newRepliesToRender", newRepliesToRender)} 
+          {newRepliesToRender.map((reply) => (
             <CommentItem
-              key={reply._id}
-              comment={reply}
-              user={user}
-              onReply={onReply}
-              onLike={onLike}
-              onDelete={onDelete}
-              isReply={true}
-              isDirectReply={true}
+                key={reply._id}
+                comment={reply}
+                user={user}
+                onReply={onReply}
+                onLike={onLike}
+                onDelete={onDelete}
+                isReply={true}
+                isDirectReply={true}
+                showLikesModal={false}
+                setShowLikesModal={() => {}}
             />
-          ))}
+            ))}
         </div>
       )}
             {/* Đệ quy hiển thị replies */}

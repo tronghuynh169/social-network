@@ -101,6 +101,7 @@ export default function PostCard({ post }) {
     
       fetchFollowings();
     }, [user.id]);
+    
 
     const handleSelectMention = (user) => {
       console.log(user)
@@ -233,6 +234,7 @@ export default function PostCard({ post }) {
       try {
         // 2. Gọi API xóa
         await deleteComment(post._id, commentId);
+        await fetchComment();
       } catch (err) {
         console.error("Lỗi xóa comment:", err);
         setComments(postFromContext?.comments || []);
@@ -591,28 +593,33 @@ export default function PostCard({ post }) {
           </button>
         
 
-          {comments
-            .filter((c) => c.userId._id === user.id)
-            .reverse()
-            .slice(0, 1)
-            .map((c) => (
-              <CommentItem
-                key={c._id}
-                comment={c}
-                user={user}
-                onReply={(id, name) => {
-                  setReplyTo(id);
-                  setReplyToUser(name);
-                  setComment(`@{${id}}|${name}  `);
-                  setDisplayComment(`@${name} `);
-                }}
-                onLike={handleCommentLike}
-                onDelete={handleDeleteComment}
-                onNavigateToDetail={handleNavigateToDetail}
-              />
-          ))}
+          {(() => {
+          const myComments = comments.filter((c) => c.userId._id === user.id);
+          const selectedComment =
+            myComments.length > 0
+              ? myComments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]
+              : comments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+
+          return selectedComment ? (
+            <CommentItem
+              key={selectedComment._id}
+              comment={selectedComment}
+              user={user}
+              onReply={(id, name) => {
+                setReplyTo(id);
+                setReplyToUser(name);
+                setComment(`@{${id}}|${name}  `);
+                setDisplayComment(`@${name} `);
+              }}
+              onLike={handleCommentLike}
+              onDelete={handleDeleteComment}
+              onNavigateToDetail={handleNavigateToDetail}
+            />
+          ) : null;
+        })()}
         </div>
       )}
+
       <div ref={wrapperRef} className="flex items-center space-x-2 pt-2 relative">
         <input
           type="text"
