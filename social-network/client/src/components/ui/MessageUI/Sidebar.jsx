@@ -229,6 +229,24 @@ const Sidebar = ({
         };
     }, []);
 
+    useEffect(() => {
+        const handleConversationDeleted = ({ conversationId: deletedId }) => {
+            setUsersInfo((prev) =>
+                prev.filter((conv) => conv.conversationId !== deletedId)
+            );
+
+            if (deletedId === conversationId) {
+                navigate("/message");
+            }
+        };
+
+        socket.on("conversationDeleted", handleConversationDeleted);
+
+        return () => {
+            socket.off("conversationDeleted", handleConversationDeleted);
+        };
+    }, [conversationId, navigate]);
+
     return (
         <div className="w-[25%] border-r border-[var(--secondary-color)] flex flex-col">
             <div className="pt-9 pb-3 px-6 font-bold text-[20px] flex items-center justify-between">

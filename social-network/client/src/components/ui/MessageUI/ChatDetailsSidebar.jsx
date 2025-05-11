@@ -72,6 +72,7 @@ const ChatDetailsSidebar = ({
                     admin={admin}
                     isGroup={isGroup}
                     myProfileId={myProfileId}
+                    conversationId={conversationId}
                     handleRemoveMember={handleRemoveMember}
                 />
             </AccordionItem>

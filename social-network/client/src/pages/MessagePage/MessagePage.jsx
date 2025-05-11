@@ -357,6 +357,20 @@ const MessagePage = () => {
         };
     }, [conversationId, navigate]);
 
+    useEffect(() => {
+        const handleConversationDeleted = ({ conversationId }) => {
+            if (conversationId === conversationId) {
+                navigate("/message"); // Redirect the user to the homepage
+            }
+        };
+
+        socket.on("conversationDeleted", handleConversationDeleted);
+
+        return () => {
+            socket.off("conversationDeleted", handleConversationDeleted);
+        };
+    }, [conversationId, navigate]);
+
     return (
         <div className="flex h-screen w-full">
             {/* Sidebar */}

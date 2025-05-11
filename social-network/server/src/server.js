@@ -112,21 +112,21 @@ io.on("connection", (socket) => {
                 latestMessage: savedMessage._id,
             });
 
-            // ✅ Gửi tin nhắn mới về client
-            io.to(data.conversationId).emit("receiveMessage", savedMessage);
-
-            // ✅ Lấy lại conversation đã populate để emit lên
+            // ✅ Phát sự kiện toàn cục để cập nhật sidebar và các thành viên khác
             const updatedConversation = await Conversation.findById(
                 data.conversationId
             )
                 .populate({
                     path: "latestMessage",
-                    select: "text createdAt sender", // Chỉ lấy các trường cần thiết
-                    populate: { path: "sender", select: "fullName avatar" }, // Populate thông tin người gửi
+                    select: "text createdAt sender",
+                    populate: { path: "sender", select: "fullName avatar" },
                 })
                 .populate("members", "fullName avatar");
 
-            io.emit("conversationUpdated", updatedConversation);
+            io.emit("conversationUpdated", updatedConversation); // Cập nhật toàn cục
+
+            // ✅ Gửi tin nhắn mới về client trong phòng
+            io.to(data.conversationId).emit("receiveMessage", savedMessage);
         } catch (error) {
             console.error("❌ Lỗi khi lưu tin nhắn:", error);
         }
@@ -149,18 +149,7 @@ io.on("connection", (socket) => {
                 }
             }
 
-            console.log(
-                "📢 Broadcasting conversationUpdated to:",
-                updatedConv.members.map((m) => m._id.toString())
-            );
-
-            // Dùng io.to(...) để gửi cho tất cả thành viên đang online
-            updatedConv.members.forEach((member) => {
-                io.to(member._id.toString()).emit(
-                    "conversationUpdated",
-                    updatedConv
-                );
-            });
+            io.emit("conversationUpdated", updatedConv);
         } catch (err) {
             console.error("❌ Error in conversationUpdated:", err);
         }
@@ -361,6 +350,34 @@ io.on("connection", (socket) => {
             }
         } catch (error) {
             console.error("❌ Lỗi khi chỉnh sửa tin nhắn:", error);
+        }
+    });
+
+    // Handle delete conversation
+    socket.on("deleteConversation", async ({ conversationId }) => {
+        try {
+            const conversation = await Conversation.findById(conversationId);
+
+            if (!conversation) {
+                return socket.emit("error", {
+                    message: "Conversation not found.",
+                });
+            }
+
+            // Phát sự kiện `conversationDeleted` tới tất cả các client
+            io.emit("conversationDeleted", {
+                conversationId,
+                message: "Cuộc trò chuyện đã bị xóa.",
+            });
+
+            // Delete the conversation and its messages
+            await Conversation.findByIdAndDelete(conversationId);
+            await Message.deleteMany({ conversation: conversationId });
+
+            console.log(`✅ Conversation ${conversationId} deleted.`);
+        } catch (error) {
+            console.error("❌ Error deleting conversation:", error);
+            socket.emit("error", { message: "Lỗi khi xóa cuộc trò chuyện." });
         }
     });
 });

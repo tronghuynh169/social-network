@@ -1,35 +1,55 @@
 import React, { useState } from "react";
 import { Bell, LogOut, Trash2 } from "lucide-react";
-import ConfirmationModal from "../Modal/ConfirmationModal"; // Import a reusable modal component
+import ConfirmationModal from "../Modal/ConfirmationModal";
+import socket from "~/socket";
 
 const PrivacySection = ({
     admin,
     isGroup,
     myProfileId,
     handleRemoveMember,
+    conversationId,
 }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalContent, setModalContent] = useState("");
+    const [onConfirmAction, setOnConfirmAction] = useState(null);
+    const [showConfirmButton, setShowConfirmButton] = useState(true); // Thêm state để kiểm soát nút "Xác nhận"
+
+    const handleDeleteConversation = () => {
+        if (!conversationId) {
+            alert("Không tìm thấy đoạn chat để xóa!"); // Thông báo lỗi nếu thiếu conversationId
+            return;
+        }
+
+        setModalContent("Bạn có chắc chắn muốn xóa đoạn chat này?");
+        setOnConfirmAction(() => () => {
+            socket.emit("deleteConversation", { conversationId }, () => {
+                alert("Đoạn chat đã được xóa thành công!"); // Có thể thay bằng react-toastify
+            });
+            setIsModalOpen(false);
+        });
+        setShowConfirmButton(true); // Hiển thị nút "Xác nhận" cho hành động hợp lệ
+        setIsModalOpen(true);
+    };
 
     const handleLeaveChat = () => {
         if (admin._id === myProfileId) {
-            // If the user is the admin, set warning message
             setModalContent(
                 "Admin không thể rời nhóm. Vui lòng chuyển quyền admin cho người khác trước khi rời nhóm."
             );
-            setIsModalOpen(true);
+            setOnConfirmAction(() => () => {
+                setIsModalOpen(false);
+            });
+            setShowConfirmButton(false); // Ẩn nút "Xác nhận" vì hành động không hợp lệ
         } else {
-            // Confirmation before leaving the chat
             setModalContent("Bạn có chắc chắn muốn rời đoạn chat này?");
-            setIsModalOpen(true);
+            setOnConfirmAction(() => () => {
+                handleRemoveMember(myProfileId);
+                setIsModalOpen(false);
+            });
+            setShowConfirmButton(true); // Hiển thị nút "Xác nhận" cho hành động hợp lệ
         }
-    };
-
-    const confirmAction = () => {
-        if (admin._id !== myProfileId) {
-            handleRemoveMember(myProfileId); // Proceed with leaving the chat
-        }
-        setIsModalOpen(false); // Close the modal
+        setIsModalOpen(true);
     };
 
     return (
@@ -47,29 +67,22 @@ const PrivacySection = ({
                     Rời đoạn chat
                 </button>
             )}
-            {isGroup ? (
-                admin._id === myProfileId ? (
-                    <button className="flex gap-3 hover:bg-[var(--secondary-color)] cursor-pointer rounded-lg px-2 py-3 w-full">
-                        <Trash2 />
-                        Xóa đoạn chat
-                    </button>
-                ) : (
-                    ""
-                )
-            ) : (
-                <button className="flex gap-3 hover:bg-[var(--secondary-color)] cursor-pointer rounded-lg px-2 py-3 w-full">
+            {isGroup && admin._id === myProfileId && (
+                <button
+                    onClick={handleDeleteConversation}
+                    className="flex gap-3 hover:bg-[var(--secondary-color)] cursor-pointer rounded-lg px-2 py-3 w-full"
+                >
                     <Trash2 />
                     Xóa đoạn chat
                 </button>
             )}
 
-            {/* Confirmation Modal */}
             {isModalOpen && (
                 <ConfirmationModal
                     content={modalContent}
                     onClose={() => setIsModalOpen(false)}
-                    onConfirm={confirmAction}
-                    showConfirmButton={admin._id !== myProfileId} // Only show confirm button for non-admins
+                    onConfirm={onConfirmAction}
+                    showConfirmButton={showConfirmButton} // Điều khiển hiển thị nút "Xác nhận"
                 />
             )}
         </div>
