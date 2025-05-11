@@ -15,6 +15,8 @@ router.delete(
     chatController.removeMember
 );
 
+router.post("/conversation/change-admin", auth, chatController.changeAdmin);
+
 router.post("/conversation", auth, chatController.createConversation);
 router.get(
     "/conversation/id/:conversationId",

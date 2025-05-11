@@ -135,3 +135,16 @@ export const removeMemberFromConversation = async (
         throw error;
     }
 };
+
+export const changeAdmin = async (conversationId, newAdminId) => {
+    try {
+        const response = await apiClient.post("/conversation/change-admin", {
+            conversationId,
+            newAdminId,
+        });
+        return response.data;
+    } catch (error) {
+        console.error("❌ Lỗi đổi quản trị viên:", error);
+        throw error; // Để caller có thể xử lý lỗi
+    }
+};

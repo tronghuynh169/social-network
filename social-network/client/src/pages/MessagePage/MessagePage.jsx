@@ -12,6 +12,7 @@ import {
     addMembersToConversation,
     getUserConversations,
     removeMemberFromConversation,
+    changeAdmin,
 } from "~/api/chat";
 import { getProfileById } from "~/api/profile";
 import { io } from "socket.io-client";
@@ -37,7 +38,6 @@ const MessagePage = () => {
     const [showInfo, setShowInfo] = useState(false);
     const [replyMessage, setReplyMessage] = useState(null);
     const [usersInfo, setUsersInfo] = useState([]);
-
     useEffect(() => {
         const fetchMessages = async () => {
             const data = await getMessages(conversationId);
@@ -371,6 +371,32 @@ const MessagePage = () => {
         };
     }, [conversationId, navigate]);
 
+    const handleChangeAdmin = async (newAdminId) => {
+        if (newAdminId === admin._id) {
+            return;
+        }
+
+        try {
+            // Gọi API để đổi admin
+            const updatedConversation = await changeAdmin(
+                conversationId,
+                newAdminId
+            );
+
+            // Phát sự kiện qua Socket.IO
+            socket.emit("changeAdmin", {
+                conversationId,
+                newAdminId,
+            });
+
+            // Cập nhật giao diện nhóm ngay lập tức
+            setConversation(updatedConversation);
+            setAdmin(updatedConversation.admin);
+        } catch (error) {
+            alert("Không thể đổi quản trị viên. Vui lòng thử lại.");
+        }
+    };
+
     return (
         <div className="flex h-screen w-full">
             {/* Sidebar */}
@@ -447,6 +473,7 @@ const MessagePage = () => {
                     usersInfo={usersInfo}
                     setShowAddMemberModal={setShowAddMemberModal}
                     handleRemoveMember={handleRemoveMember}
+                    handleChangeAdmin={handleChangeAdmin}
                 />
             )}
 

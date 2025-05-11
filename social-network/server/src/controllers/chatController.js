@@ -300,3 +300,43 @@ exports.removeMember = async (req, res) => {
         res.status(500).json({ error: "Không thể xóa thành viên." });
     }
 };
+
+exports.changeAdmin = async (req, res) => {
+    const { conversationId, newAdminId } = req.body;
+
+    try {
+        const conversation = await Conversation.findById(conversationId);
+
+        if (!conversation) {
+            return res
+                .status(404)
+                .json({ message: "Cuộc trò chuyện không tồn tại." });
+        }
+
+        // Kiểm tra xem newAdminId có phải là thành viên của nhóm hay không
+        if (!conversation.members.includes(newAdminId)) {
+            return res.status(400).json({
+                message: "Người này không phải là thành viên của nhóm.",
+            });
+        }
+
+        // Cập nhật admin
+        conversation.admin = newAdminId;
+        await conversation.save();
+
+        // Populate thông tin admin và các trường liên quan
+        const updatedConversation = await Conversation.findById(conversationId)
+            .populate("admin", "fullName avatar") // Populate admin
+            .populate("members", "fullName avatar") // Populate thành viên
+            .populate({
+                path: "latestMessage",
+                select: "text createdAt sender",
+                populate: { path: "sender", select: "fullName avatar" },
+            });
+
+        res.status(200).json(updatedConversation);
+    } catch (error) {
+        console.error("❌ Lỗi đổi quản trị viên:", error);
+        res.status(500).json({ error: "Không thể đổi quản trị viên." });
+    }
+};

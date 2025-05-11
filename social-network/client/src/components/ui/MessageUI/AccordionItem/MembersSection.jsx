@@ -11,6 +11,7 @@ const MembersSection = ({
     setShowAddMemberModal,
     conversationId,
     handleRemoveMember,
+    handleChangeAdmin,
 }) => {
     const [openPopoverId, setOpenPopoverId] = useState(null);
     const popoverRef = useRef(null);
@@ -84,6 +85,7 @@ const MembersSection = ({
                                         isGroup={isGroup}
                                         conversationId={conversationId}
                                         handleRemoveMember={handleRemoveMember}
+                                        handleChangeAdmin={handleChangeAdmin}
                                     />
                                 </div>
                             )}

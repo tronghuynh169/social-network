@@ -14,6 +14,7 @@ const ChatDetailsSidebar = ({
     setShowAddMemberModal,
     conversationId,
     handleRemoveMember,
+    handleChangeAdmin,
 }) => {
     const [openSection, setOpenSection] = useState("Thông tin");
 
@@ -52,6 +53,7 @@ const ChatDetailsSidebar = ({
                     setShowAddMemberModal={setShowAddMemberModal}
                     conversationId={conversationId}
                     handleRemoveMember={handleRemoveMember}
+                    handleChangeAdmin={handleChangeAdmin}
                 />
             </AccordionItem>
 

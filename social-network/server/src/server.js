@@ -380,6 +380,43 @@ io.on("connection", (socket) => {
             socket.emit("error", { message: "Lỗi khi xóa cuộc trò chuyện." });
         }
     });
+
+    socket.on("changeAdmin", async ({ conversationId, newAdminId }) => {
+        try {
+            const conversation = await Conversation.findById(conversationId);
+
+            if (!conversation) {
+                return socket.emit("error", {
+                    message: "Cuộc trò chuyện không tồn tại.",
+                });
+            }
+
+            // Cập nhật admin
+            conversation.admin = newAdminId;
+            await conversation.save();
+
+            // Populate thông tin admin và các trường cần thiết
+            const updatedConversation = await Conversation.findById(
+                conversationId
+            )
+                .populate("admin", "fullName avatar") // Populate thông tin admin
+                .populate("members", "fullName avatar") // Populate thông tin thành viên
+                .populate({
+                    path: "latestMessage",
+                    select: "text createdAt sender",
+                    populate: { path: "sender", select: "fullName avatar" },
+                });
+
+            // Phát sự kiện tới tất cả client
+            io.to(conversationId).emit(
+                "conversationUpdated",
+                updatedConversation
+            );
+        } catch (error) {
+            console.error("❌ Lỗi khi đổi quản trị viên:", error);
+            socket.emit("error", { message: "Không thể đổi quản trị viên." });
+        }
+    });
 });
 
 // Start the server

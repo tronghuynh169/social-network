@@ -60,6 +60,10 @@ const ChatInput = ({
     const handleFilesChange = (e) => {
         const files = Array.from(e.target.files);
         setSelectedFiles((prev) => [...prev, ...files]);
+
+        // Reset giá trị của input file để cho phép chọn lại cùng file
+        e.target.value = "";
+
         setTimeout(() => {
             inputRef.current?.focus();
         }, 0);
