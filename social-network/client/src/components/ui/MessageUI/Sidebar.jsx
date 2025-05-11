@@ -162,17 +162,22 @@ const Sidebar = ({
 
     useEffect(() => {
         const handleConversationUpdated = (updatedConv) => {
-            console.log("📢 Received conversationUpdated event:", updatedConv);
-
             setUsersInfo((prev) => {
                 const exists = prev.some(
                     (c) => c.conversationId === updatedConv._id
                 );
-
-                let updated = [];
                 if (exists) {
-                    // Nếu cuộc trò chuyện đã tồn tại, cập nhật thông tin
-                    updated = prev.map((c) =>
+                    // Nếu người dùng bị xóa khỏi nhóm, loại bỏ cuộc trò chuyện
+                    if (
+                        !updatedConv.members.some((m) => m._id === profile._id)
+                    ) {
+                        return prev.filter(
+                            (c) => c.conversationId !== updatedConv._id
+                        );
+                    }
+
+                    // Cập nhật thông tin nếu cuộc trò chuyện tồn tại
+                    return prev.map((c) =>
                         c.conversationId === updatedConv._id
                             ? {
                                   ...c,
@@ -182,45 +187,47 @@ const Sidebar = ({
                             : c
                     );
                 } else {
-                    // Nếu cuộc trò chuyện chưa tồn tại (thành viên mới), thêm vào danh sách
-                    const name = updatedConv.isGroup
-                        ? updatedConv.name
-                        : updatedConv.members.find((m) => m._id !== profile._id)
-                              ?.fullName || "Đối thoại riêng";
-                    const avatar = updatedConv.isGroup
-                        ? updatedConv.avatar
-                        : updatedConv.members.find((m) => m._id !== profile._id)
-                              ?.avatar ||
-                          "http://localhost:5173/images/avatar-default-user.png";
-
-                    updated = [
+                    // Nếu cuộc trò chuyện mới, thêm vào danh sách
+                    return [
                         {
                             conversationId: updatedConv._id,
                             isGroup: updatedConv.isGroup,
-                            name,
-                            avatar,
+                            name: updatedConv.name,
+                            avatar: updatedConv.avatar,
                             members: updatedConv.members,
                             latestMessage: updatedConv.latestMessage,
                         },
                         ...prev,
                     ];
                 }
-
-                return updated.sort(
-                    (a, b) =>
-                        new Date(b.latestMessage?.createdAt || b.createdAt) -
-                        new Date(a.latestMessage?.createdAt || a.createdAt)
-                );
             });
         };
 
-        // Lắng nghe sự kiện từ server
         socket.on("conversationUpdated", handleConversationUpdated);
 
         return () => {
             socket.off("conversationUpdated", handleConversationUpdated);
         };
     }, [profile]);
+
+    useEffect(() => {
+        const handleConversationUpdated = (updatedConv) => {
+            setUsersInfo((prev) =>
+                prev.map((conv) =>
+                    conv.conversationId === updatedConv._id
+                        ? { ...conv, members: updatedConv.members }
+                        : conv
+                )
+            );
+        };
+
+        // Lắng nghe sự kiện `conversationUpdated`
+        socket.on("conversationUpdated", handleConversationUpdated);
+
+        return () => {
+            socket.off("conversationUpdated", handleConversationUpdated);
+        };
+    }, []);
 
     return (
         <div className="w-[25%] border-r border-[var(--secondary-color)] flex flex-col">

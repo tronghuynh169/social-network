@@ -11,6 +11,7 @@ import {
     uploadImage,
     addMembersToConversation,
     getUserConversations,
+    removeMemberFromConversation,
 } from "~/api/chat";
 import { getProfileById } from "~/api/profile";
 import { io } from "socket.io-client";
@@ -283,6 +284,81 @@ const MessagePage = () => {
         };
     }, [conversationId]);
 
+    const handleRemoveMember = async (memberId) => {
+        try {
+            const response = await removeMemberFromConversation(
+                conversationId,
+                memberId,
+                profile._id
+            );
+
+            console.log("Xóa thành viên thành công:", response.message);
+
+            // Cập nhật giao diện
+            const updatedConversation = response.conversation;
+            setConversation(updatedConversation);
+
+            // Cập nhật danh sách cuộc trò chuyện trong Sidebar
+            const updatedConversations = await getUserConversations(
+                profile._id
+            );
+            updateSidebar(updatedConversations);
+
+            // Phát sự kiện qua Socket.IO để thông báo tới các thành viên khác
+            socket.emit("conversationUpdated", updatedConversation);
+        } catch (err) {
+            console.error("❌ Lỗi xóa thành viên:", err);
+            alert("Không thể xóa thành viên. Vui lòng thử lại.");
+        }
+    };
+
+    useEffect(() => {
+        if (conversationId) {
+            // Join a conversation room
+            socket.emit("joinConversation", conversationId);
+
+            // Lắng nghe sự kiện cập nhật cuộc trò chuyện hiện tại
+            const handleConversationUpdated = (updatedConv) => {
+                if (updatedConv._id === conversationId) {
+                    setConversation(updatedConv); // Cập nhật giao diện
+                    setUsersInfo((prev) =>
+                        prev.map((conv) =>
+                            conv.conversationId === conversationId
+                                ? { ...conv, members: updatedConv.members }
+                                : conv
+                        )
+                    );
+                }
+            };
+
+            socket.on("conversationUpdated", handleConversationUpdated);
+
+            return () => {
+                // Rời khỏi phòng khi component bị unmount
+                socket.emit("leaveConversation", conversationId);
+                socket.off("conversationUpdated", handleConversationUpdated);
+            };
+        }
+    }, [conversationId]);
+
+    useEffect(() => {
+        const handleRemovedFromConversation = ({ conversationId, message }) => {
+            if (conversationId === conversationId) {
+                alert(message); // Hoặc sử dụng thư viện như react-toastify để hiển thị toast
+                navigate("/"); // Điều hướng người dùng ra khỏi nhóm
+            }
+        };
+
+        socket.on("removedFromConversation", handleRemovedFromConversation);
+
+        return () => {
+            socket.off(
+                "removedFromConversation",
+                handleRemovedFromConversation
+            );
+        };
+    }, [conversationId, navigate]);
+
     return (
         <div className="flex h-screen w-full">
             {/* Sidebar */}
@@ -358,6 +434,7 @@ const MessagePage = () => {
                     avatar={avatar}
                     usersInfo={usersInfo}
                     setShowAddMemberModal={setShowAddMemberModal}
+                    handleRemoveMember={handleRemoveMember}
                 />
             )}
 

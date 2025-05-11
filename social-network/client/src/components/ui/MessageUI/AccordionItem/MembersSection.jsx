@@ -9,6 +9,8 @@ const MembersSection = ({
     myProfileId,
     admin,
     setShowAddMemberModal,
+    conversationId,
+    handleRemoveMember,
 }) => {
     const [openPopoverId, setOpenPopoverId] = useState(null);
     const popoverRef = useRef(null);
@@ -36,7 +38,7 @@ const MembersSection = ({
     return (
         <div className="space-y-3">
             {membersInfo
-                .filter((member) => isGroup || member._id !== myProfileId)
+                .filter((member) => isGroup || member?._id !== myProfileId)
                 .map((member) => (
                     <div
                         key={member._id}
@@ -80,6 +82,8 @@ const MembersSection = ({
                                         myProfileId={myProfileId}
                                         admin={admin}
                                         isGroup={isGroup}
+                                        conversationId={conversationId}
+                                        handleRemoveMember={handleRemoveMember}
                                     />
                                 </div>
                             )}

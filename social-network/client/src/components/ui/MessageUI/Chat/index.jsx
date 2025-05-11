@@ -2,9 +2,9 @@ import React, { useEffect, useRef, useState } from "react";
 import ChatHeader from "./ChatHeader";
 import ChatMessages from "./ChatMessages/ChatMessages";
 import ChatInput from "./ChatInput";
-import ImageModal from "./Modal/ImageModal";
-import LikeModal from "./Modal/LikeModal";
-import ChatRoomsModal from "./Modal/ChatRoomsModal";
+import ImageModal from "../Modal/ImageModal";
+import LikeModal from "../Modal/LikeModal";
+import ChatRoomsModal from "../Modal/ChatRoomsModal";
 
 const ChatBox = ({
     messages,
@@ -201,6 +201,7 @@ const ChatBox = ({
                 onToggleInfo={onToggleInfo}
                 showInfo={showInfo}
                 usersInfo={usersInfo}
+                conversationId={conversationId}
             />
             <div className="flex-1 overflow-auto px-6 py-4 text-sm space-y-2">
                 <ChatMessages

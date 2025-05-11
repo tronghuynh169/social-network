@@ -9,6 +9,7 @@ const ChatHeader = ({
     onToggleInfo,
     showInfo,
     usersInfo, // Nhận usersInfo từ props
+    conversationId,
 }) => {
     const correctAvatar = isGroup
         ? avatar // Sử dụng avatar nhóm nếu là nhóm
@@ -40,6 +41,7 @@ const ChatHeader = ({
                     }`} // Thêm điều kiện màu sắc
                     onClick={onToggleInfo}
                     isGroup={isGroup}
+                    conversationId={conversationId}
                 />
             </div>
         </div>

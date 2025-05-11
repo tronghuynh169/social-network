@@ -53,6 +53,14 @@ const io = new Server(server, {
 
 // Socket.IO logic
 io.on("connection", (socket) => {
+    const userId = socket.handshake.query.userId; // hoặc lấy từ token sau khi xác thực
+
+    if (userId) {
+        socket.userId = userId;
+        socket.join(userId.toString()); // Cho phép gửi io.to(userId) ở các sự kiện
+        console.log("✅ User joined room:", userId);
+    }
+
     // Xử lý sự kiện "newGroupCreated"
     socket.on("newGroupCreated", async (newGroup) => {
         try {
@@ -126,10 +134,9 @@ io.on("connection", (socket) => {
 
     socket.on("conversationUpdated", async (updatedConv) => {
         try {
-            // Kiểm tra nếu `members` chưa tồn tại hoặc rỗng, thì truy vấn lại từ MongoDB
             if (!updatedConv.members || updatedConv.members.length === 0) {
                 updatedConv = await Conversation.findById(updatedConv._id)
-                    .populate("members", "fullName avatar") // Populate thông tin thành viên
+                    .populate("members", "fullName avatar")
                     .populate({
                         path: "latestMessage",
                         select: "text createdAt sender",
@@ -143,18 +150,19 @@ io.on("connection", (socket) => {
             }
 
             console.log(
-                "📢 Sending conversationUpdated event with populated members:",
-                updatedConv
+                "📢 Broadcasting conversationUpdated to:",
+                updatedConv.members.map((m) => m._id.toString())
             );
 
-            // Phát sự kiện tới tất cả các thành viên
+            // Dùng io.to(...) để gửi cho tất cả thành viên đang online
             updatedConv.members.forEach((member) => {
-                socket
-                    .to(member._id.toString())
-                    .emit("conversationUpdated", updatedConv);
+                io.to(member._id.toString()).emit(
+                    "conversationUpdated",
+                    updatedConv
+                );
             });
-        } catch (error) {
-            console.error("❌ Error handling conversationUpdated:", error);
+        } catch (err) {
+            console.error("❌ Error in conversationUpdated:", err);
         }
     });
 
@@ -162,6 +170,11 @@ io.on("connection", (socket) => {
     socket.on("joinConversation", (conversationId) => {
         socket.join(conversationId);
         console.log(`🔗 User joined conversation: ${conversationId}`);
+    });
+
+    socket.on("leaveConversation", (conversationId) => {
+        socket.leave(conversationId);
+        console.log(`❌ User left conversation: ${conversationId}`);
     });
 
     // Handle client disconnect

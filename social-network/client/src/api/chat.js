@@ -118,3 +118,20 @@ export const addMembersToConversation = async (conversationId, newMembers) => {
         throw error; // để caller có thể catch và xử lý
     }
 };
+
+export const removeMemberFromConversation = async (
+    conversationId,
+    memberId,
+    userId
+) => {
+    try {
+        const response = await apiClient.delete(
+            `/conversation/${conversationId}/member/${memberId}`,
+            { data: { userId } } // Gửi ID admin
+        );
+        return response.data;
+    } catch (error) {
+        console.error("❌ Lỗi xóa thành viên:", error);
+        throw error;
+    }
+};

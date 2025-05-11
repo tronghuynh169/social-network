@@ -261,3 +261,49 @@ exports.addMembers = async (req, res) => {
         return res.status(500).json({ error: "Không thể thêm thành viên" });
     }
 };
+
+exports.removeMember = async (req, res) => {
+    const { conversationId, memberId } = req.params;
+    const { userId } = req.body; // ID của người thực hiện yêu cầu
+
+    try {
+        const conversation = await Conversation.findById(conversationId);
+
+        if (!conversation) {
+            return res
+                .status(404)
+                .json({ message: "Cuộc trò chuyện không tồn tại." });
+        }
+
+        // Kiểm tra xem người thực hiện có phải admin không
+        if (conversation.admin.toString() !== userId) {
+            return res
+                .status(403)
+                .json({ message: "Bạn không có quyền xóa thành viên." });
+        }
+
+        // Xóa thành viên khỏi nhóm
+        conversation.members = conversation.members.filter(
+            (member) => member.toString() !== memberId
+        );
+        await conversation.save();
+
+        // Populate lại thông tin nhóm sau khi xóa thành viên
+        const updatedConversation = await Conversation.findById(conversationId)
+            .populate("members", "fullName avatar") // Populate thông tin thành viên
+            .populate({
+                path: "latestMessage",
+                select: "text createdAt sender", // Populate tin nhắn cuối
+                populate: { path: "sender", select: "fullName avatar" }, // Populate thông tin người gửi
+            });
+
+        // Gửi phản hồi về cho frontend
+        res.status(200).json({
+            message: "Xóa thành viên thành công.",
+            conversation: updatedConversation,
+        });
+    } catch (err) {
+        console.error("❌ Lỗi khi xóa thành viên:", err);
+        res.status(500).json({ error: "Không thể xóa thành viên." });
+    }
+};

@@ -9,6 +9,11 @@ router.post(
     auth,
     chatController.addMembers
 );
+router.delete(
+    "/conversation/:conversationId/member/:memberId",
+    auth,
+    chatController.removeMember
+);
 
 router.post("/conversation", auth, chatController.createConversation);
 router.get(

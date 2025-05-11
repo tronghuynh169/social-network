@@ -12,6 +12,8 @@ const ChatDetailsSidebar = ({
     isGroup,
     myProfileId,
     setShowAddMemberModal,
+    conversationId,
+    handleRemoveMember,
 }) => {
     const [openSection, setOpenSection] = useState("Thông tin");
 
@@ -48,6 +50,8 @@ const ChatDetailsSidebar = ({
                     myProfileId={myProfileId}
                     admin={admin}
                     setShowAddMemberModal={setShowAddMemberModal}
+                    conversationId={conversationId}
+                    handleRemoveMember={handleRemoveMember}
                 />
             </AccordionItem>
 
