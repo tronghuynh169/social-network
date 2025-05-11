@@ -292,8 +292,6 @@ const MessagePage = () => {
                 profile._id
             );
 
-            console.log("Xóa thành viên thành công:", response.message);
-
             // Cập nhật giao diện
             const updatedConversation = response.conversation;
             setConversation(updatedConversation);

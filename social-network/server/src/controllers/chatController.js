@@ -275,13 +275,6 @@ exports.removeMember = async (req, res) => {
                 .json({ message: "Cuộc trò chuyện không tồn tại." });
         }
 
-        // Kiểm tra xem người thực hiện có phải admin không
-        if (conversation.admin.toString() !== userId) {
-            return res
-                .status(403)
-                .json({ message: "Bạn không có quyền xóa thành viên." });
-        }
-
         // Xóa thành viên khỏi nhóm
         conversation.members = conversation.members.filter(
             (member) => member.toString() !== memberId
