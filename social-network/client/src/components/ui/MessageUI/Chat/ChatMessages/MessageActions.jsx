@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Smile, Reply, MoreVertical } from "lucide-react";
-import MoreVerticalPopover from "./MoreVerticalPopover"; // Đổi tên thành MoreVerticalPopover
+import MoreVerticalPopover from "../../Popover/MoreVerticalPopover"; // Đổi tên thành MoreVerticalPopover
 
 const MessageActions = ({
     msg,
