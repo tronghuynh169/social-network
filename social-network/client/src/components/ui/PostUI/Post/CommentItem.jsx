@@ -379,7 +379,6 @@ const CommentItem = ({
           <span key={lastIndex}>{text.slice(lastIndex, start)}</span>
         );
       }
-      console.log("userId", userId);
       // Kiểm tra userId: 24 hex → ObjectId, ngược lại slug
     const isObjectId = /^[0-9a-fA-F]{24}$/.test(userId);
 

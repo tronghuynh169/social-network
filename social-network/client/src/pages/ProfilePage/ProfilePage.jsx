@@ -12,6 +12,7 @@ import { useUser } from "~/context/UserContext";
 import FollowButton from "~/components/ui/ProfileUI/FollowButton/FollowButton";
 import FollowersDialog from "~/components/ui/ProfileUI/FollowDialogUI/FollowersDialog";
 import FollowingDialog from "~/components/ui/ProfileUI/FollowDialogUI/FollowingDialog";
+import UserPostList from '~/components/ui/ProfileUI/UserPostList/UserPostList';
 
 const ProfilePage = ({ setAvatar }) => {
     const { slug } = useParams();
@@ -118,7 +119,7 @@ const ProfilePage = ({ setAvatar }) => {
     // Chỉ render giao diện khi tất cả dữ liệu đã sẵn sàng
     return (
         <div className="h-screen overflow-y-auto flex flex-col items-center">
-            <div className="max-w-4xl p-6 flex items-center space-x-8 mx-auto">
+            <div className="max-w-4xl p-6 flex items-center space-x-8 mx-auto border-b border-[var(--border-color)]">
                 {/* Avatar */}
                 <div className="relative group">
                     <img
@@ -195,7 +196,7 @@ const ProfilePage = ({ setAvatar }) => {
                     <span className="">{profile.bio}</span>
                 </div>
             </div>
-
+            <UserPostList userId={profile.userId} />
             {/* Avatar Modal */}
             <AvatarSyncModal
                 isOpen={isAvatarModalOpen}
@@ -224,6 +225,7 @@ const ProfilePage = ({ setAvatar }) => {
                 />
             )}
         </div>
+        
     );
 };
 

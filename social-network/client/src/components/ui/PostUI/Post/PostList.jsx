@@ -15,11 +15,6 @@ export default function PostList() {
     ));
   };
 
-
-  useEffect(() => {
-    console.log("Updated posts from context:", posts);
-  }, [posts]);
-
   return (
     <div className="space-y-8">
       {posts.map((post) => 

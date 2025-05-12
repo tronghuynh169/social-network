@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect  } from "react";
-import { getAllPosts } from '~/api/post';
+import { getAllPosts, getUserPosts } from '~/api/post';
 import { useUser } from "~/context/UserContext";
 
 const PostContext = createContext();
@@ -63,8 +63,26 @@ export const PostProvider = ({ children }) => {
       fetchPosts();
     }, [user]);
 
+    const fetchUserPosts = async (userId) => {
+    try {
+      const res = await getUserPosts(userId);
+      const userPosts = res.data.map(post => ({
+        ...post,
+        likesCount: post.likes?.length || 0,
+      }));
+
+      setPosts(prev => {
+        // Loại bỏ các bài viết cũ của user đó (nếu cần)
+        const filtered = prev.filter(post => post.userId._id !== userId);
+        return [...filtered, ...userPosts];
+      });
+    } catch (err) {
+      console.error('Lỗi khi load bài viết của user:', err);
+    }
+  };
+
   return (
-    <PostContext.Provider value={{ posts, setPosts  ,updatePostLike , updatePostData   }}>
+    <PostContext.Provider value={{ posts, setPosts  ,updatePostLike , updatePostData, fetchUserPosts }}>
       {children}
     </PostContext.Provider>
   );

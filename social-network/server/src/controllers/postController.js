@@ -75,58 +75,65 @@ exports.getUserPosts = async (req, res) => {
         const userId = req.params.id;
         const currentUserId = req.user.id;
 
-        // Lấy profile của current user để kiểm tra danh sách following
-        const currentProfile = await Profile.findOne({
-            userId: currentUserId,
-        }).select('following');
-        if (!currentProfile) {
-            return res.status(404).json({ message: 'Profile not found' });
-        }
-
         // Nếu là bài viết của chính mình
         if (userId === currentUserId.toString()) {
             const posts = await Post.find({ userId })
                 .populate('userId', 'username profilePicture')
                 .sort({ createdAt: -1 });
-            const modifiedPosts = posts.map((post) => {
-                const isLiked = post.likes.includes(currentUserId);
-                return {
-                    ...post.toObject(),
-                    isLiked,
-                };
-            });
+
+            const modifiedPosts = posts.map((post) => ({
+                ...post.toObject(),
+                isLiked: post.likes.includes(currentUserId),
+            }));
 
             return res.json(modifiedPosts);
         }
 
-        // Kiểm tra xem có đang follow user đó không
-        const isFollowing =
-            Array.isArray(currentProfile.following) &&
-            currentProfile.following.includes(userId);
-
-        // Kiểm tra xem user mục tiêu có tồn tại không
+        // Kiểm tra user tồn tại
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        // Nếu không follow thì chỉ xem được bài viết public
-        let query = { userId };
-        if (!isFollowing) {
-            query.visibility = 'public';
+        // Tìm profile của current user
+        const currentProfile = await Profile.findOne({
+            userId: currentUserId,
+        }).select('_id');
+        if (!currentProfile) {
+            return res
+                .status(404)
+                .json({ message: 'Current user profile not found' });
         }
 
-        const posts = await Post.find(query)
+        // Tìm danh sách followers của người bị xem
+        const targetProfile = await Profile.findOne({ userId }).select(
+            'followers'
+        );
+
+        const isFollower =
+            Array.isArray(targetProfile.followers) &&
+            targetProfile.followers.some(
+                (followerId) =>
+                    followerId.toString() === currentProfile._id.toString()
+            );
+
+        // Nếu là follower thì xem được cả bài followers
+        let visibilityQuery = [{ visibility: 'public' }];
+        if (isFollower) {
+            visibilityQuery.push({ visibility: 'followers' });
+        }
+
+        const posts = await Post.find({
+            userId,
+            $or: visibilityQuery,
+        })
             .populate('userId', 'username profilePicture')
             .sort({ createdAt: -1 });
 
-        const modifiedPosts = posts.map((post) => {
-            const isLiked = post.likes.includes(currentUserId);
-            return {
-                ...post.toObject(),
-                isLiked,
-            };
-        });
+        const modifiedPosts = posts.map((post) => ({
+            ...post.toObject(),
+            isLiked: post.likes.includes(currentUserId),
+        }));
 
         return res.json(modifiedPosts);
     } catch (err) {
@@ -676,11 +683,9 @@ exports.getReplyProfile = async (req, res) => {
             .exec();
 
         if (!profile) {
-            return res
-                .status(404)
-                .json({
-                    message: 'Không tìm thấy profile của user viết comment gốc',
-                });
+            return res.status(404).json({
+                message: 'Không tìm thấy profile của user viết comment gốc',
+            });
         }
 
         // 3. Trả về profile
