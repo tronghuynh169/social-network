@@ -17,6 +17,7 @@ import {
 import { getProfileById } from "~/api/profile";
 import { io } from "socket.io-client";
 import AddMemberModal from "../../components/ui/MessageUI/Modal/AddMemberModal";
+import EmojiModal from "~/components/EmojiModal";
 
 const socket = io(import.meta.env.VITE_API_URL || "http://localhost:5000");
 
@@ -38,6 +39,18 @@ const MessagePage = () => {
     const [showInfo, setShowInfo] = useState(false);
     const [replyMessage, setReplyMessage] = useState(null);
     const [usersInfo, setUsersInfo] = useState([]);
+    const [isEmojiModalOpen, setIsEmojiModalOpen] = useState(false); // Kiểm soát trạng thái modal
+    const [selectedEmoji, setSelectedEmoji] = useState("👍"); // Lưu emoji đã chọn
+
+    const handleOpenModal = () => {
+        setIsEmojiModalOpen(true);
+    };
+    const handleCloseModal = () => setIsEmojiModalOpen(false);
+
+    const handleEmojiSelect = (emoji) => {
+        setSelectedEmoji(emoji);
+    };
+
     useEffect(() => {
         const fetchMessages = async () => {
             const data = await getMessages(conversationId);
@@ -431,6 +444,7 @@ const MessagePage = () => {
                     socket={socket}
                     usersInfo={usersInfo}
                     inputRef={inputRef}
+                    emoji={selectedEmoji}
                 />
             ) : (
                 <div className="flex flex-col justify-center items-center flex-1">
@@ -474,6 +488,7 @@ const MessagePage = () => {
                     setShowAddMemberModal={setShowAddMemberModal}
                     handleRemoveMember={handleRemoveMember}
                     handleChangeAdmin={handleChangeAdmin}
+                    handleOpenModal={handleOpenModal}
                 />
             )}
 
@@ -494,6 +509,12 @@ const MessagePage = () => {
                     onSelect={handleAddMembers}
                 />
             )}
+            <EmojiModal
+                isOpen={isEmojiModalOpen}
+                onClose={handleCloseModal}
+                title="Chọn biểu tượng cảm xúc"
+                onEmojiSelect={handleEmojiSelect} // Truyền callback xử lý emoji đã chọn
+            />
         </div>
     );
 };

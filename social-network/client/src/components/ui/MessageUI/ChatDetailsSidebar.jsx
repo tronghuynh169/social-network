@@ -15,6 +15,7 @@ const ChatDetailsSidebar = ({
     conversationId,
     handleRemoveMember,
     handleChangeAdmin,
+    handleOpenModal,
 }) => {
     const [openSection, setOpenSection] = useState("Thông tin");
 
@@ -37,7 +38,7 @@ const ChatDetailsSidebar = ({
                 isOpen={openSection === "Tùy chỉnh"}
                 onClick={() => toggleSection("Tùy chỉnh")}
             >
-                <CustomizationSection />
+                <CustomizationSection handleOpenModal={handleOpenModal}/>
             </AccordionItem>
 
             <AccordionItem

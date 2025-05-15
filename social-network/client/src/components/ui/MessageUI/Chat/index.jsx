@@ -27,6 +27,7 @@ const ChatBox = ({
     socket,
     usersInfo,
     inputRef,
+    emoji,
 }) => {
     const bottomRef = useRef(null);
     const [viewingImage, setViewingImage] = useState(null);
@@ -234,6 +235,7 @@ const ChatBox = ({
                 editMessage={editMessage}
                 setEditMessage={setEditMessage}
                 conversationId={conversationId}
+                emoji={emoji}
             />
             <ImageModal
                 isOpen={isImageModalOpen}

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Smile, Mic, ImageIcon, Heart, X } from "lucide-react";
 import { Input } from "~/components/ui/input";
 import socket from "~/socket";
+import EmojiModal from "~/components/EmojiModal";
 
 const ChatInput = ({
     currentUserId,
@@ -16,8 +17,19 @@ const ChatInput = ({
     editMessage,
     setEditMessage,
     conversationId,
+    emoji,
 }) => {
     const [originalMessage, setOriginalMessage] = useState(""); // Lưu trữ nội dung gốc khi chỉnh sửa
+    const [isEmojiModalOpen, setIsEmojiModalOpen] = useState(false); // Kiểm soát trạng thái modal
+
+    const handleOpenModal = () => {
+        setIsEmojiModalOpen(true);
+    };
+    const handleCloseModal = () => setIsEmojiModalOpen(false);
+
+    const handleEmojiSelect = (emoji) => {
+        setMessage((prevMessage) => prevMessage + emoji);
+    };
 
     useEffect(() => {
         if (editMessage) {
@@ -101,7 +113,7 @@ const ChatInput = ({
         socket.emit("sendMessage", {
             sender: currentUserId, // Gửi ID người dùng hiện tại
             conversationId: conversationId, // Thay thế bằng ID cuộc trò chuyện hiện tại
-            text: "❤️", // Nội dung tin nhắn là emoji trái tim
+            text: emoji, // Nội dung tin nhắn là emoji trái tim
         });
     };
 
@@ -201,6 +213,7 @@ const ChatInput = ({
                 <span
                     title="Chọn biểu tượng cảm xúc"
                     className="cursor-pointer"
+                    onClick={handleOpenModal}
                 >
                     <Smile />
                 </span>
@@ -238,13 +251,19 @@ const ChatInput = ({
                         <span
                             title="Thích"
                             onClick={handleSendLike}
-                            className="cursor-pointer"
+                            className="cursor-pointer text-[20px]"
                         >
-                            <Heart />
+                            {emoji}
                         </span>
                     </>
                 )}
             </div>
+            <EmojiModal
+                isOpen={isEmojiModalOpen}
+                onClose={handleCloseModal}
+                title="Chọn biểu tượng cảm xúc"
+                onEmojiSelect={handleEmojiSelect} // Truyền callback xử lý emoji đã chọn
+            />
         </div>
     );
 };

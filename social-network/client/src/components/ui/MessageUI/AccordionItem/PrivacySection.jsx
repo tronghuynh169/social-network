@@ -53,15 +53,15 @@ const PrivacySection = ({
     };
 
     return (
-        <div className="space-y-1">
-            <button className="flex gap-3 hover:bg-[var(--secondary-color)] cursor-pointer rounded-lg px-2 py-3 w-full">
+        <div className="space-y-1 text-[15px]">
+            <button className="flex items-center gap-3 hover:bg-[var(--secondary-color)] cursor-pointer rounded-lg px-2 py-3 w-full">
                 <Bell />
                 Tắt thông báo
             </button>
             {isGroup && (
                 <button
                     onClick={handleLeaveChat}
-                    className="flex gap-3 hover:bg-[var(--secondary-color)] cursor-pointer rounded-lg px-2 py-3 w-full"
+                    className="flex items-center gap-3 hover:bg-[var(--secondary-color)] cursor-pointer rounded-lg px-2 py-3 w-full"
                 >
                     <LogOut />
                     Rời đoạn chat
@@ -70,7 +70,7 @@ const PrivacySection = ({
             {isGroup && admin._id === myProfileId && (
                 <button
                     onClick={handleDeleteConversation}
-                    className="flex gap-3 hover:bg-[var(--secondary-color)] cursor-pointer rounded-lg px-2 py-3 w-full"
+                    className="flex items-center gap-3 hover:bg-[var(--secondary-color)] cursor-pointer rounded-lg px-2 py-3 w-full"
                 >
                     <Trash2 />
                     Xóa đoạn chat
@@ -80,7 +80,7 @@ const PrivacySection = ({
             {!isGroup && (
                 <button
                     onClick={handleDeleteConversation}
-                    className="flex gap-3 hover:bg-[var(--secondary-color)] cursor-pointer rounded-lg px-2 py-3 w-full"
+                    className="flex items-center gap-3 hover:bg-[var(--secondary-color)] cursor-pointer rounded-lg px-2 py-3 w-full"
                 >
                     <Trash2 />
                     Xóa đoạn chat

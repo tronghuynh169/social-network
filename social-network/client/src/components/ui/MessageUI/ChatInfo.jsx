@@ -15,6 +15,7 @@ const ChatInfo = ({
     conversationId,
     handleRemoveMember,
     handleChangeAdmin,
+    handleOpenModal,
 }) => {
     const correctAvatar = isGroup
         ? avatar // Sử dụng avatar nhóm nếu là nhóm
@@ -57,6 +58,7 @@ const ChatInfo = ({
                 conversationId={conversationId}
                 handleRemoveMember={handleRemoveMember}
                 handleChangeAdmin={handleChangeAdmin}
+                handleOpenModal={handleOpenModal}
             />
         </div>
     );
