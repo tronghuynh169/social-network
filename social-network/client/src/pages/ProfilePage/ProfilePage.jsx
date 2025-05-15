@@ -6,14 +6,15 @@ import {
     getFollowers,
     getFollowing,
 } from "~/api/profile";
-import { getUserPostCount } from '~/api/post';
+import { getUserPostCount } from "~/api/post";
 import { Settings } from "lucide-react";
 import AvatarSyncModal from "~/components/ui/ProfileUI/AvatarModal";
 import { useUser } from "~/context/UserContext";
 import FollowButton from "~/components/ui/ProfileUI/FollowButton/FollowButton";
 import FollowersDialog from "~/components/ui/ProfileUI/FollowDialogUI/FollowersDialog";
 import FollowingDialog from "~/components/ui/ProfileUI/FollowDialogUI/FollowingDialog";
-import UserPostList from '~/components/ui/ProfileUI/UserPostList/UserPostList';
+import UserPostList from "~/components/ui/ProfileUI/UserPostList/UserPostList";
+import { handleStartPrivateChat } from "~/components/utils/chatHelpers";
 
 const ProfilePage = ({ setAvatar }) => {
     const { slug } = useParams();
@@ -31,7 +32,15 @@ const ProfilePage = ({ setAvatar }) => {
     const [isFollowingDialogOpen, setIsFollowingDialogOpen] = useState(false);
     const [followingList, setFollowingList] = useState([]);
     const [postCount, setPostCount] = useState(0);
+    const [isStartChat, setIsStartChat] = useState(false);
 
+    const handleChat = () => {
+        handleStartPrivateChat({
+            currentUserId: currentProfileId,
+            friend: profile,
+            navigate,
+        });
+    };
 
     useEffect(() => {
         const fetchAllData = async () => {
@@ -75,12 +84,12 @@ const ProfilePage = ({ setAvatar }) => {
     }, [slug, navigate, user]);
 
     useEffect(() => {
-      const fetchPostCount = async () => {
-        if (!profile) return;
-        const count = await getUserPostCount(profile.userId);
-        setPostCount(count);
-      };
-      fetchPostCount();
+        const fetchPostCount = async () => {
+            if (!profile) return;
+            const count = await getUserPostCount(profile.userId);
+            setPostCount(count);
+        };
+        fetchPostCount();
     }, [profile?.userId]);
 
     // Thêm hàm fetch followers
@@ -140,11 +149,13 @@ const ProfilePage = ({ setAvatar }) => {
                             alt="Avatar"
                             className="w-32 h-32 mx-auto rounded-full cursor-pointer transition-transform hover:scale-105 active:scale-95"
                             onClick={
-                                isOwner ? () => setIsAvatarModalOpen(true) : null
+                                isOwner
+                                    ? () => setIsAvatarModalOpen(true)
+                                    : null
                             }
                         />
                     </div>
-    
+
                     <div className="flex flex-col space-y-2 ml-10">
                         <div className="flex items-center space-x-4">
                             <h1 className="text-2xl max-w-80">
@@ -166,9 +177,12 @@ const ProfilePage = ({ setAvatar }) => {
                                             setIsFollowing={setIsFollowing}
                                         />
                                     )}
-    
+
                                     {/* Nút Nhắn tin */}
-                                    <button className="bg-[var(--button-color)] hover:bg-[var(--secondary-color)] px-4 py-2 rounded-md cursor-pointer text-[14px]">
+                                    <button
+                                        onClick={handleChat}
+                                        className="bg-[var(--button-color)] hover:bg-[var(--secondary-color)] px-4 py-2 rounded-md cursor-pointer text-[14px]"
+                                    >
                                         Nhắn tin
                                     </button>
                                 </>
@@ -191,7 +205,7 @@ const ProfilePage = ({ setAvatar }) => {
                                 </strong>{" "}
                                 người theo dõi
                             </span>
-    
+
                             <span
                                 className="cursor-pointer"
                                 onClick={handleOpenFollowing}
@@ -214,7 +228,6 @@ const ProfilePage = ({ setAvatar }) => {
                     <UserPostList userId={profile.userId} />
                 </div>
             </div>
-
 
             {/* Avatar Modal */}
             <AvatarSyncModal
@@ -243,8 +256,13 @@ const ProfilePage = ({ setAvatar }) => {
                     isOpen={isFollowingDialogOpen}
                 />
             )}
+            {isStartChat && (
+                <StartPrivateChat
+                    friend={profile}
+                    onFinish={() => setIsStartChat(false)}
+                />
+            )}
         </div>
-        
     );
 };
 

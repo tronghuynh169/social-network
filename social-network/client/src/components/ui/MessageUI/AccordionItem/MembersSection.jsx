@@ -71,11 +71,13 @@ const MembersSection = ({
                                 openPopoverId === member._id ? popoverRef : null
                             }
                         >
-                            <MoreVertical
-                                size={18}
-                                className="text-[var(--text-secondary-color)] cursor-pointer"
-                                onClick={() => togglePopover(member._id)}
-                            />
+                            <span title="Tùy chọn thành viên"   >
+                                <MoreVertical
+                                    size={18}
+                                    className="text-[var(--text-secondary-color)] cursor-pointer"
+                                    onClick={() => togglePopover(member._id)}
+                                />
+                            </span>
                             {openPopoverId === member._id && (
                                 <div className="absolute bottom-full mb-2 right-0 z-10">
                                     <MemberPopover

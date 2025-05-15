@@ -203,7 +203,7 @@ const ChatInput = ({
                 </div>
             )}
             <div className="flex items-center gap-3">
-                <Smile />
+                <span title="Chọn biểu tượng cảm xúc" className="cursor-pointer"><Smile /></span>
                 <Input
                     ref={inputRef}
                     placeholder="Nhắn tin..."
@@ -226,11 +226,11 @@ const ChatInput = ({
                     </button>
                 ) : (
                     <>
-                        <Mic className="cursor-pointer" />
-                        <label htmlFor="upload-file">
+                        <span title="Clip âm thanh"><Mic className="cursor-pointer" /></span>
+                        <label htmlFor="upload-file" title="Thêm ảnh hoặc video">
                             <ImageIcon className="cursor-pointer" />
                         </label>
-                        <Heart className="cursor-pointer" />
+                        <span title="Thích"><Heart className="cursor-pointer" /></span>
                     </>
                 )}
             </div>

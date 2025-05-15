@@ -10,7 +10,6 @@ exports.createConversation = async (req, res) => {
     try {
         const { members, isGroup, admin, name, avatar } = req.body;
 
-        // Kiểm tra members có hợp lệ không
         if (!Array.isArray(members)) {
             return res
                 .status(400)
@@ -19,7 +18,18 @@ exports.createConversation = async (req, res) => {
 
         const sortedMembers = [...members].sort();
 
-        // Ví dụ: tạo cuộc trò chuyện
+        // ✅ Kiểm tra nếu là chat 1-1 thì không tạo trùng
+        if (!isGroup && sortedMembers.length === 2) {
+            const existing = await Conversation.findOne({
+                isGroup: false,
+                members: { $all: sortedMembers, $size: 2 },
+            });
+
+            if (existing) {
+                return res.status(200).json(existing); // Trả về conversation đã có
+            }
+        }
+
         const conversation = new Conversation({
             members: sortedMembers,
             isGroup,

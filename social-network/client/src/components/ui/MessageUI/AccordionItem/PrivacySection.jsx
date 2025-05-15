@@ -77,6 +77,16 @@ const PrivacySection = ({
                 </button>
             )}
 
+            {!isGroup && (
+                <button
+                    onClick={handleDeleteConversation}
+                    className="flex gap-3 hover:bg-[var(--secondary-color)] cursor-pointer rounded-lg px-2 py-3 w-full"
+                >
+                    <Trash2 />
+                    Xóa đoạn chat
+                </button>
+            )}
+
             {isModalOpen && (
                 <ConfirmationModal
                     content={modalContent}

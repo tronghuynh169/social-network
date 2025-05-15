@@ -31,18 +31,20 @@ const ChatHeader = ({
                 <div className="font-semibold">{nameGroupChat}</div>
             </div>
             <div className="flex gap-4">
-                <Phone className="cursor-pointer" />
-                <Video className="cursor-pointer" />
-                <Info
-                    className={`cursor-pointer rounded-full  ${
-                        showInfo
-                            ? "text-[var(--primary-color)] bg-[var(--text-primary-color)]"
-                            : ""
-                    }`} // Thêm điều kiện màu sắc
-                    onClick={onToggleInfo}
-                    isGroup={isGroup}
-                    conversationId={conversationId}
-                />
+                <span title="Gọi thoại"><Phone className="cursor-pointer" /></span>
+                <span title="Gọi video"><Video className="cursor-pointer" /></span>
+                <span title="Thông tin về cuộc trò chuyện">
+                    <Info
+                        className={`cursor-pointer rounded-full  ${
+                            showInfo
+                                ? "text-[var(--primary-color)] bg-[var(--text-primary-color)]"
+                                : ""
+                        }`} // Thêm điều kiện màu sắc
+                        onClick={onToggleInfo}
+                        isGroup={isGroup}
+                        conversationId={conversationId}
+                    />
+                </span>
             </div>
         </div>
     );

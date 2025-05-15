@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import SearchFriendModal from "~/components/ui/MessageUI/SearchFriendModal";
+import SearchFriendModal from "~/components/ui/MessageUI/Modal/SearchFriendModal";
 import { useUser } from "~/context/UserContext";
 import Sidebar from "~/components/ui/MessageUI/Sidebar";
 import ChatBox from "~/components/ui/MessageUI/chat";
