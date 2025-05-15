@@ -233,6 +233,7 @@ const ChatBox = ({
                 setReplyMessage={setReplyMessage}
                 editMessage={editMessage}
                 setEditMessage={setEditMessage}
+                conversationId={conversationId}
             />
             <ImageModal
                 isOpen={isImageModalOpen}

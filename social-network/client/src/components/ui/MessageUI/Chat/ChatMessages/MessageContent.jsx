@@ -1,4 +1,5 @@
 import React from "react";
+import emojiRegex from "emoji-regex"; // Import thư viện emoji-regex
 
 const MessageContent = ({
     msg,
@@ -6,6 +7,13 @@ const MessageContent = ({
     setViewingImage,
     setIsImageModalOpen,
 }) => {
+    // Hàm kiểm tra nếu tin nhắn chỉ chứa emoji
+    const isOnlyEmoji = (text) => {
+        const regex = emojiRegex();
+        const matches = text.match(regex); // Tìm tất cả emoji trong chuỗi
+        return matches && matches.join("") === text.trim(); // Kiểm tra nếu toàn bộ text chỉ là emoji
+    };
+
     return (
         <div
             className={`flex flex-col ${
@@ -34,9 +42,17 @@ const MessageContent = ({
 
                     {msg.text && (
                         <div
-                            className={`break-words rounded-2xl px-3 py-2 whitespace-pre-wrap ${
+                            className={`${
+                                isOnlyEmoji(msg.text)
+                                    ? "text-5xl leading-none" // Kích thước lớn cho emoji
+                                    : "break-words rounded-2xl px-3 py-2 whitespace-pre-wrap"
+                            } ${
                                 isMe
-                                    ? "bg-[var(--text-me-message-color)]"
+                                    ? isOnlyEmoji(msg.text)
+                                        ? "" // Không có background cho emoji
+                                        : "bg-[var(--text-me-message-color)]"
+                                    : isOnlyEmoji(msg.text)
+                                    ? ""
                                     : "bg-[var(--text-otther-message-color)]"
                             }`}
                         >

@@ -15,6 +15,7 @@ const ChatInput = ({
     setReplyMessage,
     editMessage,
     setEditMessage,
+    conversationId,
 }) => {
     const [originalMessage, setOriginalMessage] = useState(""); // Lưu trữ nội dung gốc khi chỉnh sửa
 
@@ -26,7 +27,6 @@ const ChatInput = ({
         }
     }, [editMessage]);
 
-    // Focus vào input khi có reply
     useEffect(() => {
         if (replyMessage) {
             inputRef.current?.focus();
@@ -36,7 +36,6 @@ const ChatInput = ({
     const handleSendMessage = () => {
         if (message.trim() || selectedFiles.length > 0) {
             if (editMessage) {
-                // Gửi tin nhắn đã chỉnh sửa
                 socket.emit("editMessage", {
                     messageId: editMessage._id,
                     newText: message.trim(),
@@ -61,7 +60,6 @@ const ChatInput = ({
         const files = Array.from(e.target.files);
         setSelectedFiles((prev) => [...prev, ...files]);
 
-        // Reset giá trị của input file để cho phép chọn lại cùng file
         e.target.value = "";
 
         setTimeout(() => {
@@ -78,7 +76,6 @@ const ChatInput = ({
 
     const isSendDisabled = () => {
         if (editMessage) {
-            // Kiểm tra nếu đang chỉnh sửa và nội dung không thay đổi
             return message.trim() === originalMessage.trim();
         }
         return !message.trim() && selectedFiles.length === 0;
@@ -98,6 +95,14 @@ const ChatInput = ({
         setTimeout(() => {
             inputRef.current?.focus(); // Focus input
         }, 0);
+    };
+
+    const handleSendLike = () => {
+        socket.emit("sendMessage", {
+            sender: currentUserId, // Gửi ID người dùng hiện tại
+            conversationId: conversationId, // Thay thế bằng ID cuộc trò chuyện hiện tại
+            text: "❤️", // Nội dung tin nhắn là emoji trái tim
+        });
     };
 
     return (
@@ -155,29 +160,19 @@ const ChatInput = ({
                         </button>
                     </div>
                     <div className="text-[var(--text-secondary-color)] mt-1">
-                        {
-                            // Kiểm tra nếu replyMessage có file đính kèm
-                            replyMessage.files &&
-                            replyMessage.files.length > 0 ? (
-                                // Kiểm tra nếu là hình ảnh
-                                replyMessage.files[0].type.startsWith(
-                                    "image/"
-                                ) ? (
-                                    <span className="">Hình ảnh</span>
-                                ) : // Kiểm tra nếu là video
-                                replyMessage.files[0].type.startsWith(
-                                      "video/"
-                                  ) ? (
-                                    <span className="">Video</span>
-                                ) : (
-                                    // Nếu là file khác
-                                    <span className="">File đính kèm</span>
-                                )
+                        {replyMessage.files && replyMessage.files.length > 0 ? (
+                            replyMessage.files[0].type.startsWith("image/") ? (
+                                <span className="">Hình ảnh</span>
+                            ) : replyMessage.files[0].type.startsWith(
+                                  "video/"
+                              ) ? (
+                                <span className="">Video</span>
                             ) : (
-                                // Nếu không có file, hiển thị nội dung tin nhắn
-                                replyMessage.text
+                                <span className="">File đính kèm</span>
                             )
-                        }
+                        ) : (
+                            replyMessage.text
+                        )}
                     </div>
                 </div>
             )}
@@ -203,7 +198,12 @@ const ChatInput = ({
                 </div>
             )}
             <div className="flex items-center gap-3">
-                <span title="Chọn biểu tượng cảm xúc" className="cursor-pointer"><Smile /></span>
+                <span
+                    title="Chọn biểu tượng cảm xúc"
+                    className="cursor-pointer"
+                >
+                    <Smile />
+                </span>
                 <Input
                     ref={inputRef}
                     placeholder="Nhắn tin..."
@@ -226,11 +226,22 @@ const ChatInput = ({
                     </button>
                 ) : (
                     <>
-                        <span title="Clip âm thanh"><Mic className="cursor-pointer" /></span>
-                        <label htmlFor="upload-file" title="Thêm ảnh hoặc video">
+                        <span title="Clip âm thanh">
+                            <Mic className="cursor-pointer" />
+                        </span>
+                        <label
+                            htmlFor="upload-file"
+                            title="Thêm ảnh hoặc video"
+                        >
                             <ImageIcon className="cursor-pointer" />
                         </label>
-                        <span title="Thích"><Heart className="cursor-pointer" /></span>
+                        <span
+                            title="Thích"
+                            onClick={handleSendLike}
+                            className="cursor-pointer"
+                        >
+                            <Heart />
+                        </span>
                     </>
                 )}
             </div>
