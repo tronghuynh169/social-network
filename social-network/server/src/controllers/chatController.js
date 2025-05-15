@@ -350,3 +350,26 @@ exports.changeAdmin = async (req, res) => {
         res.status(500).json({ error: "Không thể đổi quản trị viên." });
     }
 };
+
+exports.updateEmoji = async (req, res) => {
+    const { conversationId } = req.params;
+    const { emoji } = req.body;
+
+    try {
+        const updatedConversation = await Conversation.findByIdAndUpdate(
+            conversationId,
+            { emoji },
+            { new: true }
+        );
+
+        if (!updatedConversation) {
+            return res.status(404).json({ message: "Conversation not found." });
+        }
+
+        // Chỉ trả về kết quả đã cập nhật
+        res.status(200).json(updatedConversation);
+    } catch (error) {
+        console.error("Error updating emoji:", error);
+        res.status(500).json({ message: "Failed to update emoji." });
+    }
+};

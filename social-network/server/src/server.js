@@ -374,7 +374,6 @@ io.on("connection", (socket) => {
             await Conversation.findByIdAndDelete(conversationId);
             await Message.deleteMany({ conversation: conversationId });
 
-            console.log(`✅ Conversation ${conversationId} deleted.`);
         } catch (error) {
             console.error("❌ Error deleting conversation:", error);
             socket.emit("error", { message: "Lỗi khi xóa cuộc trò chuyện." });
@@ -415,6 +414,25 @@ io.on("connection", (socket) => {
         } catch (error) {
             console.error("❌ Lỗi khi đổi quản trị viên:", error);
             socket.emit("error", { message: "Không thể đổi quản trị viên." });
+        }
+    });
+
+    socket.on("emojiUpdated", async ({ conversationId, emoji }) => {
+        try {
+            const conversation = await Conversation.findByIdAndUpdate(
+                conversationId,
+                { emoji },
+                { new: true }
+            );
+
+            // Phát sự kiện cập nhật emoji tới toàn bộ thành viên trong phòng
+            io.to(conversationId).emit("emojiUpdated", {
+                conversationId,
+                emoji,
+            });
+            console.log(`✅ Emoji updated for conversation ${conversationId}: ${emoji}`);
+        } catch (error) {
+            console.error("❌ Lỗi khi cập nhật emoji:", error);
         }
     });
 });

@@ -19,6 +19,7 @@ const conversationSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "Profile", // Admin nhóm (tuỳ chọn)
         },
+        emoji: { type: String, default: "👍" }, // Default emoji
     },
     { timestamps: true }
 );

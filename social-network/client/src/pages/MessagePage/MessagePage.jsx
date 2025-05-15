@@ -13,6 +13,7 @@ import {
     getUserConversations,
     removeMemberFromConversation,
     changeAdmin,
+    updateEmoji,
 } from "~/api/chat";
 import { getProfileById } from "~/api/profile";
 import { io } from "socket.io-client";
@@ -47,9 +48,42 @@ const MessagePage = () => {
     };
     const handleCloseModal = () => setIsEmojiModalOpen(false);
 
-    const handleEmojiSelect = (emoji) => {
-        setSelectedEmoji(emoji);
+    const handleEmojiSelect = async (emoji) => {
+        try {
+            setSelectedEmoji(emoji); // Cập nhật emoji trong state
+            await updateEmoji(conversationId, emoji); // Gửi yêu cầu API cập nhật emoji
+
+            socket.emit("emojiUpdated", { conversationId, emoji });
+        } catch (error) {
+            console.error("❌ Lỗi khi chọn emoji:", error);
+        }
     };
+
+    useEffect(() => {
+        const fetchConversation = async () => {
+            const data = await getConversationById(conversationId);
+            setSelectedEmoji(data.emoji || "👍"); // Lấy emoji từ server
+        };
+
+        if (conversationId) {
+            fetchConversation();
+        }
+    }, [conversationId]);
+
+    useEffect(() => {
+        const handleEmojiUpdated = ({ conversationId: updatedId, emoji }) => {
+            if (updatedId === conversationId) {
+                setSelectedEmoji(emoji); // Cập nhật emoji real-time
+            }
+        };
+
+        // Lắng nghe sự kiện từ server
+        socket.on("emojiUpdated", handleEmojiUpdated);
+
+        return () => {
+            socket.off("emojiUpdated", handleEmojiUpdated); // Gỡ bỏ sự kiện khi component unmount
+        };
+    }, [conversationId]);
 
     useEffect(() => {
         const fetchMessages = async () => {

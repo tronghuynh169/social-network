@@ -148,3 +148,16 @@ export const changeAdmin = async (conversationId, newAdminId) => {
         throw error; // Để caller có thể xử lý lỗi
     }
 };
+
+export const updateEmoji = async (conversationId, emoji) => {
+    try {
+        const response = await apiClient.put(
+            `/conversation/${conversationId}/emoji`,
+            { emoji }
+        );
+        return response.data;
+    } catch (error) {
+        console.error("❌ Lỗi cập nhật emoji:", error);
+        throw error;
+    }
+};

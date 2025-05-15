@@ -14,6 +14,11 @@ router.delete(
     auth,
     chatController.removeMember
 );
+router.put(
+    "/conversation/:conversationId/emoji",
+    auth,
+    chatController.updateEmoji
+);
 
 router.post("/conversation/change-admin", auth, chatController.changeAdmin);
 
