@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
 import { usePosts } from '~/context/PostContext';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Heart, Copy, MessageCircle  } from 'lucide-react';
+import { Heart, Copy, MessageCircle, Loader   } from 'lucide-react';
 
 export default function UserPostList({ userId }) {
-    const { posts, fetchUserPosts } = usePosts();
+    const { posts, fetchUserPosts, userPosts, loadingUserPosts } = usePosts();
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -14,7 +14,6 @@ export default function UserPostList({ userId }) {
         }
     }, [userId]);
 
-    const userPosts = posts.filter(post => post.userId._id === userId);
 
     const handlePostClick = (postId) => {
         navigate(`/post/${postId}`, {
@@ -24,10 +23,19 @@ export default function UserPostList({ userId }) {
         });
     };
 
+    if (loadingUserPosts) {
     return (
-        <div className="max-w-4xl">
+        <div className="flex justify-center items-center py-10">
+        <Loader className="animate-spin w-8 h-8 text-gray-500" />
+        </div>
+    );
+    }
+
+    return (
+        <div className="max-w-4xl w-full">
             <div className="grid grid-cols-3 gap-[2px] sm:gap-1 md:gap-2">
                 {userPosts.map(post => {
+                    const likesCount = post.likesCount || 0;
                     const liked = post.isLiked;  // lấy isLiked từ từng post
                     const comments = post.comments || [];
                     return (
@@ -52,7 +60,7 @@ export default function UserPostList({ userId }) {
                                     <div className="flex items-center gap-8 text-white text-sm font-medium">
                                         <div className="flex items-center gap-2">
                                             <Heart className={`w-6 h-6 ${liked ? "fill-current text-red-500" : ""}`} />
-                                            <span>{post.likes.length}</span>
+                                            <span>{likesCount}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <MessageCircle className="w-6 h-6"/>
@@ -76,10 +84,11 @@ export default function UserPostList({ userId }) {
                                     <div className="flex items-center gap-8 text-white text-sm font-medium">
                                         <div className="flex items-center gap-2">
                                             <Heart className={`w-6 h-6 ${liked ? "fill-current text-red-500" : ""}`} />
-                                            <span>{post.likes.length}</span>
+                                            <span>{likesCount}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <MessageCircle className="w-6 h-6"/>
+                                            {console.log("comments", comments)}
                                             <span>
                                                 {comments.reduce((acc, comment) => {
                                                     return acc + 1 + countRepliesRecursive(comment.replies || []);

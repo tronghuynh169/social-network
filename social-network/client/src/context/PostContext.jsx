@@ -7,7 +7,9 @@ const PostContext = createContext();
 export const PostProvider = ({ children }) => {
     const [posts, setPosts] = useState([]);
     const { user } = useUser(); // Lấy user từ UserContext
-    
+    const [userPosts, setUserPosts] = useState([]);
+    const [loadingUserPosts, setLoadingUserPosts] = useState(false);
+    const [loadingPosts, setLoadingPosts] = useState(false);
 
     const updatePostLike = (postId, isLiked, likesCount) => {
         setPosts(prevPosts =>
@@ -16,6 +18,11 @@ export const PostProvider = ({ children }) => {
                     ? { ...post, isLiked, likesCount }
                     : post
             )
+        );
+        setUserPosts(prevPosts =>
+          prevPosts.map(post =>
+            post._id === postId ? { ...post, isLiked, likesCount } : post
+          )
         );
     };  
 
@@ -36,10 +43,18 @@ export const PostProvider = ({ children }) => {
         setPosts(prevPosts => {
           console.log('Thêm bài viết mới vào đầu:', updatedPost);
           return [updatedPost, ...prevPosts];
-      });
+        });
+        setUserPosts(prevPosts => [updatedPost, ...prevPosts]);
       } else {
         // Cập nhật bài viết hiện tại trong danh sách
         setPosts(prevPosts =>
+          prevPosts.map(post =>
+            post._id === updatedPost._id
+              ? { ...post, ...updatedPost }
+              : post
+          )
+        );
+        setUserPosts(prevPosts =>
           prevPosts.map(post =>
             post._id === updatedPost._id
               ? { ...post, ...updatedPost }
@@ -51,6 +66,7 @@ export const PostProvider = ({ children }) => {
 
     useEffect(() => {
       const fetchPosts = async () => {
+        setLoadingPosts(true); // bắt đầu loading
         try {
           const res = await getAllPosts();
           setPosts(res.data.map(post => ({
@@ -59,12 +75,15 @@ export const PostProvider = ({ children }) => {
           })));
         } catch (err) {
           console.error("Lỗi khi load bài viết:", err);
+        } finally {
+          setLoadingPosts(false); // kết thúc loading
         }
       };
       fetchPosts();
     }, [user]);
 
     const fetchUserPosts = async (userId) => {
+      setLoadingUserPosts(true); // bắt đầu loading
     try {
       const res = await getUserPosts(userId);
       const userPosts = res.data.map(post => ({
@@ -72,18 +91,16 @@ export const PostProvider = ({ children }) => {
         likesCount: post.likes?.length || 0,
       }));
 
-      setPosts(prev => {
-        // Loại bỏ các bài viết cũ của user đó (nếu cần)
-        const filtered = prev.filter(post => post.userId._id !== userId);
-        return [...filtered, ...userPosts];
-      });
+      setUserPosts(userPosts);
     } catch (err) {
       console.error('Lỗi khi load bài viết của user:', err);
+    } finally {
+      setLoadingUserPosts(false); // kết thúc loading
     }
   };
 
   return (
-    <PostContext.Provider value={{ posts, setPosts  ,updatePostLike , updatePostData, fetchUserPosts }}>
+    <PostContext.Provider value={{ posts, setPosts  ,updatePostLike , updatePostData, fetchUserPosts, userPosts, loadingUserPosts, loadingPosts  }}>
       {children}
     </PostContext.Provider>
   );

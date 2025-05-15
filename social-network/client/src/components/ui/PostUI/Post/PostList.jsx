@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import PostCard from './PostCard';
+import {  Loader   } from 'lucide-react';
 import { usePosts } from '~/context/PostContext';
 
 export default function PostList() {
-  const { posts, setPosts } = usePosts();
+  const { posts, setPosts, loadingPosts } = usePosts();
 
   const handleLikeUpdate = (postId, update) => {
     setPosts(prevPosts => prevPosts.map(post => 
@@ -14,6 +15,14 @@ export default function PostList() {
       } : post
     ));
   };
+
+  if (loadingPosts) {
+    return (
+        <div className="flex justify-center items-center py-10">
+        <Loader className="animate-spin w-8 h-8 text-gray-500" />
+        </div>
+    );
+    }
 
   return (
     <div className="space-y-8">
