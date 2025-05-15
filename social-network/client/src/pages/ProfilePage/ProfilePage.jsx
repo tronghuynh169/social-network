@@ -6,6 +6,7 @@ import {
     getFollowers,
     getFollowing,
 } from "~/api/profile";
+import { getUserPostCount } from '~/api/post';
 import { Settings } from "lucide-react";
 import AvatarSyncModal from "~/components/ui/ProfileUI/AvatarModal";
 import { useUser } from "~/context/UserContext";
@@ -29,6 +30,8 @@ const ProfilePage = ({ setAvatar }) => {
     const [followersList, setFollowersList] = useState([]);
     const [isFollowingDialogOpen, setIsFollowingDialogOpen] = useState(false);
     const [followingList, setFollowingList] = useState([]);
+    const [postCount, setPostCount] = useState(0);
+
 
     useEffect(() => {
         const fetchAllData = async () => {
@@ -70,6 +73,15 @@ const ProfilePage = ({ setAvatar }) => {
 
         fetchAllData();
     }, [slug, navigate, user]);
+
+    useEffect(() => {
+      const fetchPostCount = async () => {
+        if (!profile) return;
+        const count = await getUserPostCount(profile.userId);
+        setPostCount(count);
+      };
+      fetchPostCount();
+    }, [profile?.userId]);
 
     // Thêm hàm fetch followers
     const fetchFollowers = async () => {
@@ -119,84 +131,91 @@ const ProfilePage = ({ setAvatar }) => {
     // Chỉ render giao diện khi tất cả dữ liệu đã sẵn sàng
     return (
         <div className="h-screen overflow-y-auto flex flex-col items-center">
-            <div className="max-w-4xl p-6 flex items-center space-x-8 mx-auto border-b border-[var(--border-color)]">
-                {/* Avatar */}
-                <div className="relative group">
-                    <img
-                        src={profile.avatar}
-                        alt="Avatar"
-                        className="w-32 h-32 mx-auto rounded-full cursor-pointer transition-transform hover:scale-105 active:scale-95"
-                        onClick={
-                            isOwner ? () => setIsAvatarModalOpen(true) : null
-                        }
-                    />
+            <div className="max-w-4xl p-6 flex flex-col mx-auto ">
+                <div className="flex p-6 items-center space-x-8 mx-auto border-b border-[var(--border-color)]">
+                    {/* Avatar */}
+                    <div className="relative group">
+                        <img
+                            src={profile.avatar}
+                            alt="Avatar"
+                            className="w-32 h-32 mx-auto rounded-full cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                            onClick={
+                                isOwner ? () => setIsAvatarModalOpen(true) : null
+                            }
+                        />
+                    </div>
+    
+                    <div className="flex flex-col space-y-2 ml-10">
+                        <div className="flex items-center space-x-4">
+                            <h1 className="text-2xl max-w-80">
+                                {profile.fullName}
+                            </h1>
+                            {isOwner ? (
+                                <Link to="/account/edit-profile">
+                                    <button className="bg-[var(--button-color)] px-4 py-1 rounded-md cursor-pointer text-[14px]">
+                                        Chỉnh sửa trang cá nhân
+                                    </button>
+                                </Link>
+                            ) : (
+                                <>
+                                    {user && profile && (
+                                        <FollowButton
+                                            currentUserId={currentProfileId}
+                                            profileId={profile._id}
+                                            isFollowing={isFollowing}
+                                            setIsFollowing={setIsFollowing}
+                                        />
+                                    )}
+    
+                                    {/* Nút Nhắn tin */}
+                                    <button className="bg-[var(--button-color)] hover:bg-[var(--secondary-color)] px-4 py-2 rounded-md cursor-pointer text-[14px]">
+                                        Nhắn tin
+                                    </button>
+                                </>
+                            )}
+                            {isOwner && <Settings className="cursor-pointer" />}
+                        </div>
+                        <div className="flex space-x-6 mt-4 text-[var(--text-secondary-color)]">
+                            <span>
+                                <strong className="text-[var(--text-primary-color)]">
+                                    {postCount}
+                                </strong>{" "}
+                                bài viết
+                            </span>
+                            <span
+                                className="cursor-pointer"
+                                onClick={handleOpenFollowers}
+                            >
+                                <strong className="text-[var(--text-primary-color)]">
+                                    {profile.followers?.length || 0}
+                                </strong>{" "}
+                                người theo dõi
+                            </span>
+    
+                            <span
+                                className="cursor-pointer"
+                                onClick={handleOpenFollowing}
+                            >
+                                Đang theo dõi{" "}
+                                <strong className="text-[var(--text-primary-color)]">
+                                    {profile.following?.length || 0}
+                                </strong>{" "}
+                                người dùng
+                            </span>
+                        </div>
+                        <a href={profile.website} className="mt-4">
+                            {profile.website}
+                        </a>
+                        <span className="">{profile.bio}</span>
+                    </div>
                 </div>
 
-                <div className="flex flex-col space-y-2 ml-10">
-                    <div className="flex items-center space-x-4">
-                        <h1 className="text-2xl max-w-80">
-                            {profile.fullName}
-                        </h1>
-                        {isOwner ? (
-                            <Link to="/account/edit-profile">
-                                <button className="bg-[var(--button-color)] px-4 py-1 rounded-md cursor-pointer text-[14px]">
-                                    Chỉnh sửa trang cá nhân
-                                </button>
-                            </Link>
-                        ) : (
-                            <>
-                                {user && profile && (
-                                    <FollowButton
-                                        currentUserId={currentProfileId}
-                                        profileId={profile._id}
-                                        isFollowing={isFollowing}
-                                        setIsFollowing={setIsFollowing}
-                                    />
-                                )}
-
-                                {/* Nút Nhắn tin */}
-                                <button className="bg-[var(--button-color)] hover:bg-[var(--secondary-color)] px-4 py-2 rounded-md cursor-pointer text-[14px]">
-                                    Nhắn tin
-                                </button>
-                            </>
-                        )}
-                        {isOwner && <Settings className="cursor-pointer" />}
-                    </div>
-                    <div className="flex space-x-6 mt-4 text-[var(--text-secondary-color)]">
-                        <span>
-                            <strong className="text-[var(--text-primary-color)]">
-                                {profile.posts?.length || 0}
-                            </strong>{" "}
-                            bài viết
-                        </span>
-                        <span
-                            className="cursor-pointer"
-                            onClick={handleOpenFollowers}
-                        >
-                            <strong className="text-[var(--text-primary-color)]">
-                                {profile.followers?.length || 0}
-                            </strong>{" "}
-                            người theo dõi
-                        </span>
-
-                        <span
-                            className="cursor-pointer"
-                            onClick={handleOpenFollowing}
-                        >
-                            Đang theo dõi{" "}
-                            <strong className="text-[var(--text-primary-color)]">
-                                {profile.following?.length || 0}
-                            </strong>{" "}
-                            người dùng
-                        </span>
-                    </div>
-                    <a href={profile.website} className="mt-4">
-                        {profile.website}
-                    </a>
-                    <span className="">{profile.bio}</span>
+                <div className="mt-8">
+                    <UserPostList userId={profile.userId} />
                 </div>
             </div>
-            <UserPostList userId={profile.userId} />
+
+
             {/* Avatar Modal */}
             <AvatarSyncModal
                 isOpen={isAvatarModalOpen}

@@ -57,7 +57,7 @@ export default function PostCard({ post }) {
     const [isCopyModalVisible, setCopyModalVisible] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
     const [hoverSource, setHoverSource] = useState(null); // 'avatar' or 'name'
-
+    const [isOwner, setIsOwner] = useState(false);
 
     // --- BEGIN AUTOCOMPLETE STATES ---
     const [followings, setFollowings] = useState([]);
@@ -385,7 +385,12 @@ export default function PostCard({ post }) {
         fetchPost();
       }, []);
 
-      const isOwner = user && post?.userId._id === user.id;
+      useEffect(() => {
+        if (user && post?.userId) {
+          const userId = typeof post.userId === 'string' ? post.userId : post.userId._id;
+          setIsOwner(String(userId) === String(user.id));
+        }
+      }, [user, post?.userId]);
 
   return (
     <div className="max-w-md mx-auto bg-black text-[var(--text-primary-color)] border-b border-[var(--border-color)] p-4 space-y-4">

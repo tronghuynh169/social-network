@@ -69,25 +69,74 @@ exports.createPost = async (req, res) => {
     }
 };
 
+// Hàm phụ lấy comment + likeUser + ownerProfile + isLiked + likesCount + totalComments cho từng post
+async function getPostExtras(post, currentUserId) {
+    const postId = post._id.toString();
+    // Lấy ownerProfile
+    const ownerProfile = await Profile.findOne({
+        userId: post.userId._id,
+    }).lean();
+
+    // Lấy danh sách like user
+    const likeUsers = await User.find({ _id: { $in: post.likes } })
+        .select('username profilePicture')
+        .lean();
+
+    for (let user of likeUsers) {
+        const profile = await Profile.findOne({ userId: user._id }).lean();
+        user.fullName = profile?.fullName || '';
+        user.avatar = profile?.avatar || '';
+    }
+
+    // Lấy comment gốc (không reply)
+    const comments = await Comment.find({
+        postId,
+        $or: [{ replyTo: { $exists: false } }, { replyTo: null }],
+    })
+        .populate('userId', 'username profilePicture')
+        .sort({ createdAt: 1 })
+        .lean();
+
+    for (let comment of comments) {
+        const profile = await Profile.findOne({
+            userId: comment.userId._id,
+        }).lean();
+        comment.userId.fullName = profile?.fullName || '';
+        comment.userId.avatar = profile?.avatar || '';
+        comment.isLikedComment = comment.likes.some(
+            (like) => like.toString() === currentUserId.toString()
+        );
+        comment.likesCommentCount = comment.likes.length;
+        comment.replies = await getReplies(comment._id, currentUserId);
+    }
+
+    // Tính isLiked của post
+    const isLiked = post.likes.some(
+        (id) => id.toString() === currentUserId.toString()
+    );
+
+    // Đếm comment gốc
+    const totalComments = await Comment.countDocuments({
+        postId,
+        $or: [{ replyTo: { $exists: false } }, { replyTo: null }],
+    });
+
+    return {
+        ownerProfile,
+        likeUsers,
+        comments,
+        isLiked,
+        likesCount: post.likes.length,
+        totalComments,
+    };
+}
+
 // Lấy tất cả bài viết của chính mình hoặc của một user cụ thể
+// API getUserPosts sửa lại trả kèm comment & like & ownerProfile
 exports.getUserPosts = async (req, res) => {
     try {
         const userId = req.params.id;
         const currentUserId = req.user.id;
-
-        // Nếu là bài viết của chính mình
-        if (userId === currentUserId.toString()) {
-            const posts = await Post.find({ userId })
-                .populate('userId', 'username profilePicture')
-                .sort({ createdAt: -1 });
-
-            const modifiedPosts = posts.map((post) => ({
-                ...post.toObject(),
-                isLiked: post.likes.includes(currentUserId),
-            }));
-
-            return res.json(modifiedPosts);
-        }
 
         // Kiểm tra user tồn tại
         const user = await User.findById(userId);
@@ -111,31 +160,39 @@ exports.getUserPosts = async (req, res) => {
         );
 
         const isFollower =
-            Array.isArray(targetProfile.followers) &&
+            Array.isArray(targetProfile?.followers) &&
             targetProfile.followers.some(
                 (followerId) =>
                     followerId.toString() === currentProfile._id.toString()
             );
 
-        // Nếu là follower thì xem được cả bài followers
+        // Quy tắc lọc visibility bài viết
         let visibilityQuery = [{ visibility: 'public' }];
-        if (isFollower) {
+        if (isFollower || userId === currentUserId.toString()) {
             visibilityQuery.push({ visibility: 'followers' });
         }
 
+        // Lấy bài viết theo userId và visibility
         const posts = await Post.find({
             userId,
             $or: visibilityQuery,
         })
             .populate('userId', 'username profilePicture')
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .lean();
 
-        const modifiedPosts = posts.map((post) => ({
-            ...post.toObject(),
-            isLiked: post.likes.includes(currentUserId),
-        }));
+        // Với mỗi post, lấy thêm comment, likeUsers, ownerProfile, isLiked, ...
+        const postsWithExtras = await Promise.all(
+            posts.map(async (post) => {
+                const extras = await getPostExtras(post, currentUserId);
+                return {
+                    ...post,
+                    ...extras,
+                };
+            })
+        );
 
-        return res.json(modifiedPosts);
+        return res.json(postsWithExtras);
     } catch (err) {
         console.error('Error in getUserPosts:', err);
         res.status(500).json({ message: err.message });

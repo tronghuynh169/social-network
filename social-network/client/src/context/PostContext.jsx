@@ -7,6 +7,7 @@ const PostContext = createContext();
 export const PostProvider = ({ children }) => {
     const [posts, setPosts] = useState([]);
     const { user } = useUser(); // Lấy user từ UserContext
+    
 
     const updatePostLike = (postId, isLiked, likesCount) => {
         setPosts(prevPosts =>
