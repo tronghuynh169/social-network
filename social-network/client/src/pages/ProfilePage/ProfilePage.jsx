@@ -15,6 +15,7 @@ import FollowersDialog from "~/components/ui/ProfileUI/FollowDialogUI/FollowersD
 import FollowingDialog from "~/components/ui/ProfileUI/FollowDialogUI/FollowingDialog";
 import UserPostList from "~/components/ui/ProfileUI/UserPostList/UserPostList";
 import { handleStartPrivateChat } from "~/components/utils/chatHelpers";
+import { usePosts } from '~/context/PostContext';
 
 const ProfilePage = ({ setAvatar }) => {
     const { slug } = useParams();
@@ -33,6 +34,7 @@ const ProfilePage = ({ setAvatar }) => {
     const [followingList, setFollowingList] = useState([]);
     const [postCount, setPostCount] = useState(0);
     const [isStartChat, setIsStartChat] = useState(false);
+    const { userPosts } = usePosts();
 
     const handleChat = () => {
         handleStartPrivateChat({
@@ -84,13 +86,12 @@ const ProfilePage = ({ setAvatar }) => {
     }, [slug, navigate, user]);
 
     useEffect(() => {
-        const fetchPostCount = async () => {
-            if (!profile) return;
-            const count = await getUserPostCount(profile.userId);
-            setPostCount(count);
-        };
-        fetchPostCount();
-    }, [profile?.userId]);
+    if (profile && userPosts) {
+        setPostCount(userPosts.length);
+    } else {
+        setPostCount(0);
+    }
+    }, [userPosts, profile]);
 
     // Thêm hàm fetch followers
     const fetchFollowers = async () => {
@@ -140,7 +141,7 @@ const ProfilePage = ({ setAvatar }) => {
     // Chỉ render giao diện khi tất cả dữ liệu đã sẵn sàng
     return (
         <div className="h-screen overflow-y-auto flex flex-col items-center">
-            <div className="max-w-4xl p-6 flex flex-col mx-auto ">
+            <div className="max-w-4xl p-6 flex flex-col mx-auto">
                 <div className="flex p-6 items-center space-x-8 mx-auto border-b border-[var(--border-color)]">
                     {/* Avatar */}
                     <div className="relative group">

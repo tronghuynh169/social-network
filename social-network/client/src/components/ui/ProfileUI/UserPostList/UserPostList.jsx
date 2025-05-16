@@ -32,7 +32,7 @@ export default function UserPostList({ userId }) {
     }
 
     return (
-        <div className="max-w-4xl w-full">
+        <div className="w-full">
             <div className="grid grid-cols-3 gap-[2px] sm:gap-1 md:gap-2">
                 {userPosts.map(post => {
                     const likesCount = post.likesCount || 0;
@@ -49,7 +49,7 @@ export default function UserPostList({ userId }) {
                                 <img
                                     src={`http://localhost:5000${post.media[0].url}`}
                                     alt="post"
-                                    className="w-full h-full object-cover transition-transform duration-100"
+                                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-100"
                                 />
 
                                 {/* Icon nhiều media */}

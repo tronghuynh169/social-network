@@ -10,6 +10,7 @@ export const PostProvider = ({ children }) => {
     const [userPosts, setUserPosts] = useState([]);
     const [loadingUserPosts, setLoadingUserPosts] = useState(false);
     const [loadingPosts, setLoadingPosts] = useState(false);
+    const [postCount, setPostCount] = useState(0);
 
     const updatePostLike = (postId, isLiked, likesCount) => {
         setPosts(prevPosts =>
@@ -84,6 +85,7 @@ export const PostProvider = ({ children }) => {
 
     const fetchUserPosts = async (userId) => {
       setLoadingUserPosts(true); // bắt đầu loading
+      setUserPosts([]);  // Reset userPosts khi bắt đầu fetch bài viết mới
     try {
       const res = await getUserPosts(userId);
       const userPosts = res.data.map(post => ({
@@ -92,6 +94,7 @@ export const PostProvider = ({ children }) => {
       }));
 
       setUserPosts(userPosts);
+      setPostCount(userPosts.length);
     } catch (err) {
       console.error('Lỗi khi load bài viết của user:', err);
     } finally {
@@ -100,7 +103,17 @@ export const PostProvider = ({ children }) => {
   };
 
   return (
-    <PostContext.Provider value={{ posts, setPosts  ,updatePostLike , updatePostData, fetchUserPosts, userPosts, loadingUserPosts, loadingPosts  }}>
+    <PostContext.Provider value={{ 
+      posts, 
+      setPosts,
+      updatePostLike, 
+      updatePostData, 
+      fetchUserPosts, 
+      userPosts, 
+      loadingUserPosts, 
+      loadingPosts, 
+      postCount  
+    }}>
       {children}
     </PostContext.Provider>
   );
