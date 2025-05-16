@@ -114,6 +114,17 @@ const PostModal = ({ isOpen, onClose, mode = 'create', initialPostData = null, o
         };
     }, [isOpen, onClose]);
 
+    const handleRequestClose = () => {
+        if (
+            captionRef.current.trim() !== '' ||
+            filesRef.current.length > 0
+        ) {
+            setShowConfirmClose(true); // hiện xác nhận
+        } else {
+            onClose(); // đóng luôn
+        }
+    };
+
     const BASE_URL = "http://localhost:5000";
     useEffect(() => {
         if (mode === 'edit' && initialPostData) {
@@ -178,7 +189,7 @@ const PostModal = ({ isOpen, onClose, mode = 'create', initialPostData = null, o
                         
                         {/* Nút đóng ở góc trên bên phải */}
                         <button
-                            onClick={onClose}
+                            onClick={handleRequestClose}
                             className="absolute right-4 top-1/2 -translate-y-1/2 text-white cursor-pointer hover:opacity-90 transition"
                         >
                             <X className="w-5 h-5" />

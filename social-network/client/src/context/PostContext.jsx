@@ -45,7 +45,9 @@ export const PostProvider = ({ children }) => {
           console.log('Thêm bài viết mới vào đầu:', updatedPost);
           return [updatedPost, ...prevPosts];
         });
-        setUserPosts(prevPosts => [updatedPost, ...prevPosts]);
+        if (user?.id?.toString() === updatedPost.userId?.toString()) {
+          setUserPosts(prevPosts => [updatedPost, ...prevPosts]);
+        }
       } else {
         // Cập nhật bài viết hiện tại trong danh sách
         setPosts(prevPosts =>
@@ -55,13 +57,15 @@ export const PostProvider = ({ children }) => {
               : post
           )
         );
-        setUserPosts(prevPosts =>
-          prevPosts.map(post =>
-            post._id === updatedPost._id
-              ? { ...post, ...updatedPost }
-              : post
-          )
-        );
+        if (user?.id === updatedPost.ownerProfile.userId) {
+            setUserPosts(prevPosts =>
+              prevPosts.map(post =>
+                post._id === updatedPost._id
+                  ? { ...post, ...updatedPost }
+                  : post
+              )
+            );
+        }
       }
     };
 

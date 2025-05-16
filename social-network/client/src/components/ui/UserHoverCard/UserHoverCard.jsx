@@ -14,7 +14,7 @@ import {
 const UserHoverCard = ({ info, hoverPosition, onFollowChange }) => {
     const navigate = useNavigate(); 
     const { user } = useUser();
-    const isUser = user.id === info.userId;
+    const isUser = user.id === info?.userId;
     const [postCount, setPostCount] = useState(0);
     const [isFollowing, setIsFollowing] = useState(false);
     const [followingLoading, setFollowingLoading] = useState(false);

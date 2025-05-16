@@ -69,6 +69,8 @@ export default function PostDetailPage({ isModal = false }) {
     const [isHovered, setIsHovered] = useState(false);
     const [hoverSource, setHoverSource] = useState(null); // 'avatar' or 'name'
 
+    // Check lỗi
+    const [errorMessage, setErrorMessage] = useState(null);
     // --- BEGIN AUTOCOMPLETE STATES ---
     const [followings, setFollowings] = useState([]);
     const [mentionSuggestions, setMentionSuggestions] = useState([]);
@@ -147,7 +149,7 @@ export default function PostDetailPage({ isModal = false }) {
             await deletePost(postDetails.post._id); // hoặc postId nếu có sẵn
             setShowConfirmDeleteModal(false);
             setPosts(prev => prev.filter(post => post._id !== postId));
-            navigate('/');
+            navigate(-1); // quay về trang trước
             console.log("Đã xóa bài viết");
         } catch (err) {
             console.error("Lỗi xoá bài viết:", err);
@@ -353,7 +355,14 @@ export default function PostDetailPage({ isModal = false }) {
             return response.data; // ✨ thêm dòng này để return dữ liệu
         } catch (error) {
             console.error("Error fetching post details:", error);
-        } finally {
+            if (error.response?.status === 403) {
+                setErrorMessage("Bạn không có quyền xem bài viết này.");
+            } else if (error.response?.status === 404) {
+                setErrorMessage("Bài viết không tồn tại.");
+            } else {
+                setErrorMessage("Đã xảy ra lỗi khi tải bài viết.");
+            }
+            } finally {
             setIsLoading(false); // Kết thúc loading dù thành công hay thất bại
           }
     };
@@ -382,6 +391,20 @@ export default function PostDetailPage({ isModal = false }) {
             };
         }
     }, [isModal]);
+
+    if (errorMessage) {
+    return (
+        <div className="flex flex-col items-center justify-center h-96 text-center text-red-500">
+            <p>{errorMessage}</p>
+            <button
+                onClick={() => navigate('/')}
+                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+            >
+                Quay lại trang chủ
+            </button>
+        </div>
+    );
+    }
 
     if (!postDetails && !isModal) {
         return <PostDetailSkeleton />

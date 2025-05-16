@@ -501,6 +501,30 @@ exports.getPostDetails = async (req, res) => {
             return res.status(404).json({ message: 'Bài viết không tồn tại' });
         }
 
+        // 🔒 Chỉ kiểm tra nếu visibility là "followers"
+        if (post.visibility === 'followers') {
+            const isOwner =
+                userId && post.userId._id.toString() === userId.toString();
+
+            // ✅ Lấy profile của người đăng bài viết
+            const ownerProfile = await Profile.findOne({
+                userId: post.userId._id,
+            })
+                .select('followers')
+                .lean();
+
+            // ✅ Kiểm tra người đang xem có nằm trong danh sách followers không
+            const isFollower = ownerProfile.followers.some(
+                (followerId) => followerId.toString() === userId
+            );
+
+            if (!isOwner && !isFollower) {
+                return res
+                    .status(403)
+                    .json({ message: 'Bạn không có quyền xem bài viết này.' });
+            }
+        }
+
         const ownerProfile = await Profile.findOne({
             userId: post.userId._id,
         }).lean();
