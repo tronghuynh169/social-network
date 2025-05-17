@@ -37,10 +37,11 @@ import LikesModal from "~/components/ui/PostUI/Post/LikesModal";
 import CopyLinkModal from "~/components/ui/PostUI/Post/CopyLinkModal";
 import PostDetailSkeleton from "~/components/ui/PostUI/Post/PostDetailSkeleton";
 import UserHoverCard from "~/components/ui/UserHoverCard/UserHoverCard";
-
+import errorImage from '~/assets/img/404.jpg';
+import ShareModal from "~/components/ui/PostUI/Share/ShareModal";
 
 export default function PostDetailPage({ isModal = false }) {
-    const { updatePostLike, setPosts, posts, updatePostData } = usePosts(); // trong PostDetailPage
+    const { updatePostLike, setPosts, posts, updatePostData, setUserPosts } = usePosts(); // trong PostDetailPage
     const { user } = useUser();
     const { id: postId } = useParams();
     const navigate = useNavigate();
@@ -68,6 +69,8 @@ export default function PostDetailPage({ isModal = false }) {
     const [isLoading, setIsLoading] = useState(true);
     const [isHovered, setIsHovered] = useState(false);
     const [hoverSource, setHoverSource] = useState(null); // 'avatar' or 'name'
+    const [isOpenShareModal, setIsOpenShareModal] = useState(false);
+
 
     // Check lỗi
     const [errorMessage, setErrorMessage] = useState(null);
@@ -149,6 +152,7 @@ export default function PostDetailPage({ isModal = false }) {
             await deletePost(postDetails.post._id); // hoặc postId nếu có sẵn
             setShowConfirmDeleteModal(false);
             setPosts(prev => prev.filter(post => post._id !== postId));
+            setUserPosts(prev => prev.filter(post => post._id !== postId));
             navigate(-1); // quay về trang trước
             console.log("Đã xóa bài viết");
         } catch (err) {
@@ -393,17 +397,18 @@ export default function PostDetailPage({ isModal = false }) {
     }, [isModal]);
 
     if (errorMessage) {
-    return (
-        <div className="flex flex-col items-center justify-center h-96 text-center text-red-500">
-            <p>{errorMessage}</p>
-            <button
-                onClick={() => navigate('/')}
-                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
-            >
-                Quay lại trang chủ
-            </button>
-        </div>
-    );
+        return (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+                <img src={errorImage} alt="Lỗi" className="w-80 h-60 mb-8 object-contain" />
+                <p className="text-xl font-semibold text-[var(--text-primary-color)]">Rất tiếc, nội dung này hiện chưa thể hiển thị hoặc đã bị xóa</p>
+                <button
+                    onClick={() => navigate('/')}
+                    className="mt-8 px-4 py-2 bg-[var(--button-enable-color)] text-[var(--text-primary-color)] rounded-md cursor-pointer hover:opacity-90"
+                >
+                    Đi tới Trang chủ
+                </button>
+            </div>
+        );
     }
 
     if (!postDetails && !isModal) {
@@ -637,28 +642,30 @@ export default function PostDetailPage({ isModal = false }) {
                 </div>
                 
                 <div className="mt-auto pt-4 border-t-2 border-[var(--border-color)]">
-                    <div className="flex items-center space-x-4 text-sm text-gray-400 mb-3">
-                        <motion.div
-                            onClick={handleLike}
-                            initial={false}
-                            animate={likeAnimationTrigger ? { scale: [1, 1.4, 1] } : { scale: 1 }}
-                            transition={{ duration: 0.3 }}
-                            className="flex items-center space-x-1 cursor-pointer hover:opacity-70"
-                        >
-                            <Heart
-                                className={`${
-                                    postDetails.post.isLiked
-                                        ? "fill-current text-red-500"
-                                        : "text-white"
-                                }`}
-                            />
-                        </motion.div>
-                        <button className="flex items-center space-x-1 cursor-pointer hover:opacity-70"
-                                onClick={() => commentInputRef.current?.focus()}
-                        >
-                            <MessageCircle className="text-white" />
-                        </button>
-                        <Send className="mr-2" />
+                    <div className="flex items-center justify-between space-x-4 text-sm text-gray-400 mb-3">
+                        <div className="flex items-center space-x-4">
+                            <motion.div
+                                onClick={handleLike}
+                                initial={false}
+                                animate={likeAnimationTrigger ? { scale: [1, 1.4, 1] } : { scale: 1 }}
+                                transition={{ duration: 0.3 }}
+                                className="flex items-center space-x-1 cursor-pointer hover:opacity-70"
+                            >
+                                <Heart
+                                    className={`${
+                                        postDetails.post.isLiked
+                                            ? "fill-current text-red-500"
+                                            : "text-white"
+                                    }`}
+                                />
+                            </motion.div>
+                            <button className="flex items-center space-x-1 cursor-pointer hover:opacity-70"
+                                    onClick={() => commentInputRef.current?.focus()}
+                            >
+                                <MessageCircle className="text-white" />
+                            </button>
+                        </div>
+                        <Send className="mr-2 text-white cursor-pointer" onClick={() => setIsOpenShareModal(true)} />
                     </div>
                     {/* Likes */}
                     <div className="mb-2">
@@ -679,6 +686,8 @@ export default function PostDetailPage({ isModal = false }) {
                         onClose={() => setShowLikesModal(false)}
                         />
                     )}
+
+                    <ShareModal isOpen={isOpenShareModal} onClose={() => setIsOpenShareModal(false)} postId={postDetails.post._id} />
                     
                     {/* Input placeholder */}
                     <div className="flex items-center space-x-2 pt-3 relative" ref={wrapperRef}>

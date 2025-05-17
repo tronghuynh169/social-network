@@ -114,6 +114,7 @@ export const PostProvider = ({ children }) => {
       updatePostData, 
       fetchUserPosts, 
       userPosts, 
+      setUserPosts,
       loadingUserPosts, 
       loadingPosts, 
       postCount  
