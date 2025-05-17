@@ -88,7 +88,6 @@ export default function UserPostList({ userId }) {
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <MessageCircle className="w-6 h-6"/>
-                                            {console.log("comments", comments)}
                                             <span>
                                                 {comments.reduce((acc, comment) => {
                                                     return acc + 1 + countRepliesRecursive(comment.replies || []);

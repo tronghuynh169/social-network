@@ -71,8 +71,9 @@ const UserHoverCard = ({ info, hoverPosition, onFollowChange }) => {
 
     useEffect(() => {
       const fetchPostCount = async () => {
-          const count = await getUserPostCount(info.userId);
-          setPostCount(count);
+        if (!info?.userId) return; // kiểm tra trước khi gọi
+        const count = await getUserPostCount(info.userId);
+        setPostCount(count);
       };
       fetchPostCount();
     }, [info?.userId]);
