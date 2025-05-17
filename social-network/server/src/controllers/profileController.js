@@ -192,7 +192,10 @@ exports.followUser = async (req, res) => {
                 sender: currentUserProfile._id,
                 type: "follow",
                 content: `${currentUserProfile.fullName} đã theo dõi bạn.`,
-                data: { followerId: currentUserProfile._id },
+                data: {
+                    followerId: currentUserProfile._id,
+                    slug: currentUserProfile.slug,
+                },
             });
             const savedNotify = await notify.save();
 
@@ -252,7 +255,10 @@ exports.unfollowUser = async (req, res) => {
             sender: currentUserProfile._id,
             type: "unfollow",
             content: `${currentUserProfile.fullName} đã hủy theo dõi bạn.`,
-            data: { unfollowerId: currentUserProfile._id },
+            data: {
+                unfollowerId: currentUserProfile._id,
+                slug: currentUserProfile.slug,
+            },
         });
         const savedNotify = await notify.save();
 

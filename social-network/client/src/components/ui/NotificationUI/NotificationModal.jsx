@@ -217,6 +217,14 @@ const NotificationModal = ({ onClose, onMarkedAllRead, onSingleRead }) => {
                                                 onClose();
                                                 navigate(`/`);
                                             } else if (
+                                                n.type === "like_message"
+                                            ) {
+                                                // Có thể báo thông báo hoặc điều hướng về trang chủ
+                                                onClose();
+                                                navigate(
+                                                    `/message/${n.data.conversationId}`
+                                                );
+                                            } else if (
                                                 n.type === "change_admin" &&
                                                 n.data?.conversationId
                                             ) {
@@ -225,7 +233,16 @@ const NotificationModal = ({ onClose, onMarkedAllRead, onSingleRead }) => {
                                                 navigate(
                                                     `/message/${n.data.conversationId}`
                                                 );
+                                            } else if (
+                                                n.type === "follow" || n.type === "unfollow"
+                                            ) {
+                                                // Có thể báo thông báo hoặc điều hướng về trang chủ
+                                                onClose();
+                                                navigate(
+                                                    `/${n.data.slug}`
+                                                );
                                             }
+                                            console.log(n.data);
                                         }}
                                     >
                                         {/* Avatar */}
