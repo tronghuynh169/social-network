@@ -5,9 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import unidecode from "unidecode";
 import { unfollowUser, followUser } from "~/api/profile";
 import { useUser } from "~/context/UserContext";
+import FollowButton from "../FollowButton/FollowButton";
 
-const FollowersDialog = ({ followers, onClose }) => {
+const FollowersDialog = ({ followers, onClose, isOwner }) => {
     const { profile } = useUser();
+    console.log(profile._id);
     const [followStatus, setFollowStatus] = useState({});
     const [actionLoading, setActionLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
@@ -144,27 +146,36 @@ const FollowersDialog = ({ followers, onClose }) => {
                                             {user.fullName}
                                         </p>
                                     </div>
-                                    <button
-                                        onClick={() =>
-                                            handleFollowToggle(user._id)
-                                        }
-                                        className={`px-4 py-2 text-sm font-medium cursor-pointer rounded-lg ${
-                                            followStatus[user._id]
-                                                ? "bg-[var(--button-secondary-color)] hover:bg-[var(--button-color)]"
-                                                : "bg-[var(--button-color)] cursor-not-allowed opacity-60"
-                                        }`}
-                                        disabled={
-                                            !followStatus[user._id] ||
-                                            actionLoading
-                                        }
-                                    >
-                                        {actionLoading &&
-                                        confirmUnfollow.userId === user._id
-                                            ? "Đang thực hiện..."
-                                            : followStatus[user._id]
-                                            ? "Xoá"
-                                            : "Đã xóa"}
-                                    </button>
+                                    {isOwner ? (
+                                        <button
+                                            onClick={() =>
+                                                handleFollowToggle(user._id)
+                                            }
+                                            className={`px-4 py-2 text-sm font-medium cursor-pointer rounded-lg ${
+                                                followStatus[user._id]
+                                                    ? "bg-[var(--button-secondary-color)] hover:bg-[var(--button-color)]"
+                                                    : "bg-[var(--button-color)] cursor-not-allowed opacity-60"
+                                            }`}
+                                            disabled={
+                                                !followStatus[user._id] ||
+                                                actionLoading
+                                            }
+                                        >
+                                            {actionLoading &&
+                                            confirmUnfollow.userId === user._id
+                                                ? "Đang thực hiện..."
+                                                : followStatus[user._id]
+                                                ? "Xoá"
+                                                : "Đã xóa"}
+                                        </button>
+                                    ) : (
+                                        user._id !== profile._id && (
+                                            <FollowButton
+                                                currentUserId={profile._id}
+                                                profileId={user._id}
+                                            />
+                                        )
+                                    )}
                                 </div>
                             ))
                         ) : (

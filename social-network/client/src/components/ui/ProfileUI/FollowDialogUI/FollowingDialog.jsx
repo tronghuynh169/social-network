@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import unidecode from "unidecode";
 import { unfollowUser, followUser } from "~/api/profile";
 import { useUser } from "~/context/UserContext";
+import FollowButton from "../FollowButton/FollowButton";
 
-const FollowingDialog = ({ following, onClose }) => {
+const FollowingDialog = ({ following, onClose, isOwner }) => {
     const { profile } = useUser();
     const [followStatus, setFollowStatus] = useState({});
     const [actionLoadingMap, setActionLoadingMap] = useState({});
@@ -184,23 +185,33 @@ const FollowingDialog = ({ following, onClose }) => {
                                             </p>
                                         </div>
                                     </div>
-                                    <button
-                                        onClick={() => {
-                                            handleFollowToggle(user._id);
-                                        }}
-                                        className={`px-4 py-2 text-sm font-medium cursor-pointer rounded-lg ${
-                                            followStatus[user._id]
-                                                ? "bg-[var(--button-secondary-color)] hover:bg-[var(--button-color)]"
-                                                : "bg-[var(--button-enable-color)] hover:bg-blue-500"
-                                        }`}
-                                        disabled={actionLoadingMap[user._id]}
-                                    >
-                                        {actionLoadingMap[user._id]
-                                            ? "Đang xử lý..."
-                                            : followStatus[user._id]
-                                            ? "Bỏ theo dõi"
-                                            : "Theo dõi"}
-                                    </button>
+                                    {user._id !== profile._id &&
+                                        (isOwner ? (
+                                            <button
+                                                onClick={() =>
+                                                    handleFollowToggle(user._id)
+                                                }
+                                                className={`px-4 py-2 text-sm font-medium cursor-pointer rounded-lg ${
+                                                    followStatus[user._id]
+                                                        ? "bg-[var(--button-secondary-color)] hover:bg-[var(--button-color)]"
+                                                        : "bg-[var(--button-enable-color)] hover:bg-blue-500"
+                                                }`}
+                                                disabled={
+                                                    actionLoadingMap[user._id]
+                                                }
+                                            >
+                                                {actionLoadingMap[user._id]
+                                                    ? "Đang xử lý..."
+                                                    : followStatus[user._id]
+                                                    ? "Bỏ theo dõi"
+                                                    : "Theo dõi"}
+                                            </button>
+                                        ) : (
+                                            <FollowButton
+                                                currentUserId={profile._id}
+                                                profileId={user._id}
+                                            />
+                                        ))}
                                 </div>
                             ))
                         ) : (

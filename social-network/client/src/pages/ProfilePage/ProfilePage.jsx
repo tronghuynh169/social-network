@@ -15,7 +15,7 @@ import FollowersDialog from "~/components/ui/ProfileUI/FollowDialogUI/FollowersD
 import FollowingDialog from "~/components/ui/ProfileUI/FollowDialogUI/FollowingDialog";
 import UserPostList from "~/components/ui/ProfileUI/UserPostList/UserPostList";
 import { handleStartPrivateChat } from "~/components/utils/chatHelpers";
-import { usePosts } from '~/context/PostContext';
+import { usePosts } from "~/context/PostContext";
 
 const ProfilePage = ({ setAvatar }) => {
     const { slug } = useParams();
@@ -86,11 +86,11 @@ const ProfilePage = ({ setAvatar }) => {
     }, [slug, navigate, user]);
 
     useEffect(() => {
-    if (profile && userPosts) {
-        setPostCount(userPosts.length);
-    } else {
-        setPostCount(0);
-    }
+        if (profile && userPosts) {
+            setPostCount(userPosts.length);
+        } else {
+            setPostCount(0);
+        }
     }, [userPosts, profile]);
 
     // Thêm hàm fetch followers
@@ -248,6 +248,9 @@ const ProfilePage = ({ setAvatar }) => {
                     followers={followersList}
                     onClose={() => setIsFollowersDialogOpen(false)}
                     isOpen={isFollowersDialogOpen}
+                    isOwner={isOwner}
+                    currentUserId={currentProfileId}
+                    profileId={profile._id}
                 />
             )}
             {isFollowingDialogOpen && (
@@ -255,6 +258,9 @@ const ProfilePage = ({ setAvatar }) => {
                     following={followingList}
                     onClose={() => setIsFollowingDialogOpen(false)}
                     isOpen={isFollowingDialogOpen}
+                    isOwner={isOwner}
+                    currentUserId={currentProfileId}
+                    profileId={profile._id}
                 />
             )}
             {isStartChat && (
