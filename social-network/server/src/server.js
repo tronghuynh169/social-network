@@ -14,44 +14,40 @@ const Profile = require("./models/Profile");
 // Load environment variables
 dotenv.config();
 
-// Initialize Express
 const app = express();
 
-// Middleware
 app.use(express.json());
 app.use(
     cors({
         origin: "http://localhost:5173", // Frontend URL
-        credentials: true, // Allow cookies and tokens
+        credentials: true,
     })
 );
 
-// Static file serving
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/messages", express.static(path.join(__dirname, "messages")));
 app.use(express.static(path.join(__dirname, "public")));
 
-// Initialize routes
+// *** Tạo server trước khi gọi route ***
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: "http://localhost:5173",
+        credentials: true,
+    },
+});
+
+// *** ĐẶT DÒNG NÀY SAU KHI TẠO io ***
+app.set("io", io);
+
+// Route phải sau app.set("io", io)
 route(app);
 
-// Fallback route for unknown endpoints
 app.use((req, res) => {
     res.status(404).json({ message: "API endpoint not found" });
 });
 
-// Connect to the database
 connectDB();
-
-// Create HTTP server
-const server = http.createServer(app);
-
-// Configure Socket.IO
-const io = new Server(server, {
-    cors: {
-        origin: "http://localhost:5173", // Frontend URL
-        credentials: true,
-    },
-});
 
 // Socket.IO logic
 io.on("connection", (socket) => {
@@ -151,8 +147,6 @@ io.on("connection", (socket) => {
                             "newNotification",
                             savedNotify
                         );
-
-                        console.log("Nguoi nhan: " + member._id);
                     });
                 await Promise.all(notifyPromises);
             } catch (error) {

@@ -164,9 +164,10 @@ exports.checkFollowingStatus = async (req, res) => {
 
 exports.followUser = async (req, res) => {
     try {
-        const { userProfileId } = req.body; // ID của user thực hiện follow
-        const profileToFollow = await Profile.findById(req.params.profileId); // abc123
-        const currentUserProfile = await Profile.findById(userProfileId); // BFNGOC
+        const { userProfileId } = req.body;
+        const profileToFollow = await Profile.findById(req.params.profileId);
+        const currentUserProfile = await Profile.findById(userProfileId);
+
         if (!profileToFollow || !currentUserProfile) {
             console.error("❌ Không tìm thấy profile:", {
                 userProfileId,
@@ -175,16 +176,36 @@ exports.followUser = async (req, res) => {
             return res.status(404).json({ message: "Profile không tồn tại" });
         }
 
-        // Kiểm tra nếu chưa follow thì mới thêm
         if (
             !currentUserProfile.following.includes(
                 profileToFollow._id.toString()
             )
         ) {
-            currentUserProfile.following.push(profileToFollow._id.toString()); // Đúng ✅
-            profileToFollow.followers.push(currentUserProfile._id.toString()); // Sửa lỗi ✅
+            currentUserProfile.following.push(profileToFollow._id.toString());
+            profileToFollow.followers.push(currentUserProfile._id.toString());
             await currentUserProfile.save();
             await profileToFollow.save();
+
+            const Notification = require("../models/Notification");
+            const notify = new Notification({
+                user: profileToFollow._id,
+                sender: currentUserProfile._id,
+                type: "follow",
+                content: `${currentUserProfile.fullName} đã theo dõi bạn.`,
+                data: { followerId: currentUserProfile._id },
+            });
+            const savedNotify = await notify.save();
+
+            if (req.app && req.app.get && req.app.get("io")) {
+                req.app
+                    .get("io")
+                    .to(profileToFollow._id.toString())
+                    .emit("newNotification", savedNotify);
+            } else {
+                console.log("Không tìm thấy io instance trong app");
+            }
+        } else {
+            console.log("Đã follow từ trước, không thực hiện lại");
         }
 
         res.status(200).json({
@@ -200,7 +221,7 @@ exports.followUser = async (req, res) => {
 // ✅ Hủy theo dõi người dùng
 exports.unfollowUser = async (req, res) => {
     try {
-        const { currentUserId } = req.body; // Đổi từ userProfileId thành currentUserId
+        const { currentUserId } = req.body;
         const profileToUnfollow = await Profile.findById(req.params.profileId);
         const currentUserProfile = await Profile.findById(currentUserId);
 
@@ -224,6 +245,25 @@ exports.unfollowUser = async (req, res) => {
             { new: true }
         );
 
+        // === THÊM ĐOẠN NÀY BÊN DƯỚI ===
+        const Notification = require("../models/Notification");
+        const notify = new Notification({
+            user: profileToUnfollow._id,
+            sender: currentUserProfile._id,
+            type: "unfollow",
+            content: `${currentUserProfile.fullName} đã hủy theo dõi bạn.`,
+            data: { unfollowerId: currentUserProfile._id },
+        });
+        const savedNotify = await notify.save();
+
+        if (req.app && req.app.get && req.app.get("io")) {
+            req.app
+                .get("io")
+                .to(profileToUnfollow._id.toString())
+                .emit("newNotification", savedNotify);
+        }
+        // =============================
+
         res.status(200).json({
             message: "Đã hủy theo dõi",
             following: currentUserProfile.following,
@@ -242,7 +282,6 @@ exports.unfollowUser = async (req, res) => {
         });
     }
 };
-
 // ✅ Lấy danh sách người theo dõi
 exports.getFollowers = async (req, res) => {
     try {
