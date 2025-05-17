@@ -109,9 +109,12 @@ exports.login = async (req, res) => {
                 .json({ message: "Mật khẩu không chính xác" });
         }
 
+        // Lấy profile theo userId
+        const profile = await Profile.findOne({ userId: user._id });
+
         // Tạo token
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-            expiresIn: "1h",
+            expiresIn: "10h",
         });
 
         res.json({
@@ -121,14 +124,15 @@ exports.login = async (req, res) => {
                 username: user.username,
                 slug: user.slug,
                 email: user.email,
-                fullName: user.fullName, // Thêm thông tin fullName
-                avatar: user.avatar, // Thêm avatar
-                role: user.role, // Thêm quyền
-                createdAt: user.createdAt, // Thêm thời gian tạo tài khoản
+                fullName: user.fullName,
+                avatar: user.avatar,
+                role: user.role,
+                createdAt: user.createdAt,
             },
+            profileId: profile?._id, // <-- Trả về profileId ở đây
         });
     } catch (err) {
-        console.error("Lỗi server:", err); // ✅ Debug
+        console.error("Lỗi server:", err);
         res.status(500).json({ error: err.message });
     }
 };

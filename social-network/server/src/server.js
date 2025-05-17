@@ -135,7 +135,7 @@ io.on("connection", (socket) => {
                 const notifyPromises = conversation.members
                     .filter((member) => member._id.toString() !== data.sender) // Không gửi thông báo cho người gửi
                     .map(async (member) => {
-                        const newNotify = new Notification({    
+                        const newNotify = new Notification({
                             user: member._id,
                             sender: data.sender,
                             type: "message",
@@ -151,6 +151,8 @@ io.on("connection", (socket) => {
                             "newNotification",
                             savedNotify
                         );
+
+                        console.log("Nguoi nhan: " + member._id);
                     });
                 await Promise.all(notifyPromises);
             } catch (error) {
@@ -159,10 +161,6 @@ io.on("connection", (socket) => {
 
             // ✅ Gửi tin nhắn mới về client trong phòng
             io.to(data.conversationId).emit("receiveMessage", savedMessage);
-            console.log(
-                "[MSG] Emit receiveMessage to conversationId:",
-                data.conversationId
-            );
         } catch (error) {
             console.error("❌ Lỗi khi lưu tin nhắn:", error);
         }

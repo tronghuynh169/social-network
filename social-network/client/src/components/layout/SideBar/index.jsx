@@ -9,7 +9,6 @@ import {
     PlusSquare,
     Users,
 } from "lucide-react";
-import Logo from "~/assets/img/Logo.png";
 import LogoNoMochi from "~/assets/img/Logo-no-mochi.png";
 import Mochi from "~/assets/img/Mochi.png";
 import DropdownMenu from "~/components/ui/DropdownMenu";
@@ -46,7 +45,6 @@ const Sidebar = memo(() => {
     useEffect(() => {
         if (!profile?._id) return;
         const handleNewNotification = (notify) => {
-            console.log("Nhận được newNotification", notify);
             getNotifications(profile._id).then((data) => {
                 setUnreadCount(data.filter((n) => !n.isRead).length);
             });
@@ -55,13 +53,10 @@ const Sidebar = memo(() => {
         return () => socket.off("newNotification", handleNewNotification);
     }, [profile]);
 
-    // Callback cho NotificationModal
-    const handleMarkedAllRead = () => setUnreadCount(0);
-
-    // Reset badge when modal closes (after markAllAsRead)
-    const handleCloseNotificationModal = () => {
-        setNotificationModal(false);
+    const handleOpenNotificationModal = () => {
+        setNotificationModal((prev) => !prev);
     };
+    const handleCloseNotificationModal = () => setNotificationModal(false);
 
     const handleToggleMenu = (e) => {
         e.stopPropagation();
@@ -69,7 +64,7 @@ const Sidebar = memo(() => {
     };
 
     useEffect(() => {
-        if (location.pathname === "/message") {
+        if (location.pathname.startsWith("/message")) {
             setIsCollapsed(true);
         } else setIsCollapsed(false);
     }, [location.pathname]);
@@ -183,8 +178,12 @@ const Sidebar = memo(() => {
                                     }
                                     text="Thông báo"
                                     onClick={() => {
-                                        setNotificationModal((prev) => !prev);
-                                        if (location.pathname === "/message") {
+                                        handleOpenNotificationModal();
+                                        if (
+                                            location.pathname.startsWith(
+                                                "/message"
+                                            )
+                                        ) {
                                             setIsCollapsed(true);
                                         } else {
                                             setIsCollapsed((prev) => !prev);
@@ -207,8 +206,10 @@ const Sidebar = memo(() => {
                                 }
                                 text="Thông báo"
                                 onClick={() => {
-                                    setNotificationModal((prev) => !prev);
-                                    if (location.pathname === "/message") {
+                                    handleOpenNotificationModal();
+                                    if (
+                                        location.pathname.startsWith("/message")
+                                    ) {
                                         setIsCollapsed(true);
                                     } else {
                                         setIsCollapsed((prev) => !prev);
@@ -221,7 +222,12 @@ const Sidebar = memo(() => {
                         {notificationModal && (
                             <NotificationModal
                                 onClose={handleCloseNotificationModal}
-                                onMarkedAllRead={handleMarkedAllRead}
+                                onMarkedAllRead={() => setUnreadCount(0)}
+                                onSingleRead={() =>
+                                    setUnreadCount((prev) =>
+                                        Math.max(prev - 1, 0)
+                                    )
+                                }
                             />
                         )}
 
