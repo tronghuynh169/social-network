@@ -143,13 +143,14 @@ const PostModal = ({ isOpen, onClose, mode = 'create', initialPostData = null, o
     if (!isOpen) return null;
 
     // Kiểm tra điều kiện để bật nút Đăng
+    const hasContent = caption.trim().length > 0 || oldMedia.length + newFiles.length > 0;
     const canPost = mode === 'edit'
-    ? (
+    ? (hasContent && (
         caption !== initialPostData?.caption ||
         visibility !== initialPostData?.visibility ||
         oldMedia.length !== (initialPostData?.media?.length || 0) ||
         newFiles.length > 0
-        )
+        ))
     : (caption.trim().length > 0 || files.length > 0);
 
     const backdropVariants = {
@@ -185,7 +186,7 @@ const PostModal = ({ isOpen, onClose, mode = 'create', initialPostData = null, o
                 >
                     {/* Header */}
                     <div className="bg-[var(--primary-color)] h-[42px] relative flex items-center justify-center border-b border-[var(--border-color)]">
-                        <h2 className="text-md text-[var(--text-primary-color)] font-semibold">Tạo bài viết</h2>
+                        <h2 className="text-md text-[var(--text-primary-color)] font-semibold">{mode === 'edit' ? "Chỉnh sửa bài viết" : "Tạo bài viết"}</h2>
                         
                         {/* Nút đóng ở góc trên bên phải */}
                         <button

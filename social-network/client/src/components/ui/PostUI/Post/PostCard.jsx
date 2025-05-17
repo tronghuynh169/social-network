@@ -26,6 +26,7 @@ import PostModal from "~/components/ui/PostUI/PostUpLoadUI/PostModal";
 import CommentItem from "~/components/ui/PostUI/Post/CommentItem";
 import CopyLinkModal from "~/components/ui/PostUI/Post/CopyLinkModal";
 import UserHoverCard from "~/components/ui/UserHoverCard/UserHoverCard";
+import ShareModal from "~/components/ui/PostUI/Share/ShareModal";
 
 
 export default function PostCard({ post }) {
@@ -58,7 +59,7 @@ export default function PostCard({ post }) {
     const [isHovered, setIsHovered] = useState(false);
     const [hoverSource, setHoverSource] = useState(null); // 'avatar' or 'name'
     const [isOwner, setIsOwner] = useState(false);
-
+    const [isOpenShareModal, setIsOpenShareModal] = useState(false);
     // --- BEGIN AUTOCOMPLETE STATES ---
     const [followings, setFollowings] = useState([]);
     const [mentionSuggestions, setMentionSuggestions] = useState([]);
@@ -548,7 +549,7 @@ export default function PostCard({ post }) {
         </motion.div>
           <MessageCircle className="w-6 h-6 hover:opacity-70 cursor-pointer" onClick={handleCommentClick}/>
         </div>
-          <Send className="w-6 h-6 hover:opacity-70 cursor-pointer" />
+          <Send className="w-6 h-6 hover:opacity-70 cursor-pointer" onClick={() => setIsOpenShareModal(true)}/>
       </div>
 
       {/* Likes */}
@@ -569,6 +570,8 @@ export default function PostCard({ post }) {
           onClose={() => setShowLikesModal(false)}
         />
       )}
+
+      <ShareModal isOpen={isOpenShareModal} onClose={() => setIsOpenShareModal(false)} postId={post._id} />
 
       {/* Caption */}
       <div className="text-sm">

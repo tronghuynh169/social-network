@@ -75,7 +75,7 @@ const UserHoverCard = ({ info, hoverPosition, onFollowChange }) => {
           setPostCount(count);
       };
       fetchPostCount();
-    }, [info.userId]);
+    }, [info?.userId]);
 
     useEffect(() => {
       const fetchFollowingStatus = async () => {
@@ -98,7 +98,7 @@ const UserHoverCard = ({ info, hoverPosition, onFollowChange }) => {
       else {
         setIsReadyToShow(true); // tự xem mình thì vẫn cho hiển thị
       }
-    }, [user.id, info.userId]);
+    }, [user?.id, info?.userId]);
 
     if (!isReadyToShow) return null; // chưa sẵn sàng thì không render gì cả
 
