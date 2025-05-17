@@ -192,9 +192,35 @@ const NotificationModal = ({ onClose, onMarkedAllRead, onSingleRead }) => {
                                             }
                                             // Điều hướng
                                             if (
-                                                n.type === "message" &&
+                                                (n.type === "message" ||
+                                                    n.type ===
+                                                        "forward_message") &&
                                                 n.data?.conversationId
                                             ) {
+                                                onClose();
+                                                navigate(
+                                                    `/message/${n.data.conversationId}`
+                                                );
+                                            } else if (
+                                                n.type === "add_member" &&
+                                                n.data?.conversationId
+                                            ) {
+                                                // Có thể cũng navigate tới nhóm chat mới
+                                                onClose();
+                                                navigate(
+                                                    `/message/${n.data.conversationId}`
+                                                );
+                                            } else if (
+                                                n.type === "remove_member"
+                                            ) {
+                                                // Có thể báo thông báo hoặc điều hướng về trang chủ
+                                                onClose();
+                                                navigate(`/`);
+                                            } else if (
+                                                n.type === "change_admin" &&
+                                                n.data?.conversationId
+                                            ) {
+                                                // Có thể điều hướng tới nhóm hoặc hiển thị popup
                                                 onClose();
                                                 navigate(
                                                     `/message/${n.data.conversationId}`

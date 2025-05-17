@@ -236,7 +236,13 @@ const MessagePage = () => {
             // 2. Phát sự kiện qua Socket.IO để thông báo tới tất cả thành viên
             socket.emit("conversationUpdated", updatedConv);
 
-            // 3. Cập nhật thông tin cuộc trò chuyện hiện tại trên giao diện
+            socket.emit("addMember", {
+                conversationId,
+                newMemberIds: newIds,
+                adderId: profile._id, // Người thực hiện
+            });
+
+            // 3. Cập nhật thông tin cuộc trò chuyện hiện tại trên <gia></gia>o diện
             setConversation(updatedConv);
 
             // 4. Lấy lại danh sách cuộc trò chuyện từ server để cập nhật Sidebar
@@ -346,6 +352,7 @@ const MessagePage = () => {
             const updatedConversations = await getUserConversations(
                 profile._id
             );
+
             updateSidebar(updatedConversations);
 
             // Phát sự kiện qua Socket.IO để thông báo tới các thành viên khác

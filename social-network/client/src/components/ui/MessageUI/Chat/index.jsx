@@ -181,14 +181,15 @@ const ChatBox = ({
     const handleSelectRoom = (room) => {
         console.log(
             "Chuyển tiếp tin nhắn:",
-            selectedMessage,
+            selectedMessage._id,
             "đến phòng:",
-            room
+            room.conversationId
         );
         socket.emit("forwardMessage", {
             messageId: selectedMessage._id,
-            conversationId: room._id,
+            conversationId: room.conversationId,
             currentConversationId: conversationId,
+            sender: currentUserId,
         });
     };
 

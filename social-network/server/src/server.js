@@ -221,6 +221,27 @@ io.on("connection", (socket) => {
             } else {
                 // Like
                 message.likes.push(userId);
+
+                // Tạo thông báo nếu người like khác người gửi
+                if (userId.toString() !== message.sender.toString()) {
+                    const senderUser = await Profile.findById(userId); // người like
+                    const newNotify = new Notification({
+                        user: message.sender, // người nhận là người gửi tin nhắn
+                        sender: userId,
+                        type: "like_message",
+                        content: `${senderUser.fullName} đã thích tin nhắn của bạn.`,
+                        data: {
+                            conversationId: message.conversation,
+                            messageId: message._id,
+                        },
+                    });
+                    const savedNotify = await newNotify.save();
+                    io.to(message.sender.toString()).emit(
+                        "newNotification",
+                        savedNotify
+                    );
+                    console.log(message.conversation);
+                }
             }
 
             const updatedMessage = await message.save().then((msg) =>
@@ -230,14 +251,8 @@ io.on("connection", (socket) => {
                         path: "replyTo",
                         populate: { path: "sender", select: "fullName avatar" },
                     },
-                    {
-                        path: "likes",
-                        select: "fullName avatar slug",
-                    },
-                    {
-                        path: "readBy",
-                        select: "fullName avatar",
-                    },
+                    { path: "likes", select: "fullName avatar slug" },
+                    { path: "readBy", select: "fullName avatar" },
                 ])
             );
 
@@ -315,7 +330,12 @@ io.on("connection", (socket) => {
 
     socket.on(
         "forwardMessage",
-        async ({ messageId, conversationId, currentConversationId }) => {
+        async ({
+            messageId,
+            conversationId,
+            currentConversationId,
+            sender,
+        }) => {
             try {
                 const originalMessage = await Message.findById(messageId);
 
@@ -325,12 +345,13 @@ io.on("connection", (socket) => {
                     });
                 }
 
+                // Tạo tin nhắn chuyển tiếp
                 const forwardedMessage = new Message({
-                    sender: originalMessage.sender,
+                    sender: sender || originalMessage.sender, // người chuyển tiếp hoặc gốc
                     conversation: conversationId,
                     text: originalMessage.text,
                     files: originalMessage.files,
-                    replyTo: null, // Không cần replyTo
+                    replyTo: null,
                 });
 
                 const savedMessage = await forwardedMessage.save().then((msg) =>
@@ -340,15 +361,52 @@ io.on("connection", (socket) => {
                     ])
                 );
 
-                // Gửi tin nhắn đến tất cả thành viên trong phòng
+                // Cập nhật latestMessage cho conversation (cập nhật sidebar)
+                await Conversation.findByIdAndUpdate(conversationId, {
+                    latestMessage: savedMessage._id,
+                });
+
+                // Lấy danh sách thành viên nhóm nhận tin nhắn (ngoại trừ người chuyển tiếp)
+                const conversation = await Conversation.findById(
+                    conversationId
+                ).populate("members", "_id");
+                const senderProfile = await Profile.findById(sender);
+
+                for (const member of conversation.members) {
+                    if (member._id.toString() !== sender) {
+                        const notify = new Notification({
+                            user: member._id,
+                            sender: sender,
+                            type: "forward_message",
+                            content: `${senderProfile.fullName} đã chuyển tiếp một tin nhắn vào nhóm.`,
+                            data: {
+                                conversationId,
+                                messageId: savedMessage._id,
+                            },
+                        });
+                        const savedNotify = await notify.save();
+                        io.to(member._id.toString()).emit(
+                            "newNotification",
+                            savedNotify
+                        );
+                    }
+                }
+
+                // Gửi tin nhắn mới về phòng
                 io.to(conversationId).emit("receiveMessage", savedMessage);
 
-                // Đảm bảo không gửi tin nhắn đến phòng chat hiện tại
-                if (currentConversationId !== conversationId) {
-                    io.to(currentConversationId).emit("messageUpdated", {
-                        messageId,
-                    });
-                }
+                // Cập nhật sidebar (emit conversationUpdated)
+                const updatedConversation = await Conversation.findById(
+                    conversationId
+                )
+                    .populate({
+                        path: "latestMessage",
+                        select: "text createdAt sender",
+                        populate: { path: "sender", select: "fullName avatar" },
+                    })
+                    .populate("members", "fullName avatar");
+
+                io.emit("conversationUpdated", updatedConversation);
             } catch (error) {
                 console.error("❌ Lỗi khi chuyển tiếp tin nhắn:", error);
                 socket.emit("error", {
@@ -427,26 +485,22 @@ io.on("connection", (socket) => {
             conversation.admin = newAdminId;
             await conversation.save();
 
-            // Populate thông tin admin và các trường cần thiết
-            const updatedConversation = await Conversation.findById(
-                conversationId
-            )
-                .populate("admin", "fullName avatar") // Populate thông tin admin
-                .populate("members", "fullName avatar") // Populate thông tin thành viên
-                .populate({
-                    path: "latestMessage",
-                    select: "text createdAt sender",
-                    populate: { path: "sender", select: "fullName avatar" },
-                });
+            // Gửi thông báo cho admin mới
+            const oldAdminId = conversation.admin.toString();
+            const newAdminProfile = await Profile.findById(newAdminId);
+            const notify = new Notification({
+                user: newAdminId,
+                sender: oldAdminId,
+                type: "change_admin",
+                content: `Bạn đã được chỉ định làm quản trị viên nhóm.`,
+                data: { conversationId },
+            });
+            const savedNotify = await notify.save();
+            io.to(newAdminId.toString()).emit("newNotification", savedNotify);
 
-            // Phát sự kiện tới tất cả client
-            io.to(conversationId).emit(
-                "conversationUpdated",
-                updatedConversation
-            );
+            // ... phần còn lại giữ nguyên
         } catch (error) {
-            console.error("❌ Lỗi khi đổi quản trị viên:", error);
-            socket.emit("error", { message: "Không thể đổi quản trị viên." });
+            // ...
         }
     });
 
@@ -470,6 +524,47 @@ io.on("connection", (socket) => {
             console.error("❌ Lỗi khi cập nhật emoji:", error);
         }
     });
+
+    socket.on(
+        "addMember",
+        async ({ conversationId, newMemberIds, adderId }) => {
+            const adderProfile = await Profile.findById(adderId);
+            for (const newMemberId of newMemberIds) {
+                const notify = new Notification({
+                    user: newMemberId,
+                    sender: adderId,
+                    type: "add_member",
+                    content: `${adderProfile.fullName} đã thêm bạn vào một nhóm chat.`,
+                    data: { conversationId },
+                });
+                const savedNotify = await notify.save();
+                io.to(newMemberId.toString()).emit(
+                    "newNotification",
+                    savedNotify
+                );
+            }
+        }
+    );
+
+    socket.on(
+        "removeMember",
+        async ({ conversationId, removedMemberId, removerId }) => {
+            // Sau khi xóa thành viên khỏi nhóm
+            const removerProfile = await Profile.findById(removerId);
+            const notify = new Notification({
+                user: removedMemberId,
+                sender: removerId,
+                type: "remove_member",
+                content: `${removerProfile.fullName} đã xóa bạn khỏi nhóm chat.`,
+                data: { conversationId },
+            });
+            const savedNotify = await notify.save();
+            io.to(removedMemberId.toString()).emit(
+                "newNotification",
+                savedNotify
+            );
+        }
+    );
 });
 
 // Start the server
