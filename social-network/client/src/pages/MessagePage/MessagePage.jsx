@@ -357,6 +357,12 @@ const MessagePage = () => {
 
             // Phát sự kiện qua Socket.IO để thông báo tới các thành viên khác
             socket.emit("conversationUpdated", updatedConversation);
+
+            socket.emit("removeMember", {
+                conversationId,
+                removedMemberId: memberId,
+                removerId: profile._id,
+            });
         } catch (err) {
             console.error("❌ Lỗi xóa thành viên:", err);
             alert("Không thể xóa thành viên. Vui lòng thử lại.");
