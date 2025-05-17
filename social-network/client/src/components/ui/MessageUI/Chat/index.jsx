@@ -95,7 +95,7 @@ const ChatBox = ({
     // Tham gia phòng chat
     useEffect(() => {
         if (conversationId) {
-            socket.emit("joinRoom", conversationId);
+            socket.emit("joinConversation", conversationId);
         }
     }, [conversationId, socket]);
 

@@ -16,11 +16,9 @@ import {
     updateEmoji,
 } from "~/api/chat";
 import { getProfileById } from "~/api/profile";
-import { io } from "socket.io-client";
+import socket from "~/socket";
 import AddMemberModal from "../../components/ui/MessageUI/Modal/AddMemberModal";
 import EmojiModal from "~/components/EmojiModal";
-
-const socket = io(import.meta.env.VITE_API_URL || "http://localhost:5000");
 
 const MessagePage = () => {
     const { profile } = useUser();
@@ -135,18 +133,19 @@ const MessagePage = () => {
     }, [conversationId, profile._id]);
 
     useEffect(() => {
-        if (conversationId) {
-            socket.emit("joinConversation", conversationId);
-
-            socket.on("receiveMessage", (newMessage) => {
+        const handleReceiveMessage = (newMessage) => {
+            // Nếu đúng phòng thì thêm vào messages
+            if (
+                newMessage.conversation === conversationId ||
+                newMessage.conversation?._id === conversationId
+            ) {
                 setMessages((prev) => [...prev, newMessage]);
-            });
-        }
-
-        return () => {
-            socket.off("receiveMessage");
+            }
         };
-    }, [conversationId]);
+        socket.on("receiveMessage", handleReceiveMessage);
+
+        return () => socket.off("receiveMessage", handleReceiveMessage);
+    });
 
     const handleSendMessage = async () => {
         if (!message.trim() && selectedFiles.length === 0) return;
@@ -329,7 +328,7 @@ const MessagePage = () => {
         return () => {
             socket.off("conversationUpdated", handleConversationUpdated);
         };
-    }, [conversationId]);
+    });
 
     const handleRemoveMember = async (memberId) => {
         try {
@@ -359,9 +358,6 @@ const MessagePage = () => {
 
     useEffect(() => {
         if (conversationId) {
-            // Join a conversation room
-            socket.emit("joinConversation", conversationId);
-
             // Lắng nghe sự kiện cập nhật cuộc trò chuyện hiện tại
             const handleConversationUpdated = (updatedConv) => {
                 if (updatedConv._id === conversationId) {
@@ -379,12 +375,10 @@ const MessagePage = () => {
             socket.on("conversationUpdated", handleConversationUpdated);
 
             return () => {
-                // Rời khỏi phòng khi component bị unmount
-                socket.emit("leaveConversation", conversationId);
                 socket.off("conversationUpdated", handleConversationUpdated);
             };
         }
-    }, [conversationId]);
+    });
 
     useEffect(() => {
         const handleRemovedFromConversation = ({ conversationId, message }) => {

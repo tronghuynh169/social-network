@@ -28,11 +28,11 @@ const DefaultLayout = memo(({ children }) => {
 
     return (
         <div className="flex min-h-screen">
-            <div className="w-[14.4%] border-r border-[#262626] border-opacity-10 shadow-[inset_-1px_0_0_rgba(255,255,255,0.2)]">
+            <div className="border-r border-[#262626] border-opacity-10 shadow-[inset_-1px_0_0_rgba(255,255,255,0.2)]">
                 <SideBar />
             </div>
 
-            <div className="w-[85.6%] flex-grow">
+            <div className="flex-grow">
                 {slug ? <ProfilePage setAvatar={setAvatar} /> : children}
             </div>
         </div>

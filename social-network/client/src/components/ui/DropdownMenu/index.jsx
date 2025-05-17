@@ -11,7 +11,7 @@ import {
     LogOut,
 } from "lucide-react";
 
-const DropdownMenu = ({ isCollapsed }) => {
+const DropdownMenu = ({ collapsed }) => {
     const [isOpen, setIsOpen] = useState(false);
     const navigate = useNavigate();
     const dropdownRef = useRef(null);
@@ -50,7 +50,7 @@ const DropdownMenu = ({ isCollapsed }) => {
                 } transition-all duration-300 ease-in-out`}
             >
                 <Menu size={24} />
-                {!isCollapsed && (
+                {!collapsed && (
                     <span className="transition-opacity duration-300">
                         Xem thêm
                     </span>

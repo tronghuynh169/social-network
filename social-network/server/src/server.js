@@ -8,6 +8,8 @@ const connectDB = require("./database/connection");
 const route = require("./routes");
 const Message = require("./models/Message");
 const Conversation = require("./models/Conversation");
+const Notification = require("./models/Notification");
+const Profile = require("./models/Profile");
 
 // Load environment variables
 dotenv.config();
@@ -54,7 +56,6 @@ const io = new Server(server, {
 // Socket.IO logic
 io.on("connection", (socket) => {
     const userId = socket.handshake.query.userId; // hoặc lấy từ token sau khi xác thực
-
     if (userId) {
         socket.userId = userId;
         socket.join(userId.toString()); // Cho phép gửi io.to(userId) ở các sự kiện
@@ -82,6 +83,7 @@ io.on("connection", (socket) => {
     // Listen for 'sendMessage' event
     // Xử lý sự kiện 'sendMessage' từ client
     socket.on("sendMessage", async (data) => {
+        console.log("BE received sendMessage:", data);
         console.log("data: ", data);
         try {
             const parsedFiles =
@@ -125,8 +127,42 @@ io.on("connection", (socket) => {
 
             io.emit("conversationUpdated", updatedConversation); // Cập nhật toàn cục
 
+            try {
+                const conversation = await Conversation.findById(
+                    data.conversationId
+                ).populate("members", "fullName");
+                const senderUser = await Profile.findById(data.sender); // để lấy tên
+                const notifyPromises = conversation.members
+                    .filter((member) => member._id.toString() !== data.sender) // Không gửi thông báo cho người gửi
+                    .map(async (member) => {
+                        const newNotify = new Notification({    
+                            user: member._id,
+                            sender: data.sender,
+                            type: "message",
+                            content: `${senderUser.fullName} đã gửi một tin nhắn mới.`,
+                            data: {
+                                conversationId: data.conversationId,
+                                messageId: savedMessage._id,
+                            },
+                        });
+                        const savedNotify = await newNotify.save();
+                        // Gửi realtime qua socket
+                        io.to(member._id.toString()).emit(
+                            "newNotification",
+                            savedNotify
+                        );
+                    });
+                await Promise.all(notifyPromises);
+            } catch (error) {
+                console.error("❌ Lỗi gửi notification:", error);
+            }
+
             // ✅ Gửi tin nhắn mới về client trong phòng
             io.to(data.conversationId).emit("receiveMessage", savedMessage);
+            console.log(
+                "[MSG] Emit receiveMessage to conversationId:",
+                data.conversationId
+            );
         } catch (error) {
             console.error("❌ Lỗi khi lưu tin nhắn:", error);
         }
@@ -373,7 +409,6 @@ io.on("connection", (socket) => {
             // Delete the conversation and its messages
             await Conversation.findByIdAndDelete(conversationId);
             await Message.deleteMany({ conversation: conversationId });
-
         } catch (error) {
             console.error("❌ Error deleting conversation:", error);
             socket.emit("error", { message: "Lỗi khi xóa cuộc trò chuyện." });
@@ -430,7 +465,9 @@ io.on("connection", (socket) => {
                 conversationId,
                 emoji,
             });
-            console.log(`✅ Emoji updated for conversation ${conversationId}: ${emoji}`);
+            console.log(
+                `✅ Emoji updated for conversation ${conversationId}: ${emoji}`
+            );
         } catch (error) {
             console.error("❌ Lỗi khi cập nhật emoji:", error);
         }
