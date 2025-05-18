@@ -13,6 +13,7 @@ import { useUser } from "~/context/UserContext";
 import FollowButton from "~/components/ui/ProfileUI/FollowButton/FollowButton";
 import FollowersDialog from "~/components/ui/ProfileUI/FollowDialogUI/FollowersDialog";
 import FollowingDialog from "~/components/ui/ProfileUI/FollowDialogUI/FollowingDialog";
+import ProfileLinks from "~/components/ui/ProfileUI/ProfileLinks/ProfileLinks";
 import UserPostList from "~/components/ui/ProfileUI/UserPostList/UserPostList";
 import { handleStartPrivateChat } from "~/components/utils/chatHelpers";
 import { usePosts } from "~/context/PostContext";
@@ -35,6 +36,7 @@ const ProfilePage = ({ setAvatar }) => {
     const [postCount, setPostCount] = useState(0);
     const [isStartChat, setIsStartChat] = useState(false);
     const { userPosts } = usePosts();
+    const [isLinkModalOpen, setLinkModalOpen] = useState(false);
 
     const handleChat = () => {
         handleStartPrivateChat({
@@ -218,9 +220,17 @@ const ProfilePage = ({ setAvatar }) => {
                                 người dùng
                             </span>
                         </div>
-                        <a href={profile.website} className="mt-4">
-                            {profile.website}
-                        </a>
+                        {console.log(profile.website, typeof profile.website)}
+                        {
+                            profile.website && Array.isArray(profile.website) && 
+                            profile.website.some(item => item.trim() !== "") &&
+                            <button
+                                className="text-[var(--text-primary-color)] cursor-pointer mt-4 text-left"
+                                onClick={() => setLinkModalOpen(true)}
+                            >
+                                Liên kết {isOwner ? "của tôi" : `của ${profile.fullName}`}
+                            </button>
+                        }
                         <span className="">{profile.bio}</span>
                     </div>
                 </div>
@@ -229,6 +239,13 @@ const ProfilePage = ({ setAvatar }) => {
                     <UserPostList userId={profile.userId} />
                 </div>
             </div>
+
+            {/* Modal Component */}
+            <ProfileLinks
+                websites={profile.website}
+                isOpen={isLinkModalOpen}
+                setIsOpen={setLinkModalOpen}
+            />
 
             {/* Avatar Modal */}
             <AvatarSyncModal

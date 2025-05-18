@@ -93,7 +93,7 @@ const UserHoverCard = ({ info, hoverPosition, onFollowChange }) => {
         }
       };
     
-      if (user.id !== info.userId) {
+      if (user.id !== info?.userId) {
         fetchFollowingStatus();
       }
       else {

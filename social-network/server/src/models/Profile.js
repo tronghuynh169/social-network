@@ -1,43 +1,43 @@
-const mongoose = require("mongoose");
-const removeAccents = require("remove-accents");
+const mongoose = require('mongoose');
+const removeAccents = require('remove-accents');
 
 const ProfileSchema = new mongoose.Schema(
     {
         userId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "User",
+            ref: 'User',
             required: true,
         },
         username: { type: String, unique: true, required: true },
         fullName: { type: String, required: true },
         fullNameUnsigned: { type: String },
         slug: { type: String, unique: true, required: true },
-        bio: { type: String, default: "" }, // Mô tả ngắn
-        avatar: { type: String, default: "" }, // Ảnh đại diện
-        website: { type: String, default: "" }, // Link website cá nhân
-        location: { type: String, default: "" }, // Địa điểm
+        bio: { type: String, default: '' }, // Mô tả ngắn
+        avatar: { type: String, default: '' }, // Ảnh đại diện
+        website: { type: [String], default: [] }, // Cho phép lưu nhiều liên kết
+        location: { type: String, default: '' }, // Địa điểm
         gender: {
             type: String,
-            enum: ["Nam", "Nữ", "Khác"],
-            default: "Khác",
+            enum: ['Nam', 'Nữ', 'Khác'],
+            default: 'Khác',
         },
 
         isPrivate: { type: Boolean, default: false }, // Tài khoản riêng tư
 
-        followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Profile" }], // Người theo dõi
-        following: [{ type: mongoose.Schema.Types.ObjectId, ref: "Profile" }], // Đang theo dõi
+        followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Profile' }], // Người theo dõi
+        following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Profile' }], // Đang theo dõi
 
-        posts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }], // Bài đăng
-        savedPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }], // Bài đăng đã lưu
-        stories: [{ type: mongoose.Schema.Types.ObjectId, ref: "Story" }], // Story trong 24h
+        posts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }], // Bài đăng
+        savedPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }], // Bài đăng đã lưu
+        stories: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Story' }], // Story trong 24h
     },
     { timestamps: true }
 );
 
 // 👇 Tự động cập nhật fullNameUnsigned trước khi lưu
-ProfileSchema.pre("save", function (next) {
+ProfileSchema.pre('save', function (next) {
     this.fullNameUnsigned = removeAccents(this.fullName.toLowerCase());
     next();
 });
 
-module.exports = mongoose.model("Profile", ProfileSchema);
+module.exports = mongoose.model('Profile', ProfileSchema);

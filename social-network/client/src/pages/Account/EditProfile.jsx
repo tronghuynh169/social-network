@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useUser } from "~/context/UserContext";
 import { getProfileByUsername, updateProfileByUsername } from "~/api/profile";
+import { Link as LinkIcon, Pencil, X, CirclePlus  } from "lucide-react";
 
 const EditProfile = () => {
     const { user } = useUser();
@@ -8,8 +9,9 @@ const EditProfile = () => {
     const [bio, setBio] = useState("");
     const [gender, setGender] = useState("Khác");
     const [originalProfile, setOriginalProfile] = useState(null);
-    const [website, setWebsite] = useState("");
+    const [websites, setWebsites] = useState([""]);
     const [location, setLocation] = useState("");
+    const [editingIndexes, setEditingIndexes] = useState([]); // ví dụ: [0, 2]
 
     useEffect(() => {
         const fetchProfileData = async () => {
@@ -20,8 +22,14 @@ const EditProfile = () => {
                     setOriginalProfile(profileData); // ✅ Lưu trạng thái ban đầu
                     setBio(profileData.bio || "");
                     setGender(profileData.gender || "Khác");
-                    setWebsite(profileData.website || "");
                     setLocation(profileData.location || "");
+
+                    const initialWebsites = Array.isArray(profileData.website)
+                    ? profileData.website
+                    : profileData.website
+                    ? [profileData.website]
+                    : [""];
+                    setWebsites(initialWebsites);
                 }
             } catch (err) {
                 console.error("❌ Lỗi khi lấy profile:", err);
@@ -33,11 +41,37 @@ const EditProfile = () => {
         }
     }, [user?.username]);
 
+    const handleEditClick = (index) => {
+        setEditingIndexes((prev) => [...prev, index]);
+    };
+
+    const handleDoneEdit = (index) => {
+        setEditingIndexes((prev) => prev.filter((i) => i !== index));
+    };
+
+    const handleWebsiteChange = (index, value) => {
+        const updated = [...websites];
+        updated[index] = value;
+        setWebsites(updated);
+    };
+
+    const handleAddWebsite = () => {
+        setWebsites([...websites, ""]);
+        setEditingIndexes((prev) => [...prev, websites.length]);
+    };
+
+    const handleRemoveWebsite = (index) => {
+        const updated = [...websites];
+        updated.splice(index, 1);
+        setWebsites(updated);
+        setEditingIndexes((prev) => prev.filter((i) => i !== index));
+    };
+
     const isChanged = () => {
         return (
             bio !== originalProfile?.bio ||
             gender !== originalProfile?.gender ||
-            website !== originalProfile?.website ||
+            JSON.stringify(websites.filter(Boolean)) !== JSON.stringify(originalProfile?.website || []) ||
             location !== originalProfile?.location
         );
     };
@@ -49,7 +83,7 @@ const EditProfile = () => {
             const updatedProfile = {
                 bio,
                 gender,
-                website,
+                website: websites.filter((url) => url.trim() !== ""),
                 location,
             };
 
@@ -111,16 +145,67 @@ const EditProfile = () => {
 
             {/* Trang Web */}
             <div className="mt-8">
-                <label className="block mt-8 mb-3 font-semibold">
-                    Trang web
-                </label>
-                <input
-                    type="text"
-                    value={website}
-                    onChange={(e) => setWebsite(e.target.value)}
-                    placeholder="Trang web"
-                    className="w-full p-2 border-[1px] border-[var(--secondary-color)] rounded-md"
-                />
+                <label className="block mb-3 font-semibold">Trang web</label>
+
+                {websites.map((url, index) => {
+                    const isEditing = editingIndexes.includes(index);
+                    const isEmpty = !url.trim();
+
+                    // ⚠️ Nếu rỗng và không đang chỉnh sửa, thì bỏ qua không render
+                    if (isEmpty && !isEditing) return null;
+
+                    return (
+                        <div key={index} className="flex items-center gap-2 mb-2 group">
+                            {isEditing ? (
+                                <>
+                                    <input
+                                        type="text"
+                                        value={url}
+                                        onChange={(e) => handleWebsiteChange(index, e.target.value)}
+                                        className="w-full p-2 border border-gray-300 rounded-md"
+                                        placeholder="Địa chỉ trang web"
+                                    />
+                                    <button
+                                        onClick={() => handleDoneEdit(index)}
+                                        className="text-sm text-[var(--text-primary-color)] hover:cursor-pointer"
+                                    >
+                                        Xong
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="flex-1 text-md text-[var(--text-primary-color)] flex items-center gap-2 p-4">
+                                        <LinkIcon size={22} className="text-gray-500 mr-2" />
+                                        <a
+                                            href={url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="hover:underline"
+                                        >
+                                            {url}
+                                        </a>
+                                    </div>
+                                    <button
+                                        onClick={() => handleEditClick(index)}
+                                        className="p-2 rounded-full overflow-hidden bg-[var(--text-primary-color)] hover:cursor-pointer"
+                                        title="Chỉnh sửa"
+                                    >
+                                        <Pencil size={16} className="text-gray-500" />
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    );
+                })}
+
+                {/* Nút thêm */}
+                <button
+                    type="button"
+                    onClick={handleAddWebsite}
+                    className="flex items-center p-4 text-[var(--text-primary-color)] mt-2 hover:underline cursor-pointer"
+                >
+                    <CirclePlus  size={24} className="mr-2" /> Thêm một trang web
+                </button>
             </div>
 
             {/* Tiểu sử */}
