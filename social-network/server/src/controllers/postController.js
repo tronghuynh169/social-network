@@ -2,6 +2,7 @@ const Post = require('../models/Post');
 const Comment = require('../models/Comment');
 const Profile = require('../models/Profile');
 const User = require('../models/User');
+const Notification = require('../models/Notification'); // đường dẫn tuỳ theo cấu trúc project
 const mongoose = require('mongoose');
 
 // Đăng bài viết (Sửa để upload nhiều ảnh)
@@ -282,6 +283,36 @@ exports.toggleLike = async (req, res) => {
         if (likeIndex === -1) {
             post.likes.push(userId);
             isLiked = true;
+
+            // Tạo thông báo khi like bài viết (trừ trường hợp tự like)
+            const postOwnerProfile = await Profile.findOne({
+                userId: post.userId,
+            }).lean();
+            const likerProfile = await Profile.findOne({ userId }).lean();
+
+            if (!postOwnerProfile || !likerProfile) return;
+
+            // Không gửi thông báo nếu tự like bài viết mình
+            if (
+                postOwnerProfile._id.toString() !== likerProfile._id.toString()
+            ) {
+                const newNotification = new Notification({
+                    user: postOwnerProfile._id, // người nhận (theo profileId)
+                    sender: likerProfile._id, // người like (theo profileId)
+                    type: 'like_post',
+                    content: `${likerProfile.fullName} đã thích bài viết của bạn`,
+                    data: {
+                        postId: post._id,
+                    },
+                });
+                await newNotification.save();
+
+                // Gửi notification realtime đến profileId
+                req.app
+                    .get('io')
+                    .to(postOwnerProfile._id.toString())
+                    .emit('newNotification', newNotification);
+            }
         } else {
             post.likes.splice(likeIndex, 1);
             isLiked = false;
@@ -295,6 +326,7 @@ exports.toggleLike = async (req, res) => {
             likesCount: post.likes.length,
         });
     } catch (error) {
+        console.error('Toggle like error:', error);
         res.status(500).json({ message: 'Lỗi khi like bài viết', error });
     }
 };
@@ -303,6 +335,8 @@ exports.toggleLike = async (req, res) => {
 exports.addComment = async (req, res) => {
     try {
         const { content } = req.body;
+        const postId = req.params.postId;
+
         const newComment = new Comment({
             userId: req.user.id,
             postId: req.params.postId,
@@ -312,6 +346,50 @@ exports.addComment = async (req, res) => {
 
         const savedComment = await newComment.save();
         await savedComment.populate('userId', 'username profilePicture');
+
+        // Lấy thông tin bài viết
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.status(404).json({ message: 'Bài viết không tồn tại' });
+        }
+
+        // Tạo thông báo khi comment (trừ trường hợp tự comment)
+        // Lấy profile của người viết bài và người bình luận
+        const postOwnerProfile = await Profile.findOne({
+            userId: post.userId,
+        }).lean();
+        const commenterProfile = await Profile.findOne({
+            userId: req.user.id,
+        }).lean();
+
+        if (!postOwnerProfile || !commenterProfile) {
+            return res
+                .status(404)
+                .json({ message: 'Không tìm thấy thông tin profile' });
+        }
+
+        // Tạo thông báo khi comment (trừ trường hợp tự comment)
+        if (
+            postOwnerProfile._id.toString() !== commenterProfile._id.toString()
+        ) {
+            const newNotification = new Notification({
+                user: postOwnerProfile._id, // người nhận thông báo (profileId)
+                sender: commenterProfile._id, // người bình luận (profileId)
+                type: 'comment_post',
+                content: `${commenterProfile.fullName} đã bình luận về bài viết của bạn`,
+                data: {
+                    postId: post._id,
+                    commentId: savedComment._id,
+                },
+            });
+            await newNotification.save();
+
+            // Gửi thông báo realtime đến profileId
+            req.app
+                .get('io')
+                .to(postOwnerProfile._id.toString())
+                .emit('newNotification', newNotification);
+        }
         res.status(201).json(savedComment);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -337,7 +415,7 @@ exports.addReply = async (req, res) => {
             req.params.commentId
         ).exec();
         let replyToProfile = null;
-
+        let receiverProfile = null;
         if (repliedComment) {
             const profile = await Profile.findOne({
                 userId: repliedComment.userId,
@@ -345,6 +423,35 @@ exports.addReply = async (req, res) => {
                 .select('username fullName slug avatar')
                 .exec();
             replyToProfile = profile;
+            receiverProfile = profile;
+        }
+
+        const replierProfile = await Profile.findOne({
+            userId: req.user.id,
+        }).lean();
+        // Tạo thông báo khi reply (trừ trường hợp tự reply)
+        if (
+            receiverProfile &&
+            receiverProfile._id.toString() !== replierProfile._id.toString()
+        ) {
+            const newNotification = new Notification({
+                user: receiverProfile._id, // profileId của người nhận
+                sender: replierProfile._id, // profileId của người trả lời
+                type: 'reply_comment',
+                content: `${replierProfile.fullName} đã trả lời bình luận của bạn`,
+                data: {
+                    postId: req.params.postId,
+                    commentId: req.params.commentId,
+                    replyId: savedReply._id,
+                },
+            });
+            await newNotification.save();
+
+            // Gửi thông báo realtime
+            req.app
+                .get('io')
+                .to(receiverProfile._id.toString())
+                .emit('newNotification', newNotification);
         }
 
         // 3. Trả về cả comment và replyToProfile
@@ -371,6 +478,40 @@ exports.toggleCommentLike = async (req, res) => {
         if (index === -1) {
             comment.likes.push(userId);
             isLiked = true;
+
+            // Tạo thông báo khi like comment (trừ trường hợp tự like)
+            // Tạo thông báo khi like comment (trừ trường hợp tự like)
+            if (comment.userId.toString() !== userId) {
+                const likerProfile = await Profile.findOne({ userId }).lean();
+                const receiverProfile = await Profile.findOne({
+                    userId: comment.userId,
+                }).lean();
+
+                if (
+                    likerProfile &&
+                    receiverProfile &&
+                    receiverProfile._id.toString() !==
+                        likerProfile._id.toString()
+                ) {
+                    const newNotification = new Notification({
+                        user: receiverProfile._id, // profileId của người nhận
+                        sender: likerProfile._id, // profileId của người like
+                        type: 'like_comment',
+                        content: `${likerProfile.fullName} đã thích bình luận của bạn`,
+                        data: {
+                            postId: comment.postId,
+                            commentId: comment._id,
+                        },
+                    });
+                    await newNotification.save();
+
+                    // Gửi thông báo realtime
+                    req.app
+                        .get('io')
+                        .to(receiverProfile._id.toString())
+                        .emit('newNotification', newNotification);
+                }
+            }
         } else {
             comment.likes.splice(index, 1);
             isLiked = false;

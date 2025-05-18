@@ -7,7 +7,7 @@ import {
     getFollowing,
 } from "~/api/profile";
 import { getUserPostCount } from "~/api/post";
-import { Settings } from "lucide-react";
+import { Settings, Link2 } from "lucide-react";
 import AvatarSyncModal from "~/components/ui/ProfileUI/AvatarModal";
 import { useUser } from "~/context/UserContext";
 import FollowButton from "~/components/ui/ProfileUI/FollowButton/FollowButton";
@@ -220,14 +220,14 @@ const ProfilePage = ({ setAvatar }) => {
                                 người dùng
                             </span>
                         </div>
-                        {console.log(profile.website, typeof profile.website)}
                         {
                             profile.website && Array.isArray(profile.website) && 
                             profile.website.some(item => item.trim() !== "") &&
                             <button
-                                className="text-[var(--text-primary-color)] cursor-pointer mt-4 text-left"
+                                className="text-[var(--text-link-color)] cursor-pointer mt-4 text-left flex items-center gap-2"
                                 onClick={() => setLinkModalOpen(true)}
                             >
+                                <Link2 className="w-5 h-5" />
                                 Liên kết {isOwner ? "của tôi" : `của ${profile.fullName}`}
                             </button>
                         }
