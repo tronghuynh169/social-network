@@ -20,6 +20,7 @@ const CommentItem = ({
     onNavigateToDetail,
     highlightCommentId,
     replyToId,
+    replyToChain
 }) => {
     const navigate = useNavigate();
     const [showLikesModal, setShowLikesModal] = useState(false);
@@ -397,6 +398,7 @@ const CommentItem = ({
                             setShowLikesModal={() => {}}
                             highlightCommentId={highlightCommentId} // 💡 THÊM DÒNG NÀY
                             replyToId={replyToId} // 💡 THÊM DÒNG NÀY
+                            replyToChain={replyToChain} // 💡 THÊM DÒNG NÀY
                         />
                     ))}
                 </div>

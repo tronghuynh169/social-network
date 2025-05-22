@@ -74,6 +74,23 @@ export default function PostDetailPage({ isModal = false }) {
     const [searchParams] = useSearchParams();
     const highlightCommentId = searchParams.get("commentId");
     const replyToId = searchParams.get("replyToId"); // ID của comment cha
+
+    const [replyToChain, setReplyToChain] = useState([]);
+
+    useEffect(() => {
+    const loadReplyChain = async () => {
+        try {
+        const chain = await getReplyChain(highlightCommentId); // comment cuối cùng muốn scroll tới
+        setReplyToChain(chain); // ["A", "B", "C"]
+        } catch (e) {
+        console.error("Không thể load reply chain:", e);
+        }
+    };
+
+    if (highlightCommentId) {
+        loadReplyChain();
+    }
+    }, [highlightCommentId]);
     
     // Check lỗi
     const [errorMessage, setErrorMessage] = useState(null);
@@ -642,6 +659,7 @@ export default function PostDetailPage({ isModal = false }) {
                                 level={0} // ➡️ comment gốc level 0
                                 highlightCommentId={highlightCommentId}
                                 replyToId={replyToId} // ID của comment cha
+                                replyToChain={replyToChain}
                             />
                         ))}
                 </div>

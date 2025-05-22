@@ -113,3 +113,14 @@ export const getReplyProfile = async (commentId) => {
         throw error.response?.data || error;
     }
 };
+
+// 🔗 Lấy chuỗi replyToChain của 1 comment (dùng để hiển thị cây reply)
+export const getReplyChain = async (commentId) => {
+    try {
+        const response = await api.get(`/comments/${commentId}/reply-chain`);
+        return response.data.chain; // Trả về mảng các commentId từ gốc đến gần nhất
+    } catch (error) {
+        console.error('Lỗi khi lấy reply chain:', error);
+        throw error.response?.data || error;
+    }
+};

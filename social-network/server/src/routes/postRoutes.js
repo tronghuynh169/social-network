@@ -17,6 +17,7 @@ const {
     updatePost,
     getUserPostCount,
     getReplyProfile,
+    getReplyToChain,
 } = require('../controllers/postController');
 const auth = require('../middlewares/authMiddleware');
 const upload = require('../middlewares/uploadMiddleware');
@@ -48,6 +49,7 @@ router.put(
     updatePost
 );
 router.get('/comments/:replyToId/reply-profile', auth, getReplyProfile);
+router.get('/:commentId/reply-chain', getReplyToChain);
 router.post('/:postId/like', auth, toggleLike);
 router.get('/:postId/likes', getPostLikes);
 router.get('/:postId/comments/:commentId/likes', getCommentLikes);

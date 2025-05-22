@@ -468,6 +468,7 @@ exports.addReply = async (req, res) => {
         const replierProfile = await Profile.findOne({
             userId: req.user.id,
         }).lean();
+
         // Tạo thông báo khi reply (trừ trường hợp tự reply)
         if (
             receiverProfile &&
@@ -518,8 +519,8 @@ exports.addReply = async (req, res) => {
                     content: `${replierProfile.fullName} đã nhắc đến bạn trong một bình luận`,
                     data: {
                         postId: req.params.postId,
-                        commentId: req.params.commentId,
-                        replyId: savedReply._id,
+                        commentId: savedReply._id,
+                        replyToId: req.params.commentId,
                     },
                 });
                 await newMentionNotification.save();
@@ -539,6 +540,29 @@ exports.addReply = async (req, res) => {
         });
     } catch (err) {
         res.status(500).json({ message: err.message });
+    }
+};
+
+exports.getReplyToChain = async (req, res) => {
+    try {
+        const { commentId } = req.params;
+
+        const chain = [];
+        let current = await Comment.findById(commentId);
+
+        if (!current) {
+            return res.status(404).json({ message: 'Comment not found' });
+        }
+
+        while (current?.replyTo) {
+            chain.unshift(current.replyTo.toString());
+            current = await Comment.findById(current.replyTo);
+        }
+
+        res.json({ chain }); // ["id của comment gốc", "id của cha gần nhất"]
+    } catch (error) {
+        console.error('Error fetching reply chain:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
     }
 };
 
