@@ -5,7 +5,7 @@ import { formatPostTime } from "~/components/utils/formatPostTime";
 import DeleteCommentModal from "./DeleteCommentModal";
 import { getProfileByUserId } from "~/api/profile";
 import { getReplyProfile } from "~/api/post";
-import { useNavigate, Link  } from "react-router-dom";
+import { useNavigate, Link, useLocation  } from "react-router-dom";
 import UserHoverCardPortal from "~/components/ui/UserHoverCard/UserHoverCardPortal";
 import Mention from "./Mention"; // đường dẫn tương ứng
 
@@ -17,7 +17,9 @@ const CommentItem = ({
     onDelete, // Hàm xóa bình luận
     isReply = false,
     isDirectReply = false, // mới thêm
-    onNavigateToDetail
+    onNavigateToDetail,
+    highlightCommentId,
+    replyToId,
 }) => {
     const navigate = useNavigate();
     const [showLikesModal, setShowLikesModal] = useState(false);
@@ -48,6 +50,47 @@ const CommentItem = ({
     const hasMounted = useRef(false);
 
     const initialOwnReplyIds = useRef([]);
+
+    const commentRef = useRef(null);
+    const [shouldHighlightReply, setShouldHighlightReply] = useState(false);
+    const [hasHighlightedOnce, setHasHighlightedOnce] = useState(false);
+
+    const timeoutRef = useRef(null);
+
+    useEffect(() => {
+    if (!highlightCommentId || hasHighlightedOnce) return;
+
+    let el = null;
+
+    if (comment._id === highlightCommentId && commentRef.current) {
+        el = commentRef.current;
+    } else if (comment._id === replyToId) {
+        if (!showReplies) {
+        setShowReplies(true);
+        setShouldHighlightReply(true);
+        // Don't set hasHighlightedOnce ở đây, chờ đến sau timeout
+        return; // dừng effect ở đây, sẽ chạy lại khi showReplies thay đổi
+        } else {
+        el = document.getElementById(`comment-${highlightCommentId}`);
+        }
+    }
+
+    if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("highlighted-comment");
+
+        timeoutRef.current = setTimeout(() => {
+        el.classList.remove("highlighted-comment");
+        setHasHighlightedOnce(true);  // Set ở đây, sau khi highlight biến mất
+        }, 3000);
+    }
+
+    return () => {
+        if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        }
+    };
+    }, [highlightCommentId, replyToId, comment._id, showReplies, hasHighlightedOnce]);
 
     useEffect(() => {
     const all = flattenReplies(comment.replies || []);
@@ -174,7 +217,7 @@ const CommentItem = ({
 
 
     return (
-        <div className={`w-full ${indentClass}`}>
+        <div ref={commentRef} id={`comment-${comment._id}`} className={`w-full ${indentClass}`}>
             <div className="flex items-start gap-3 w-full relative">
                 {/* Avatar */}
                 <img
@@ -281,6 +324,7 @@ const CommentItem = ({
                                     }
                                     // ẩn hoặc show
                                     setShowReplies(prev => !prev);
+                                    setHasHighlightedOnce(true); // ✅ Cho phép tắt highlight mode sau khi click
                                     }
                                 }}
                                 className="ml-2 text-[var(--text-secondary-color)] text-[12px] cursor-pointer"
@@ -351,6 +395,8 @@ const CommentItem = ({
                             isDirectReply={!isReply} // chỉ reply cấp 1 mới thụt
                             showLikesModal={false}
                             setShowLikesModal={() => {}}
+                            highlightCommentId={highlightCommentId} // 💡 THÊM DÒNG NÀY
+                            replyToId={replyToId} // 💡 THÊM DÒNG NÀY
                         />
                     ))}
                 </div>

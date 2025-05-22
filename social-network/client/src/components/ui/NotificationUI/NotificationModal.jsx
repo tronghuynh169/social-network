@@ -242,6 +242,30 @@ const NotificationModal = ({ onClose, onMarkedAllRead, onSingleRead }) => {
                                                     `/${n.data.slug}`
                                                 );
                                             }
+                                            else if (
+                                                n.type === "like_post" ||
+                                                n.type === "comment_post" ||
+                                                n.type === "reply_comment" ||
+                                                n.type === "like_comment" ||
+                                                n.type === "mention"
+                                            ) {
+                                                onClose();
+                                                const { postId, commentId, replyToId } = n.data || {};
+
+                                                if (postId && commentId) {
+                                                    // Nếu có replyToId (tức là đây là reply của một comment)
+                                                    const url = replyToId
+                                                        ? `/post/${postId}?commentId=${commentId}&replyToId=${replyToId}`
+                                                        : `/post/${postId}?commentId=${commentId}`;
+                                                    navigate(url);
+                                                } else if (postId) {
+                                                    // Nếu chỉ có postId: Điều hướng đến bài viết
+                                                    navigate(`/post/${postId}`);
+                                                } else {
+                                                    // Fallback nếu thiếu dữ liệu
+                                                    navigate(`/`);
+                                                }
+                                            }
                                             console.log(n.data);
                                         }}
                                     >

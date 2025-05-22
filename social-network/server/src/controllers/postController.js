@@ -390,6 +390,45 @@ exports.addComment = async (req, res) => {
                 .to(postOwnerProfile._id.toString())
                 .emit('newNotification', newNotification);
         }
+
+        // ✅✅✅ PHẦN THÊM MỚI: Gửi thông báo khi mention
+        const mentionPattern = /@\{([^\}]+)\}\|([^\s]+)/g;
+        let match;
+        const mentionedSlugs = new Set();
+
+        while ((match = mentionPattern.exec(content)) !== null) {
+            mentionedSlugs.add(match[1]);
+        }
+
+        if (mentionedSlugs.size > 0) {
+            const mentionedProfiles = await Profile.find({
+                slug: { $in: Array.from(mentionedSlugs) },
+            }).lean();
+
+            for (const profile of mentionedProfiles) {
+                if (profile._id.toString() === commenterProfile._id.toString())
+                    continue;
+
+                const newMentionNotification = new Notification({
+                    user: profile._id,
+                    sender: commenterProfile._id,
+                    type: 'mention',
+                    content: `${commenterProfile.fullName} đã nhắc đến bạn trong một bình luận`,
+                    data: {
+                        postId: post._id,
+                        commentId: savedComment._id,
+                    },
+                });
+                await newMentionNotification.save();
+
+                req.app
+                    .get('io')
+                    .to(profile._id.toString())
+                    .emit('newNotification', newMentionNotification);
+            }
+        }
+        // ✅✅✅ KẾT THÚC PHẦN MENTION
+
         res.status(201).json(savedComment);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -441,8 +480,8 @@ exports.addReply = async (req, res) => {
                 content: `${replierProfile.fullName} đã trả lời bình luận của bạn`,
                 data: {
                     postId: req.params.postId,
-                    commentId: req.params.commentId,
-                    replyId: savedReply._id,
+                    commentId: savedReply._id,
+                    replyToId: req.params.commentId,
                 },
             });
             await newNotification.save();
@@ -453,6 +492,45 @@ exports.addReply = async (req, res) => {
                 .to(receiverProfile._id.toString())
                 .emit('newNotification', newNotification);
         }
+
+        // ✅✅✅ PHẦN THÊM MỚI: Gửi thông báo khi mention
+        const mentionPattern = /@\{([^\}]+)\}\|([^\s]+)/g;
+        let match;
+        const mentionedSlugs = new Set();
+
+        while ((match = mentionPattern.exec(content)) !== null) {
+            mentionedSlugs.add(match[1]);
+        }
+
+        if (mentionedSlugs.size > 0) {
+            const mentionedProfiles = await Profile.find({
+                slug: { $in: Array.from(mentionedSlugs) },
+            }).lean();
+
+            for (const profile of mentionedProfiles) {
+                if (profile._id.toString() === replierProfile._id.toString())
+                    continue;
+
+                const newMentionNotification = new Notification({
+                    user: profile._id,
+                    sender: replierProfile._id,
+                    type: 'mention',
+                    content: `${replierProfile.fullName} đã nhắc đến bạn trong một bình luận`,
+                    data: {
+                        postId: req.params.postId,
+                        commentId: req.params.commentId,
+                        replyId: savedReply._id,
+                    },
+                });
+                await newMentionNotification.save();
+
+                req.app
+                    .get('io')
+                    .to(profile._id.toString())
+                    .emit('newNotification', newMentionNotification);
+            }
+        }
+        // ✅✅✅ KẾT THÚC PHẦN MENTION
 
         // 3. Trả về cả comment và replyToProfile
         res.status(201).json({

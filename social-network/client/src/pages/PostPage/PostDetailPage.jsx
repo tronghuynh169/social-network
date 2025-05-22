@@ -1,4 +1,4 @@
-import { useNavigate, useParams  } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams  } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import {
     getPostDetails,
@@ -71,7 +71,10 @@ export default function PostDetailPage({ isModal = false }) {
     const [hoverSource, setHoverSource] = useState(null); // 'avatar' or 'name'
     const [isOpenShareModal, setIsOpenShareModal] = useState(false);
 
-
+    const [searchParams] = useSearchParams();
+    const highlightCommentId = searchParams.get("commentId");
+    const replyToId = searchParams.get("replyToId"); // ID của comment cha
+    
     // Check lỗi
     const [errorMessage, setErrorMessage] = useState(null);
     // --- BEGIN AUTOCOMPLETE STATES ---
@@ -637,6 +640,8 @@ export default function PostDetailPage({ isModal = false }) {
                                 showLikesModal={showCommentLikesModal}
                                 setShowLikesModal={setShowCommentLikesModal}
                                 level={0} // ➡️ comment gốc level 0
+                                highlightCommentId={highlightCommentId}
+                                replyToId={replyToId} // ID của comment cha
                             />
                         ))}
                 </div>

@@ -77,3 +77,14 @@ body {
     background-color: var(--text-primary-color);
 }
 
+.highlighted-comment {
+  animation: highlightFade 2s ease-in-out;
+  background-color: rgba(255, 239, 184, 0.4); /* màu vàng nhạt */
+  transition: background-color 1s;
+}
+
+@keyframes highlightFade {
+  0% { background-color: rgba(255, 239, 184, 1); }
+  100% { background-color: rgba(255, 239, 184, 0.4); }
+}
+
