@@ -554,12 +554,16 @@ exports.getReplyToChain = async (req, res) => {
             return res.status(404).json({ message: 'Comment not found' });
         }
 
+        // Lặp lên đến gốc, mỗi lần thêm cha vào đầu mảng
         while (current?.replyTo) {
             chain.unshift(current.replyTo.toString());
             current = await Comment.findById(current.replyTo);
         }
 
-        res.json({ chain }); // ["id của comment gốc", "id của cha gần nhất"]
+        // Cuối cùng, thêm commentId (comment đích) vào cuối chain
+        chain.push(commentId);
+
+        res.json({ chain }); // ["id của comment gốc", ..., "id của commentId"]
     } catch (error) {
         console.error('Error fetching reply chain:', error);
         res.status(500).json({ message: 'Internal Server Error' });

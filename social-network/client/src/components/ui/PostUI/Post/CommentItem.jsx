@@ -20,7 +20,7 @@ const CommentItem = ({
     onNavigateToDetail,
     highlightCommentId,
     replyToId,
-    replyToChain
+    replyToChain,
 }) => {
     const navigate = useNavigate();
     const [showLikesModal, setShowLikesModal] = useState(false);
@@ -44,7 +44,7 @@ const CommentItem = ({
     const hasUserReplied = comment.replies?.some(
         (reply) => reply.userId._id === user.id
     );
-    const allReplies = showReplies ? flattenReplies(comment.replies) : [];
+    const allReplies =  (showReplies ? (comment.replies || []) : []);
 
     // 1. Khởi tạo state từ localStorage (lazy initializer)
     const [newReplyIds, setNewReplyIds] = useState([]);
@@ -92,6 +92,12 @@ const CommentItem = ({
         }
     };
     }, [highlightCommentId, replyToId, comment._id, showReplies, hasHighlightedOnce]);
+
+    useEffect(() => {
+        if (Array.isArray(replyToChain) && replyToChain.includes(comment._id)) {
+            setShowReplies(true);
+        }
+    }, [replyToChain, comment._id]);
 
     useEffect(() => {
     const all = flattenReplies(comment.replies || []);
@@ -208,12 +214,15 @@ const CommentItem = ({
         }
     };
 
+    const isInReplyToChain = Array.isArray(replyToChain) && replyToChain.includes(comment._id);
+
     const newRepliesToRender = flattenReplies(comment.replies || []).filter(
     r =>
         // chỉ lấy những reply do mình tạo
         r.userId._id === user.id &&
         // và mà không có trong snapshot ban đầu
-        !initialOwnReplyIds.current.includes(r._id)
+        !initialOwnReplyIds.current.includes(r._id) &&
+        !(Array.isArray(replyToChain) && replyToChain.includes(r._id))
     );
 
 
@@ -363,10 +372,10 @@ const CommentItem = ({
                 ref={hoverCardRef}
             />
         )}
-        {!isReply && !showReplies && newRepliesToRender.length > 0 && (
+        {!isReply && !showReplies && newRepliesToRender.length > 0 && !isInReplyToChain &&(
         <div className="mt-4 space-y-4">
-          {newRepliesToRender.map((reply) => (
-            <CommentItem
+          {newRepliesToRender.map((reply) => {
+            return <CommentItem
                 key={reply._id}
                 comment={reply}
                 user={user}
@@ -378,15 +387,15 @@ const CommentItem = ({
                 showLikesModal={false}
                 setShowLikesModal={() => {}}
             />
-            ))}
+        })}
         </div>
       )}
             {/* Đệ quy hiển thị replies */}
             {allReplies.length > 0 && (
                 <div className="mt-4 space-y-4">
-                    {allReplies.map((reply) => (
-                        <CommentItem
-                            key={`${comment._id}-${reply._id}`}
+                    {allReplies.map((reply) => {
+                        return <CommentItem
+                            key={`${comment._id}-${reply._id}-${reply.createdAt}`}
                             comment={reply}
                             user={user}
                             onReply={onReply}
@@ -400,7 +409,7 @@ const CommentItem = ({
                             replyToId={replyToId} // 💡 THÊM DÒNG NÀY
                             replyToChain={replyToChain} // 💡 THÊM DÒNG NÀY
                         />
-                    ))}
+                })}
                 </div>
             )}
         </div>

@@ -8,7 +8,8 @@ import {
     toggleCommentLike,
     deleteComment,
     deletePost,
-    updatePost
+    updatePost,
+    getReplyChain
 } from "~/api/post";
 import {
     Heart,
@@ -76,6 +77,7 @@ export default function PostDetailPage({ isModal = false }) {
     const replyToId = searchParams.get("replyToId"); // ID của comment cha
 
     const [replyToChain, setReplyToChain] = useState([]);
+    
 
     useEffect(() => {
     const loadReplyChain = async () => {

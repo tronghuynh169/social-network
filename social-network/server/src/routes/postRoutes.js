@@ -49,7 +49,7 @@ router.put(
     updatePost
 );
 router.get('/comments/:replyToId/reply-profile', auth, getReplyProfile);
-router.get('/:commentId/reply-chain', getReplyToChain);
+router.get('/comments/:commentId/reply-chain', getReplyToChain);
 router.post('/:postId/like', auth, toggleLike);
 router.get('/:postId/likes', getPostLikes);
 router.get('/:postId/comments/:commentId/likes', getCommentLikes);
