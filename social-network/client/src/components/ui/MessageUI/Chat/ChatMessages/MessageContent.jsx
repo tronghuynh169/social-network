@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import emojiRegex from "emoji-regex"; // Import thư viện emoji-regex
 
 const MessageContent = ({
@@ -79,6 +79,14 @@ const MessageContent = ({
                                 >
                                     <source src={file.url} type={file.type} />
                                 </video>
+                            ) : file.type?.startsWith("audio/") ? (
+                                <audio
+                                    controls
+                                    src={file.url}
+                                    className="rounded-2xl max-w-[220px] mt-1"
+                                >
+                                    Trình duyệt của bạn không hỗ trợ audio.
+                                </audio>
                             ) : (
                                 <div className="px-3 py-2 rounded-lg bg-[var(--button-color)] w-fit">
                                     <a

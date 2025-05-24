@@ -15,20 +15,18 @@ const messageStorage = multer.diskStorage({
     },
     filename: (req, file, cb) => {
         const ext = path.extname(file.originalname).toLowerCase();
-        
-        // Nếu là hình ảnh hoặc video, dùng timestamp để tạo tên duy nhất
         if ([".jpg", ".jpeg", ".png", ".gif", ".mp4"].includes(ext)) {
             const uniqueSuffix = Date.now();
-            cb(null, `${uniqueSuffix}${ext}`); // Sử dụng timestamp cho hình ảnh và video
+            cb(null, `${uniqueSuffix}${ext}`);
         } else {
-            // Nếu là tài liệu (Word, PDF...), giữ nguyên tên gốc
-            const originalName = Buffer.from(file.originalname, "latin1").toString("utf8");
-            cb(null, originalName); // Giữ tên gốc cho tài liệu
+            const originalName = Buffer.from(
+                file.originalname,
+                "latin1"
+            ).toString("utf8");
+            cb(null, originalName);
         }
     },
 });
-
-
 
 // Bộ lọc file cho phép
 const fileFilter = (req, file, cb) => {
@@ -40,8 +38,10 @@ const fileFilter = (req, file, cb) => {
         "application/pdf",
         "application/msword",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "audio/webm", // <-- Thêm audio
+        "audio/mpeg", // mp3
+        "audio/wav", // wav
     ];
-
     if (allowedTypes.includes(file.mimetype)) {
         cb(null, true);
     } else {
@@ -54,9 +54,9 @@ const uploadMessageFiles = multer({
     storage: messageStorage,
     fileFilter,
     limits: {
-        fileSize: 20 * 1024 * 1024, // Giới hạn 20MB/file
-        files: 10, // Tối đa 10 file
+        fileSize: 20 * 1024 * 1024, // 20MB/file
+        files: 10,
     },
-}).array("messages"); // Sử dụng field name "messages"
+}).array("messages");
 
 module.exports = uploadMessageFiles;

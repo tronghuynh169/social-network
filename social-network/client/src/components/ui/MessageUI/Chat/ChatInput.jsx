@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Smile, Mic, ImageIcon, Heart, X } from "lucide-react";
+import React, { useEffect, useState, useRef } from "react";
+import { Smile, Mic, ImageIcon, X, StopCircle } from "lucide-react";
 import { Input } from "~/components/ui/input";
 import socket from "~/socket";
 import EmojiModal from "~/components/EmojiModal";
@@ -22,6 +22,104 @@ const ChatInput = ({
     const [originalMessage, setOriginalMessage] = useState(""); // Lưu trữ nội dung gốc khi chỉnh sửa
     const [isEmojiModalOpen, setIsEmojiModalOpen] = useState(false); // Kiểm soát trạng thái modal
 
+    // Voice message states
+    const [isRecording, setIsRecording] = useState(false);
+    const [mediaRecorder, setMediaRecorder] = useState(null);
+    const [audioChunks, setAudioChunks] = useState([]);
+    const [recordTime, setRecordTime] = useState(0);
+    const [audioUrl, setAudioUrl] = useState(null);
+    const recordInterval = useRef(null);
+    // Start recording
+    const handleStartRecording = async () => {
+        if (isRecording) return;
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+            });
+            const recorder = new window.MediaRecorder(stream);
+            setMediaRecorder(recorder);
+            setIsRecording(true);
+            setRecordTime(0);
+
+            // Biến cục bộ lưu chunk
+            let localChunks = [];
+
+            recorder.ondataavailable = (e) => {
+                if (e.data.size > 0) {
+                    localChunks.push(e.data);
+                }
+            };
+            recorder.onstop = () => {
+                stream.getTracks().forEach((track) => track.stop());
+                const blob = new Blob(localChunks, { type: "audio/webm" });
+                setAudioUrl(URL.createObjectURL(blob));
+                const audioFile = new File([blob], `voice-${Date.now()}.webm`, {
+                    type: "audio/webm",
+                });
+                setSelectedFiles((prev) => [...prev, audioFile]);
+                setIsRecording(false);
+                setMediaRecorder(null);
+                clearInterval(recordInterval.current);
+                // KHÔNG reset recordTime ngay lập tức
+                setTimeout(() => setRecordTime(0), 500); // để user thấy thời gian vừa ghi
+            };
+
+            recorder.start();
+            recordInterval.current = setInterval(() => {
+                setRecordTime((prev) => prev + 1);
+            }, 1000);
+        } catch (err) {
+            alert("Bạn cần cho phép quyền micro để ghi âm!");
+        }
+    };
+
+    // Stop recording
+    const handleStopRecording = () => {
+        if (mediaRecorder && isRecording) {
+            mediaRecorder.stop();
+        }
+    };
+
+    // Cancel recording
+    const handleCancelRecording = () => {
+        setIsRecording(false);
+        setAudioChunks([]);
+        setAudioUrl(null);
+        clearInterval(recordInterval.current);
+        setRecordTime(0);
+    };
+
+    // Format time as mm:ss
+    const formatTime = (seconds) => {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m}:${s < 10 ? "0" : ""}${s}`;
+    };
+
+    // UI: Nếu đang recording thì show Stop, nếu không thì show Mic
+    const renderRecordingBar = () => (
+        <div className="flex items-center justify-between px-4 py-2 rounded-2xl bg-[var(--message-me-color)] w-full relative">
+            <div className="flex items-center gap-5">
+                <button
+                    onClick={handleCancelRecording}
+                    className="mr-2 cursor-pointer"
+                    title="Hủy ghi âm"
+                >
+                    <X size={20} />
+                </button>
+                <span className="text-lg font-mono text-gray-700">
+                    {formatTime(recordTime)}
+                </span>
+            </div>
+            <button
+                onClick={handleStopRecording}
+                className="bg-[var(--text-primary-color)] rounded-full flex items-center justify-center w-7 h-7 mr-3 border cursor-pointer"
+                title="Dừng ghi âm"
+            >
+                <StopCircle className="text-red-500" size={20} />
+            </button>
+        </div>
+    );
     const handleOpenModal = () => {
         setIsEmojiModalOpen(true);
     };
@@ -217,15 +315,20 @@ const ChatInput = ({
                 >
                     <Smile />
                 </span>
-                <Input
-                    ref={inputRef}
-                    placeholder="Nhắn tin..."
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    className="border-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                />
-                {message.trim() || selectedFiles.length > 0 ? (
+                {isRecording ? (
+                    renderRecordingBar()
+                ) : (
+                    <Input
+                        ref={inputRef}
+                        placeholder="Nhắn tin..."
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        className="border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                )}
+                {!isRecording &&
+                (message.trim() || selectedFiles.length > 0) ? (
                     <button
                         className={`text-[var(--button-enable-color)] ${
                             isSendDisabled()
@@ -237,10 +340,14 @@ const ChatInput = ({
                     >
                         Send
                     </button>
-                ) : (
+                ) : !isRecording ? (
                     <>
-                        <span title="Clip âm thanh">
-                            <Mic className="cursor-pointer" />
+                        <span
+                            title="Ghi âm"
+                            onClick={handleStartRecording}
+                            className="cursor-pointer"
+                        >
+                            <Mic />
                         </span>
                         <label
                             htmlFor="upload-file"
@@ -256,7 +363,7 @@ const ChatInput = ({
                             {emoji}
                         </span>
                     </>
-                )}
+                ) : null}
             </div>
             <EmojiModal
                 isOpen={isEmojiModalOpen}
