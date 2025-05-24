@@ -1,4 +1,4 @@
-import { useNavigate, useParams, useSearchParams  } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams, useLocation   } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import {
     getPostDetails,
@@ -71,28 +71,11 @@ export default function PostDetailPage({ isModal = false }) {
     const [isHovered, setIsHovered] = useState(false);
     const [hoverSource, setHoverSource] = useState(null); // 'avatar' or 'name'
     const [isOpenShareModal, setIsOpenShareModal] = useState(false);
-
-    const [searchParams] = useSearchParams();
-    const highlightCommentId = searchParams.get("commentId");
-    const replyToId = searchParams.get("replyToId"); // ID của comment cha
-
-    const [replyToChain, setReplyToChain] = useState([]);
     
+    const location = useLocation();
+    const params = new URLSearchParams(location.search);
+    const highlightCommentId = params.get("commentId"); // luôn có
 
-    useEffect(() => {
-    const loadReplyChain = async () => {
-        try {
-        const chain = await getReplyChain(highlightCommentId); // comment cuối cùng muốn scroll tới
-        setReplyToChain(chain); // ["A", "B", "C"]
-        } catch (e) {
-        console.error("Không thể load reply chain:", e);
-        }
-    };
-
-    if (highlightCommentId) {
-        loadReplyChain();
-    }
-    }, [highlightCommentId]);
     
     // Check lỗi
     const [errorMessage, setErrorMessage] = useState(null);
@@ -273,7 +256,7 @@ export default function PostDetailPage({ isModal = false }) {
             // Cập nhật state local
             const updatedPostDetails = {
                 ...postDetails,
-                comments: updateCommentTree(postDetails.comments),
+                comments: updateCommentTree(postDetails?.comments),
             };
             setPostDetails(updatedPostDetails);
 
@@ -447,6 +430,7 @@ export default function PostDetailPage({ isModal = false }) {
     const isSingleVideo =
         postDetails?.post.media?.length === 1 &&
         postDetails?.post.media[0].type === "video";
+        
 
     const modalContent = !postDetails ? (
         <PostDetailSkeleton isModal={isModal} />
@@ -659,9 +643,7 @@ export default function PostDetailPage({ isModal = false }) {
                                 showLikesModal={showCommentLikesModal}
                                 setShowLikesModal={setShowCommentLikesModal}
                                 level={0} // ➡️ comment gốc level 0
-                                highlightCommentId={highlightCommentId}
-                                replyToId={replyToId} // ID của comment cha
-                                replyToChain={replyToChain}
+                                highlightCommentId={highlightCommentId} // Truyền ID comment cần highlight
                             />
                         ))}
                 </div>

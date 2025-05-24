@@ -19,8 +19,6 @@ const CommentItem = ({
     isDirectReply = false, // mới thêm
     onNavigateToDetail,
     highlightCommentId,
-    replyToId,
-    replyToChain,
 }) => {
     const navigate = useNavigate();
     const [showLikesModal, setShowLikesModal] = useState(false);
@@ -44,7 +42,58 @@ const CommentItem = ({
     const hasUserReplied = comment.replies?.some(
         (reply) => reply.userId._id === user.id
     );
-    const allReplies =  (showReplies ? (comment.replies || []) : []);
+
+    const allReplies = showReplies ? flattenReplies(comment.replies) : [];
+    const [isHighlighted, setIsHighlighted] = useState(false);
+
+    useEffect(() => {
+        if (!isReply && highlightCommentId && comment.replies?.length > 0) {
+            const all = flattenReplies(comment.replies);
+            const isMatch = all.some(reply => reply._id === highlightCommentId);
+            if (isMatch) {
+                setShowReplies(true);
+            }
+        }
+    }, [highlightCommentId, comment.replies]);
+
+    const commentRef = useRef(null);
+    const hasHighlightedRef = useRef(false);
+    const timerRef = useRef(null);
+    const hasBeenHighlightedRef = useRef(false); // thay cho state
+
+    // 1) Khi comment cần highlight, bật highlight và scroll
+    useEffect(() => {
+    if (
+        comment._id === highlightCommentId &&
+        !hasHighlightedRef.current &&
+        !hasBeenHighlightedRef.current
+    ) {
+        console.log("1: Bật highlight");
+        hasHighlightedRef.current = true;
+        hasBeenHighlightedRef.current = true;
+        setIsHighlighted(true);
+
+        commentRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        });
+    }
+    }, [comment._id, highlightCommentId]);
+
+    // 2) Khi isHighlighted chuyển thành true, đặt timer để tắt highlight sau 2s
+    useEffect(() => {
+    if (isHighlighted) {
+        console.log("2: Lập timer để tắt highlight");
+        const timer = setTimeout(() => {
+        console.log("3: Tắt highlight");
+        setIsHighlighted(false);
+        }, 2000);
+        return () => clearTimeout(timer);
+    }
+    }, [isHighlighted]);
+
+
+    const highlightClass = isHighlighted ? "bg-yellow-100 ring-2 ring-yellow-400" : "";
 
     // 1. Khởi tạo state từ localStorage (lazy initializer)
     const [newReplyIds, setNewReplyIds] = useState([]);
@@ -52,52 +101,6 @@ const CommentItem = ({
 
     const initialOwnReplyIds = useRef([]);
 
-    const commentRef = useRef(null);
-    const [shouldHighlightReply, setShouldHighlightReply] = useState(false);
-    const [hasHighlightedOnce, setHasHighlightedOnce] = useState(false);
-
-    const timeoutRef = useRef(null);
-
-    useEffect(() => {
-    if (!highlightCommentId || hasHighlightedOnce) return;
-
-    let el = null;
-
-    if (comment._id === highlightCommentId && commentRef.current) {
-        el = commentRef.current;
-    } else if (comment._id === replyToId) {
-        if (!showReplies) {
-        setShowReplies(true);
-        setShouldHighlightReply(true);
-        // Don't set hasHighlightedOnce ở đây, chờ đến sau timeout
-        return; // dừng effect ở đây, sẽ chạy lại khi showReplies thay đổi
-        } else {
-        el = document.getElementById(`comment-${highlightCommentId}`);
-        }
-    }
-
-    if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        el.classList.add("highlighted-comment");
-
-        timeoutRef.current = setTimeout(() => {
-        el.classList.remove("highlighted-comment");
-        setHasHighlightedOnce(true);  // Set ở đây, sau khi highlight biến mất
-        }, 3000);
-    }
-
-    return () => {
-        if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        }
-    };
-    }, [highlightCommentId, replyToId, comment._id, showReplies, hasHighlightedOnce]);
-
-    useEffect(() => {
-        if (Array.isArray(replyToChain) && replyToChain.includes(comment._id)) {
-            setShowReplies(true);
-        }
-    }, [replyToChain, comment._id]);
 
     useEffect(() => {
     const all = flattenReplies(comment.replies || []);
@@ -214,21 +217,18 @@ const CommentItem = ({
         }
     };
 
-    const isInReplyToChain = Array.isArray(replyToChain) && replyToChain.includes(comment._id);
 
     const newRepliesToRender = flattenReplies(comment.replies || []).filter(
     r =>
         // chỉ lấy những reply do mình tạo
         r.userId._id === user.id &&
         // và mà không có trong snapshot ban đầu
-        !initialOwnReplyIds.current.includes(r._id) &&
-        !(Array.isArray(replyToChain) && replyToChain.includes(r._id))
+        !initialOwnReplyIds.current.includes(r._id) 
     );
 
-
     return (
-        <div ref={commentRef} id={`comment-${comment._id}`} className={`w-full ${indentClass}`}>
-            <div className="flex items-start gap-3 w-full relative">
+        <div className={`w-full ${indentClass}`}>
+            <div className="flex items-start gap-3 w-full relative ">
                 {/* Avatar */}
                 <img
                     ref={avatarRef}
@@ -241,8 +241,9 @@ const CommentItem = ({
                 />
 
                 {/* Nội dung */}
-                <div className="flex-1">
-                    <p className="text-sm leading-snug break-words break-all whitespace-pre-wrap">
+                <div className={`flex-1`}>
+                    <p ref={commentRef} className={`text-sm leading-snug break-words break-all whitespace-pre-wrap transition-all duration-500 
+                                     ${highlightClass}`}>
                         <span 
                             ref={nameRef}
                             className="font-semibold cursor-pointer"
@@ -334,7 +335,6 @@ const CommentItem = ({
                                     }
                                     // ẩn hoặc show
                                     setShowReplies(prev => !prev);
-                                    setHasHighlightedOnce(true); // ✅ Cho phép tắt highlight mode sau khi click
                                     }
                                 }}
                                 className="ml-2 text-[var(--text-secondary-color)] text-[12px] cursor-pointer"
@@ -372,7 +372,7 @@ const CommentItem = ({
                 ref={hoverCardRef}
             />
         )}
-        {!isReply && !showReplies && newRepliesToRender.length > 0 && !isInReplyToChain &&(
+        {!isReply && !showReplies && newRepliesToRender.length > 0 &&(
         <div className="mt-4 space-y-4">
           {newRepliesToRender.map((reply) => {
             return <CommentItem
@@ -395,7 +395,7 @@ const CommentItem = ({
                 <div className="mt-4 space-y-4">
                     {allReplies.map((reply) => {
                         return <CommentItem
-                            key={`${comment._id}-${reply._id}-${reply.createdAt}`}
+                            key={`${comment._id}-${reply._id}`}
                             comment={reply}
                             user={user}
                             onReply={onReply}
@@ -405,9 +405,7 @@ const CommentItem = ({
                             isDirectReply={!isReply} // chỉ reply cấp 1 mới thụt
                             showLikesModal={false}
                             setShowLikesModal={() => {}}
-                            highlightCommentId={highlightCommentId} // 💡 THÊM DÒNG NÀY
-                            replyToId={replyToId} // 💡 THÊM DÒNG NÀY
-                            replyToChain={replyToChain} // 💡 THÊM DÒNG NÀY
+                            highlightCommentId={highlightCommentId} // truyền xuống
                         />
                 })}
                 </div>
