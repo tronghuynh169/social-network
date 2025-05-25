@@ -42,7 +42,7 @@ import errorImage from '~/assets/img/404.jpg';
 import ShareModal from "~/components/ui/PostUI/Share/ShareModal";
 
 export default function PostDetailPage({ isModal = false }) {
-    const { updatePostLike, setPosts, posts, updatePostData, setUserPosts } = usePosts(); // trong PostDetailPage
+    const { updatePostLike, setPosts, posts, updatePostData, setUserPosts, setUserPostsMap, removePostData  } = usePosts(); // trong PostDetailPage
     const { user } = useUser();
     const { id: postId } = useParams();
     const navigate = useNavigate();
@@ -157,8 +157,8 @@ export default function PostDetailPage({ isModal = false }) {
         try {
             await deletePost(postDetails.post._id); // hoặc postId nếu có sẵn
             setShowConfirmDeleteModal(false);
-            setPosts(prev => prev.filter(post => post._id !== postId));
-            setUserPosts(prev => prev.filter(post => post._id !== postId));
+            // Đồng bộ context
+            removePostData(postDetails.post._id);
             navigate(-1); // quay về trang trước
             console.log("Đã xóa bài viết");
         } catch (err) {
@@ -213,7 +213,7 @@ export default function PostDetailPage({ isModal = false }) {
 
             // Đồng bộ sang PostContext
             updatePostLike(postDetails.post._id, res.isLiked, res.likesCount);
-
+            
                 // Trigger animation
             setLikeAnimationTrigger(true);
             setTimeout(() => setLikeAnimationTrigger(false), 300);

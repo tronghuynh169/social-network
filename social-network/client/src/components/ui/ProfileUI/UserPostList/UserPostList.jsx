@@ -4,9 +4,17 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Heart, Copy, MessageCircle, Loader   } from 'lucide-react';
 
 export default function UserPostList({ userId }) {
-    const { posts, fetchUserPosts, userPosts, loadingUserPosts } = usePosts();
+    const {
+        fetchUserPosts,
+        getUserPostsById,
+        loadingUserPostsMap
+    } = usePosts();
+
     const navigate = useNavigate();
     const location = useLocation();
+
+    const userPosts = getUserPostsById(userId);
+    const loading = loadingUserPostsMap[userId];
 
     useEffect(() => {
         if (userId) {
@@ -23,7 +31,7 @@ export default function UserPostList({ userId }) {
         });
     };
 
-    if (loadingUserPosts) {
+    if (loading) {
     return (
         <div className="flex justify-center items-center py-10">
         <Loader className="animate-spin w-8 h-8 text-gray-500" />

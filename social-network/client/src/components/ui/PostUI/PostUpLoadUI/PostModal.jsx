@@ -26,14 +26,12 @@ const PostModal = ({ isOpen, onClose, mode = 'create', initialPostData = null, o
         formData.append('caption', caption);
         formData.append('visibility', visibility);
         files.forEach((file) => formData.append('files', file));
-    
+        let response;
         try {
             setLoading(true);
-            const response = await createPost(formData);
+            response = await createPost(formData);
             console.log('Bài viết đã đăng:', response.data);
             
-            // ✅ Cập nhật context ngay sau khi đăng bài
-            updatePostData(response.data);
             // ✅ Reset form sau khi đăng thành công
             setCaption('');
             setFiles([]);
@@ -45,6 +43,21 @@ const PostModal = ({ isOpen, onClose, mode = 'create', initialPostData = null, o
             alert('Đăng bài thất bại!');
         } finally {
             setLoading(false);
+        }
+        // Cập nhật context, tách try để không ảnh hưởng alert
+        try {
+            updatePostData({
+            post: response.data.post,
+            isLiked: response.data.isLiked,
+            likes: response.data.likes,
+            likesCount: response.data.likesCount,
+            comments: response.data.comments,
+            totalComments: response.data.totalComments,
+            ownerProfile: response.data.post.ownerProfile,
+            });
+        } catch (ctxError) {
+            console.warn('Lỗi khi cập nhật context:', ctxError);
+            // không show alert, chỉ log
         }
     };
 

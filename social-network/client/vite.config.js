@@ -1,8 +1,8 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
-import path from "path";
-import nodePolyfills from "vite-plugin-node-polyfills";
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+import path from 'path';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 export default defineConfig({
     plugins: [
@@ -14,11 +14,11 @@ export default defineConfig({
     ],
     resolve: {
         alias: {
-            "~": path.resolve(__dirname, "src"),
+            '~': path.resolve(__dirname, 'src'),
         },
     },
     define: {
-        global: "globalThis",
-        "process.env": {},
+        global: 'globalThis',
+        'process.env': {},
     },
 });
