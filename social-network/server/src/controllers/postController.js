@@ -753,16 +753,24 @@ exports.getPostDetails = async (req, res) => {
             const isOwner =
                 userId && post.userId._id.toString() === userId.toString();
 
-            // ✅ Lấy profile của người đăng bài viết
+            const viewerProfile = await Profile.findOne({ userId: userId })
+                .select('_id')
+                .lean();
+            if (!viewerProfile) {
+                return res
+                    .status(403)
+                    .json({ message: 'Không tìm thấy profile người dùng.' });
+            }
+
             const ownerProfile = await Profile.findOne({
                 userId: post.userId._id,
             })
                 .select('followers')
                 .lean();
 
-            // ✅ Kiểm tra người đang xem có nằm trong danh sách followers không
             const isFollower = ownerProfile.followers.some(
-                (followerId) => followerId.toString() === userId
+                (followerId) =>
+                    followerId.toString() === viewerProfile._id.toString()
             );
 
             if (!isOwner && !isFollower) {

@@ -75,6 +75,7 @@ export default function PostDetailPage({ isModal = false }) {
     const location = useLocation();
     const params = new URLSearchParams(location.search);
     const highlightCommentId = params.get("commentId"); // luôn có
+    const highlightedCommentIdsRef = useRef(new Set());
 
     
     // Check lỗi
@@ -644,6 +645,7 @@ export default function PostDetailPage({ isModal = false }) {
                                 setShowLikesModal={setShowCommentLikesModal}
                                 level={0} // ➡️ comment gốc level 0
                                 highlightCommentId={highlightCommentId} // Truyền ID comment cần highlight
+                                highlightedCommentIdsRef={highlightedCommentIdsRef}
                             />
                         ))}
                 </div>
