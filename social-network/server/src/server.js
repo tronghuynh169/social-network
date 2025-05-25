@@ -559,6 +559,29 @@ io.on("connection", (socket) => {
             );
         }
     );
+
+    socket.on("call-user", ({ userToCall, signalData, from }) => {
+        io.to(userToCall).emit("incoming-call", { signal: signalData, from });
+    });
+
+    socket.on("answer-call", ({ to, signal }) => {
+        io.to(to).emit("call-accepted", signal);
+    });
+
+    socket.on("decline-call", ({ to }) => {
+        io.to(to).emit("decline-call"); // Gửi lại cho người gọi
+    });
+
+    socket.on("update-call-members", (members) => {
+        io.to(members).emit("call-members-updated", members);
+    });
+
+    socket.on("leave-call", ({ from, members }) => {
+        const others = members.filter((id) => id !== from);
+        others.forEach((id) => {
+            io.to(id).emit("user-left-call", from);
+        });
+    });
 });
 
 // Start the server

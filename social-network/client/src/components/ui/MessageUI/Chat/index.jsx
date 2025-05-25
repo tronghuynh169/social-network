@@ -204,6 +204,7 @@ const ChatBox = ({
                 showInfo={showInfo}
                 usersInfo={usersInfo}
                 conversationId={conversationId}
+                currentUserId={currentUserId}
             />
             <div className="flex-1 overflow-auto px-6 py-4 text-sm space-y-2">
                 <ChatMessages
