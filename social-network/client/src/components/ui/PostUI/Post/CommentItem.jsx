@@ -19,8 +19,10 @@ const CommentItem = ({
     isDirectReply = false, // mới thêm
     onNavigateToDetail,
     highlightCommentId,
+    highlightedCommentIdsRef
 }) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [showLikesModal, setShowLikesModal] = useState(false);
     const [profile, setProfile] = useState();
     const [showDeleteModal, setShowDeleteModal] = useState(false); // State để mở modal xóa
@@ -61,39 +63,34 @@ const CommentItem = ({
     const timerRef = useRef(null);
     const hasBeenHighlightedRef = useRef(false); // thay cho state
 
-    // 1) Khi comment cần highlight, bật highlight và scroll
     useEffect(() => {
     if (
         comment._id === highlightCommentId &&
-        !hasHighlightedRef.current &&
-        !hasBeenHighlightedRef.current
+        !highlightedCommentIdsRef.current.has(comment._id)
     ) {
         console.log("1: Bật highlight");
-        hasHighlightedRef.current = true;
-        hasBeenHighlightedRef.current = true;
+        highlightedCommentIdsRef.current.add(comment._id);
         setIsHighlighted(true);
 
         commentRef.current?.scrollIntoView({
         behavior: "smooth",
         block: "center",
         });
-    }
-    }, [comment._id, highlightCommentId]);
 
-    // 2) Khi isHighlighted chuyển thành true, đặt timer để tắt highlight sau 2s
-    useEffect(() => {
-    if (isHighlighted) {
-        console.log("2: Lập timer để tắt highlight");
-        const timer = setTimeout(() => {
+        setTimeout(() => {
         console.log("3: Tắt highlight");
         setIsHighlighted(false);
+
+        // ❌ KHÔNG cần xoá commentId khỏi URL
+        // --> Giữ nguyên location.search
         }, 2000);
-        return () => clearTimeout(timer);
     }
-    }, [isHighlighted]);
+    }, [comment._id, highlightCommentId, highlightedCommentIdsRef]);
 
 
-    const highlightClass = isHighlighted ? "bg-yellow-100 ring-2 ring-yellow-400" : "";
+    const highlightClass = isHighlighted
+    ? "bg-yellow-100 ring-2 ring-yellow-400/50 shadow-md animate-pulse rounded-md transition duration-500"
+    : "";
 
     // 1. Khởi tạo state từ localStorage (lazy initializer)
     const [newReplyIds, setNewReplyIds] = useState([]);
@@ -406,6 +403,7 @@ const CommentItem = ({
                             showLikesModal={false}
                             setShowLikesModal={() => {}}
                             highlightCommentId={highlightCommentId} // truyền xuống
+                            highlightedCommentIdsRef={highlightedCommentIdsRef} // truyền xuống
                         />
                 })}
                 </div>
