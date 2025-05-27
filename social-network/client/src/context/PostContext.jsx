@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect  } from "react";
-import { getAllPosts, getUserPosts } from '~/api/post';
+import { getAllPosts, getUserPosts, getUserPostCount as fetchPostCountFromServer } from '~/api/post';
 import { useUser } from "~/context/UserContext";
 
 const PostContext = createContext();
@@ -7,10 +7,9 @@ const PostContext = createContext();
 export const PostProvider = ({ children }) => {
     const [posts, setPosts] = useState([]);
     const { user } = useUser(); // Lấy user từ UserContext
-    const [userPosts, setUserPosts] = useState([]);
     const [loadingUserPosts, setLoadingUserPosts] = useState(false);
     const [loadingPosts, setLoadingPosts] = useState(false);
-    const [postCount, setPostCount] = useState(0);
+    const [postCounts, setPostCounts] = useState({});
     // state mới: map từ userId → mảng posts
     const [userPostsMap, setUserPostsMap] = useState({});
     const [loadingUserPostsMap, setLoadingUserPostsMap] = useState({});
@@ -61,7 +60,6 @@ export const PostProvider = ({ children }) => {
         );
       }
 
-      // B) Cập nhật userPostsMap cho đúng owner
       const ownerId = updatedPost.ownerProfile.userId.toString();
       setUserPostsMap(prevMap => {
         const arr = prevMap[ownerId] || [];
@@ -73,7 +71,6 @@ export const PostProvider = ({ children }) => {
             [ownerId]: [updatedPost, ...arr]
           };
         }
-
         // nếu đã có, map để cập nhật
         return {
           ...prevMap,
@@ -82,6 +79,7 @@ export const PostProvider = ({ children }) => {
           )
         };
       });
+
     };
 
     const removePostData = (postId) => {
@@ -94,6 +92,7 @@ export const PostProvider = ({ children }) => {
       for (const [uid, arr] of Object.entries(prevMap)) {
         newMap[uid] = arr.filter(p => p._id !== postId);
       }
+
       return newMap;
     });
   };
@@ -117,34 +116,48 @@ export const PostProvider = ({ children }) => {
     }, [user]);
 
     const fetchUserPosts = async (userId) => {
-    // đánh dấu loading riêng cho mỗi userId
-    setLoadingUserPostsMap(m => ({ ...m, [userId]: true }));
-    try {
-      const res = await getUserPosts(userId);
-      const arr = res.data.map(p => ({ ...p, likesCount: p.likes?.length||0 }));
-      setUserPostsMap(m => ({ ...m, [userId]: arr }));
-    } catch (e) {
-      console.error('Lỗi khi load bài của user', userId, e);
-    } finally {
-      setLoadingUserPostsMap(m => ({ ...m, [userId]: false }));
-    }
-  };
+      // đánh dấu loading riêng cho mỗi userId
+      setLoadingUserPostsMap(m => ({ ...m, [userId]: true }));
+      try {
+        const res = await getUserPosts(userId);
+        const arr = res.data.posts.map(p => ({ ...p, likesCount: p.likes?.length||0 }));
+        setUserPostsMap(m => ({ ...m, [userId]: arr }));
+        setPostCounts(m => ({ ...m, [userId]: res.data.totalPostCount })); // <- thêm dòng này
+      } catch (e) {
+        console.error('Lỗi khi load bài của user', userId, e);
+      } finally {
+        setLoadingUserPostsMap(m => ({ ...m, [userId]: false }));
+      }
+    };
 
-  // helper lấy posts cho từng user
-  const getUserPostsById = (userId) => userPostsMap[userId] || [];
+    const refreshPostCount = async (userId) => {
+      try {
+        const response = await fetchPostCountFromServer(userId);
+        const newCount = response;
+        console.log(`✅ Post count mới của user ${userId}:`, newCount);
+        setPostCounts(prev => ({ ...prev, [userId]: newCount }));
+      } catch (err) {
+        console.error("Lỗi khi refresh post count:", err);
+      }
+    };
 
-  return (
+    // helper lấy posts cho từng user
+    const getUserPostsById = (userId) => userPostsMap[userId] || [];
+    const getUserPostCount = (userId) => postCounts[userId] ?? 0;
+
+    return (
     <PostContext.Provider value={{ 
       posts, 
       setPosts,
       updatePostLike, 
       updatePostData, 
       fetchUserPosts, 
-      userPosts, 
-      setUserPosts,
       loadingUserPosts, 
       loadingPosts, 
-      postCount,
+      postCounts,
+      setPostCounts,
+      refreshPostCount,
+      getUserPostCount,
       getUserPostsById,
       loadingUserPostsMap,
       removePostData

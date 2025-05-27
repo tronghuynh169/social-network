@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'; // ✅ thêm
 import { usePosts } from '~/context/PostContext'; // import context
 
 const PostModal = ({ isOpen, onClose, mode = 'create', initialPostData = null, onUpdate  }) => {
-    const { updatePostData } = usePosts(); // destructure từ context
+    const { updatePostData, refreshPostCount  } = usePosts(); // destructure từ context
     const [caption, setCaption] = useState('');
     const [files, setFiles] = useState([]);
     const [oldMedia, setOldMedia] = useState([]); // media cũ từ server (URL)
@@ -19,6 +19,7 @@ const PostModal = ({ isOpen, onClose, mode = 'create', initialPostData = null, o
     const modalRef = useRef();
     const captionRef = useRef('');
     const filesRef = useRef([]);
+
 
     const handleSubmit = async () => {
         if (!canPost || loading) return;
@@ -43,6 +44,12 @@ const PostModal = ({ isOpen, onClose, mode = 'create', initialPostData = null, o
             alert('Đăng bài thất bại!');
         } finally {
             setLoading(false);
+        }
+
+        // ✅ Cập nhật postCounts TỪ SERVER TRẢ VỀ
+        if (response.data?.post?.ownerProfile?.userId) {
+            const ownerId = response.data?.post?.ownerProfile?.userId.toString();
+            await refreshPostCount(ownerId); // gọi lại từ server ✅
         }
         // Cập nhật context, tách try để không ảnh hưởng alert
         try {

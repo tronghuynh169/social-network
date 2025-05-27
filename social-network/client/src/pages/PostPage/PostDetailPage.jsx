@@ -42,7 +42,7 @@ import errorImage from '~/assets/img/404.jpg';
 import ShareModal from "~/components/ui/PostUI/Share/ShareModal";
 
 export default function PostDetailPage({ isModal = false }) {
-    const { updatePostLike, setPosts, posts, updatePostData, setUserPosts, setUserPostsMap, removePostData  } = usePosts(); // trong PostDetailPage
+    const { updatePostLike, setPosts, posts, updatePostData, setUserPosts, setUserPostsMap, removePostData, refreshPostCount  } = usePosts(); // trong PostDetailPage
     const { user } = useUser();
     const { id: postId } = useParams();
     const navigate = useNavigate();
@@ -159,6 +159,10 @@ export default function PostDetailPage({ isModal = false }) {
             setShowConfirmDeleteModal(false);
             // Đồng bộ context
             removePostData(postDetails.post._id);
+            if(postDetails?.ownerProfile?.userId){
+                const ownerId = postDetails.ownerProfile.userId.toString();
+                await refreshPostCount(ownerId); // gọi lại từ server ✅
+            }
             navigate(-1); // quay về trang trước
             console.log("Đã xóa bài viết");
         } catch (err) {

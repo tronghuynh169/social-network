@@ -173,6 +173,9 @@ exports.getUserPosts = async (req, res) => {
             visibilityQuery.push({ visibility: 'followers' });
         }
 
+        // Tổng số bài viết thực sự của người dùng
+        const totalPostCount = await Post.countDocuments({ userId });
+
         // Lấy bài viết theo userId và visibility
         const posts = await Post.find({
             userId,
@@ -193,7 +196,10 @@ exports.getUserPosts = async (req, res) => {
             })
         );
 
-        return res.json(postsWithExtras);
+        return res.json({
+            posts: postsWithExtras,
+            totalPostCount,
+        });
     } catch (err) {
         console.error('Error in getUserPosts:', err);
         res.status(500).json({ message: err.message });

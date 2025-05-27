@@ -33,10 +33,10 @@ const ProfilePage = ({ setAvatar }) => {
     const [followersList, setFollowersList] = useState([]);
     const [isFollowingDialogOpen, setIsFollowingDialogOpen] = useState(false);
     const [followingList, setFollowingList] = useState([]);
-    const [postCount, setPostCount] = useState(0);
     const [isStartChat, setIsStartChat] = useState(false);
-    const { userPosts } = usePosts();
     const [isLinkModalOpen, setLinkModalOpen] = useState(false);
+    const { getUserPostCount } = usePosts();
+    const postCount = getUserPostCount(profile?.userId);
 
     const handleChat = () => {
         handleStartPrivateChat({
@@ -87,13 +87,6 @@ const ProfilePage = ({ setAvatar }) => {
         fetchAllData();
     }, [slug, navigate, user]);
 
-    useEffect(() => {
-        if (profile && userPosts) {
-            setPostCount(userPosts.length);
-        } else {
-            setPostCount(0);
-        }
-    }, [userPosts, profile]);
 
     // Thêm hàm fetch followers
     const fetchFollowers = async () => {
