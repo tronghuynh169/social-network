@@ -19,7 +19,9 @@ const CommentItem = ({
     isDirectReply = false, // mới thêm
     onNavigateToDetail,
     highlightCommentId,
-    highlightedCommentIdsRef
+    highlightedCommentIdsRef,
+    fromNotification,
+    mentionUsers,
 }) => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -65,11 +67,11 @@ const CommentItem = ({
 
     useEffect(() => {
     if (
+        fromNotification &&
         comment._id === highlightCommentId &&
-        !highlightedCommentIdsRef.current.has(comment._id)
+        !highlightedCommentIdsRef?.current.has(comment._id)
     ) {
-        console.log("1: Bật highlight");
-        highlightedCommentIdsRef.current.add(comment._id);
+        highlightedCommentIdsRef?.current.add(comment._id);
         setIsHighlighted(true);
 
         commentRef.current?.scrollIntoView({
@@ -78,7 +80,6 @@ const CommentItem = ({
         });
 
         setTimeout(() => {
-        console.log("3: Tắt highlight");
         setIsHighlighted(false);
 
         // ❌ KHÔNG cần xoá commentId khỏi URL
@@ -250,7 +251,7 @@ const CommentItem = ({
                         >
                             {comment.userId.fullName || comment.userId.username}
                         </span>{" "}
-                        {renderCommentText(comment.content)}
+                        {renderCommentText(comment.content,mentionUsers)}
                     </p>
 
                     <div className="flex items-center gap-4 mt-1 text-xs text-[var(--text-secondary-color)]">
@@ -404,6 +405,8 @@ const CommentItem = ({
                             setShowLikesModal={() => {}}
                             highlightCommentId={highlightCommentId} // truyền xuống
                             highlightedCommentIdsRef={highlightedCommentIdsRef} // truyền xuống
+                            fromNotification ={fromNotification} // truyền xuống
+                            mentionUsers={mentionUsers}
                         />
                 })}
                 </div>
@@ -414,10 +417,10 @@ const CommentItem = ({
 
 
 // 🔍 Chuyển @Tên -> <a>
- function renderCommentText(text) {
+ function renderCommentText(text, mentionUsers = {}) {
     // Regex cải tiến để xử lý chính xác mọi trường hợp
-    const regex = /@(?:\{([^}]+)\}\|)?([\p{Lu}][\p{L}'-]*(?: [\p{Lu}][\p{L}'-]*)*)(?=\s|$|@)/gu;
-  
+    const regex = /@(?:\{([^}]+)\}\|)?([\p{L}0-9'_\-\s]+)/gu;
+
     const parts = [];
     let lastIndex = 0;
     let match;
@@ -434,27 +437,39 @@ const CommentItem = ({
       }
       // Kiểm tra userId: 24 hex → ObjectId, ngược lại slug
     const isObjectId = /^[0-9a-fA-F]{24}$/.test(userId);
+    const userObj = mentionUsers?.[userId];
+
 
     if (isObjectId) {
-      // ObjectId → dùng Mention để fetch profile và lấy slug
-      parts.push(
+    parts.push(
         <Mention
-          key={`${userId}-${start}`}
-          commentId={userId}
-          fallbackName={fullName.trim()}
+        key={`${userId}-${start}`}
+        commentId={userId}
+        fallbackName={fullName.trim()}
         />
-      );
-    } else {
-      // Đã là slug → render Link thẳng, không gọi API
-      parts.push(
+    );
+    } else if (userObj) {
+    // Có object user: render Link đầy đủ info
+    parts.push(
         <Link
-          key={`${userId}-${start}`}
-          to={`/${userId}`}
-          className="text-[#c8d7e4] hover:underline"
+        key={`${userId}-${start}`}
+        to={`/${userObj.slug}`}
+        className="text-[#c8d7e4] hover:underline"
         >
-          @{fullName.trim()}
+        @{userObj.fullName || fullName.trim()}
         </Link>
-      );
+    );
+    } else {
+    // fallback: slug nhưng không có object, chỉ hiện link cơ bản
+    parts.push(
+        <Link
+        key={`${userId}-${start}`}
+        to={`/${userId}`}
+        className="text-[#c8d7e4] hover:underline"
+        >
+        @{fullName.trim()}
+        </Link>
+    );
     }
   
       lastIndex = start + fullMatch.length;

@@ -37,7 +37,6 @@ export const PostProvider = ({ children }) => {
     };  
 
     const updatePostData = (updatedData) => {
-      console.log("dữ liệu nhận được:", updatedData);
       const updatedPost = {
         ...updatedData.post,
         isLiked: updatedData.isLiked,

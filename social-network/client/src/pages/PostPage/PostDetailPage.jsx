@@ -71,12 +71,15 @@ export default function PostDetailPage({ isModal = false }) {
     const [isHovered, setIsHovered] = useState(false);
     const [hoverSource, setHoverSource] = useState(null); // 'avatar' or 'name'
     const [isOpenShareModal, setIsOpenShareModal] = useState(false);
-    
+
+    // slug
+    const [mentionUsers, setMentionUsers] = useState({}); // {slug: userObject}
+
     const location = useLocation();
     const params = new URLSearchParams(location.search);
     const highlightCommentId = params.get("commentId"); // luôn có
     const highlightedCommentIdsRef = useRef(new Set());
-
+    const fromNotification = !!highlightCommentId; // Có highlight là đang từ thông báo
     
     // Check lỗi
     const [errorMessage, setErrorMessage] = useState(null);
@@ -123,30 +126,29 @@ export default function PostDetailPage({ isModal = false }) {
         fetchFollowings();
       }, [user.id]);
   
-      const handleSelectMention = (user) => {
-        console.log(user)
-        // 1. text hiển thị dạng @Full Name
-        const mentionDisplay = `@${user.fullName} `;
-        // 2. text internal dạng @{id}|Full Name
-        const mentionMarkup  = `@{${user.slug}}|${user.fullName} `;
-      
-        // 3. Thay phần "@..." cuối chuỗi displayComment
-        //    \p{L} là mọi chữ (có dấu), space là khoảng trắng, * nghĩa là nhiều hay ít
-        const newDisplay = displayComment.replace(/@[\p{L} ]*$/u, mentionDisplay);
-        setDisplayComment(newDisplay);
-      
-        // 4. Thay phần "@..." cuối chuỗi comment
-        //    (?:\{[^}]*\}\|)? để bỏ qua trường hợp cũ đã có @{...}|  
-        const newComment = comment.replace(/@(?:\{[^}]*\}\|)?[\p{L} ]*$/u, mentionMarkup);
-        setComment(newComment);
-      
-        // 5. Ẩn dropdown
-        setShowSuggestions(false);
-      
-        // 6. (Tuỳ chọn) di con trỏ về cuối nếu cần, ví dụ:
-        //    const newPos = newDisplay.length;
-        //    setCursorPosition(newPos);
-      };
+    const handleSelectMention = (user) => {
+        console.log("Selected user:", user);
+    // 1. text hiển thị dạng @Full Name
+    const mentionDisplay = `@${user.fullName} `;
+    // 2. text internal dạng @{id}|Full Name
+    const mentionMarkup  = `@{${user.slug}}|${user.fullName} `;
+    // 3. Thay phần "@..." cuối chuỗi displayComment
+    //    \p{L} là mọi chữ (có dấu), space là khoảng trắng, * nghĩa là nhiều hay ít
+    const newDisplay = displayComment.replace(/@[\p{L} ]*$/u, mentionDisplay);
+    setDisplayComment(newDisplay);
+    
+    // 4. Thay phần "@..." cuối chuỗi comment
+    //    (?:\{[^}]*\}\|)? để bỏ qua trường hợp cũ đã có @{...}|  
+    const newComment = comment.replace(/@(?:\{[^}]*\}\|)?[\p{L} ]*$/u, mentionMarkup);
+    setComment(newComment);
+    setMentionUsers((prev) => ({ ...prev, [user.slug]: user }));
+    // 5. Ẩn dropdown
+    setShowSuggestions(false);
+    
+    // 6. (Tuỳ chọn) di con trỏ về cuối nếu cần, ví dụ:
+    //    const newPos = newDisplay.length;
+    //    setCursorPosition(newPos);
+    };
     
     const handleDelete = () => {
         setShowOptionModal(false);
@@ -363,7 +365,6 @@ export default function PostDetailPage({ isModal = false }) {
             const response = await getPostDetails(postId);
             const post = response.data.post;
             const comments = response.data.comments || [];
-            console.log(response.data);
             
             setPostDetails(response.data); // giữ nguyên dữ liệu backend trả về
             return response.data; // ✨ thêm dòng này để return dữ liệu
@@ -650,6 +651,8 @@ export default function PostDetailPage({ isModal = false }) {
                                 level={0} // ➡️ comment gốc level 0
                                 highlightCommentId={highlightCommentId} // Truyền ID comment cần highlight
                                 highlightedCommentIdsRef={highlightedCommentIdsRef}
+                                fromNotification={fromNotification}
+                                mentionUsers={mentionUsers}
                             />
                         ))}
                 </div>
@@ -732,7 +735,6 @@ export default function PostDetailPage({ isModal = false }) {
 
                                     // ✅ Nếu user chỉ mới gõ "@" (chưa có ký tự gì thêm)
                                     if (query === "") {
-                                    console.log("Hiển toàn bộ danh sách:", followings);
                                     setMentionSuggestions(followings); // hiện toàn bộ danh sách
                                     } else {
                                     const matches = followings.filter((u) =>
