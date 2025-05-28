@@ -251,7 +251,7 @@ const CommentItem = ({
                         >
                             {comment.userId.fullName || comment.userId.username}
                         </span>{" "}
-                        {renderCommentText(comment.content,mentionUsers)}
+                        {renderCommentText(comment.content)}
                     </p>
 
                     <div className="flex items-center gap-4 mt-1 text-xs text-[var(--text-secondary-color)]">
@@ -267,12 +267,13 @@ const CommentItem = ({
                         )}
 
                         <span
-                            onClick={() =>
-                                onReply(
+                            onClick={() =>{
+                                return onReply(
                                     comment._id,
                                     comment.userId.fullName ||
                                         comment.userId.username
                                 )
+                            }
                             }
                             className="cursor-pointer text-[var(--text-secondary-color)]"
                         >
@@ -417,9 +418,10 @@ const CommentItem = ({
 
 
 // 🔍 Chuyển @Tên -> <a>
- function renderCommentText(text, mentionUsers = {}) {
+function renderCommentText(text) {
     // Regex cải tiến để xử lý chính xác mọi trường hợp
-    const regex = /@(?:\{([^}]+)\}\|)?([\p{L}0-9'_\-\s]+)/gu;
+    console.log("renderCommentText", text);
+    const regex = /@(?:\{([^}]+)\}\|)?([\p{L}][\p{L}'-]*(?: [\p{L}][\p{L}'-]*)*)(?= {2}|$|@)/gu
 
     const parts = [];
     let lastIndex = 0;
@@ -437,7 +439,6 @@ const CommentItem = ({
       }
       // Kiểm tra userId: 24 hex → ObjectId, ngược lại slug
     const isObjectId = /^[0-9a-fA-F]{24}$/.test(userId);
-    const userObj = mentionUsers?.[userId];
 
 
     if (isObjectId) {
@@ -447,17 +448,6 @@ const CommentItem = ({
         commentId={userId}
         fallbackName={fullName.trim()}
         />
-    );
-    } else if (userObj) {
-    // Có object user: render Link đầy đủ info
-    parts.push(
-        <Link
-        key={`${userId}-${start}`}
-        to={`/${userObj.slug}`}
-        className="text-[#c8d7e4] hover:underline"
-        >
-        @{userObj.fullName || fullName.trim()}
-        </Link>
     );
     } else {
     // fallback: slug nhưng không có object, chỉ hiện link cơ bản
