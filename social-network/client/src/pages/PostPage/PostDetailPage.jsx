@@ -127,23 +127,29 @@ export default function PostDetailPage({ isModal = false }) {
       }, [user.id]);
   
     const handleSelectMention = (user) => {
-
+        console.log(user)
+        // 1. text hiển thị dạng @Full Name
         const mentionDisplay = `@${user.fullName} `;
+        // 2. text internal dạng @{id}|Full Name
         const mentionMarkup  = `@{${user.slug}}|${user.fullName} `;
-
-        const mentionRegex = /@[\p{L}0-9 _'-]*$/u;
-
-        setDisplayComment(d => d.replace(mentionRegex, mentionDisplay));
-        setComment(c => c.replace(mentionRegex, mentionMarkup));
-
-        // Chỉ thêm nếu chưa có trong mảng
-        setMentionUsers(prev => {
-            if (prev.some(u => u._id === user._id)) return prev;
-            return [...prev, user];
-        });
-
+      
+        // 3. Thay phần "@..." cuối chuỗi displayComment
+        //    \p{L} là mọi chữ (có dấu), space là khoảng trắng, * nghĩa là nhiều hay ít
+        const newDisplay = displayComment.replace(/@[\p{L} ]*$/u, mentionDisplay);
+        setDisplayComment(newDisplay);
+      
+        // 4. Thay phần "@..." cuối chuỗi comment
+        //    (?:\{[^}]*\}\|)? để bỏ qua trường hợp cũ đã có @{...}|  
+        const newComment = comment.replace(/@(?:\{[^}]*\}\|)?[\p{L} ]*$/u, mentionMarkup);
+        setComment(newComment);
+      
+        // 5. Ẩn dropdown
         setShowSuggestions(false);
-        };
+      
+        // 6. (Tuỳ chọn) di con trỏ về cuối nếu cần, ví dụ:
+        //    const newPos = newDisplay.length;
+        //    setCursorPosition(newPos);
+      };
     
     const handleDelete = () => {
         setShowOptionModal(false);
