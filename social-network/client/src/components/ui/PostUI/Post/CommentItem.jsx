@@ -21,7 +21,7 @@ const CommentItem = ({
     highlightCommentId,
     highlightedCommentIdsRef,
     fromNotification,
-    mentionUsers,
+    mentionUsers = [], // Danh sách mention users
 }) => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -251,7 +251,7 @@ const CommentItem = ({
                         >
                             {comment.userId.fullName || comment.userId.username}
                         </span>{" "}
-                        {renderCommentText(comment.content)}
+                        {renderCommentText(comment.content,mentionUsers)}
                     </p>
 
                     <div className="flex items-center gap-4 mt-1 text-xs text-[var(--text-secondary-color)]">
@@ -418,9 +418,9 @@ const CommentItem = ({
 
 
 // 🔍 Chuyển @Tên -> <a>
-function renderCommentText(text) {
+function renderCommentText(text, mentionUsers=[]) {
+    console.log("renderCommentText:", text);
     // Regex cải tiến để xử lý chính xác mọi trường hợp
-    console.log("renderCommentText", text);
     const regex = /@(?:\{([^}]+)\}\|)?([\p{L}\p{N}][\p{L}\p{N}'-]*(?: [\p{L}\p{N}][\p{L}\p{N}'-]*)*)(?=\s|$|@)/gu;
     const parts = [];
     let lastIndex = 0;
@@ -450,6 +450,7 @@ function renderCommentText(text) {
     );
     } else {
     // fallback: slug nhưng không có object, chỉ hiện link cơ bản
+    console.log("Mention không phải ObjectId, sử dụng slug:", userId);
     parts.push(
         <Link
         key={`${userId}-${start}`}

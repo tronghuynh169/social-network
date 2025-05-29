@@ -73,7 +73,7 @@ export default function PostDetailPage({ isModal = false }) {
     const [isOpenShareModal, setIsOpenShareModal] = useState(false);
 
     // slug
-    const [mentionUsers, setMentionUsers] = useState({}); // {slug: userObject}
+    const [mentionUsers, setMentionUsers] = useState([]); // {slug: userObject}
 
     const location = useLocation();
     const params = new URLSearchParams(location.search);
@@ -127,20 +127,23 @@ export default function PostDetailPage({ isModal = false }) {
       }, [user.id]);
   
     const handleSelectMention = (user) => {
+
         const mentionDisplay = `@${user.fullName} `;
         const mentionMarkup  = `@{${user.slug}}|${user.fullName} `;
 
-        // Regex chỉ bắt từ "@" đến vị trí kết thúc từ (trước space, hoặc hết chuỗi)
-        const mentionRegex = /@[\p{L}0-9 _'-]*$/u; // chỉ bắt phần đang gõ, không dính phần sau
+        const mentionRegex = /@[\p{L}0-9 _'-]*$/u;
 
-        const newDisplay = displayComment.replace(mentionRegex, mentionDisplay);
-        const newComment = comment.replace(mentionRegex, mentionMarkup);
+        setDisplayComment(d => d.replace(mentionRegex, mentionDisplay));
+        setComment(c => c.replace(mentionRegex, mentionMarkup));
 
-        setDisplayComment(newDisplay);
-        setComment(newComment);
-        setMentionUsers((prev) => ({ ...prev, [user._id]: user }));
+        // Chỉ thêm nếu chưa có trong mảng
+        setMentionUsers(prev => {
+            if (prev.some(u => u._id === user._id)) return prev;
+            return [...prev, user];
+        });
+
         setShowSuggestions(false);
-    };
+        };
     
     const handleDelete = () => {
         setShowOptionModal(false);
