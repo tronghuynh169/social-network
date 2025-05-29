@@ -127,14 +127,16 @@ export default function PostDetailPage({ isModal = false }) {
       }, [user.id]);
   
     const handleSelectMention = (user) => {
-        console.log("Selected user:", user);
-        const mentionDisplay = `@${user.fullName}  `;
-        
-        const mentionMarkup  = `@{${user.slug}}|${user.fullName}  `;
-        const newDisplay = displayComment.replace(/@[\p{L} ]*$/u, mentionDisplay);
+        const mentionDisplay = `@${user.fullName} `;
+        const mentionMarkup  = `@{${user.slug}}|${user.fullName} `;
+
+        // Regex chỉ bắt từ "@" đến vị trí kết thúc từ (trước space, hoặc hết chuỗi)
+        const mentionRegex = /@[\p{L}0-9 _'-]*$/u; // chỉ bắt phần đang gõ, không dính phần sau
+
+        const newDisplay = displayComment.replace(mentionRegex, mentionDisplay);
+        const newComment = comment.replace(mentionRegex, mentionMarkup);
+
         setDisplayComment(newDisplay);
-        
-        const newComment = comment.replace(/@(?:\{[^}]*\}\|)?[\p{L} ]*$/u, mentionMarkup);
         setComment(newComment);
         setMentionUsers((prev) => ({ ...prev, [user._id]: user }));
         setShowSuggestions(false);

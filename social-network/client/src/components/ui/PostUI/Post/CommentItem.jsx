@@ -421,8 +421,7 @@ const CommentItem = ({
 function renderCommentText(text) {
     // Regex cải tiến để xử lý chính xác mọi trường hợp
     console.log("renderCommentText", text);
-    const regex = /@(?:\{([^}]+)\}\|)?([\p{L}][\p{L}'-]*(?: [\p{L}][\p{L}'-]*)*)(?= {2}|$|@)/gu
-
+    const regex = /@(?:\{([^}]+)\}\|)?([\p{L}\p{N}][\p{L}\p{N}'-]*(?: [\p{L}\p{N}][\p{L}\p{N}'-]*)*)(?=\s|$|@)/gu;
     const parts = [];
     let lastIndex = 0;
     let match;
