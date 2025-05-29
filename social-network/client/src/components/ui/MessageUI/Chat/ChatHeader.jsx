@@ -64,7 +64,7 @@ const ChatHeader = ({
                     <Phone className="cursor-pointer" />
                 </span>
                 <span title="Gọi video">
-                    <Video className="cursor-pointer" />
+                    <Video className="cursor-not-allowed" />
                 </span>
                 <span title="Thông tin về cuộc trò chuyện">
                     <Info

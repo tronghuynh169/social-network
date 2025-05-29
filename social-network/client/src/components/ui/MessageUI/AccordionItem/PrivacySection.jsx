@@ -54,10 +54,6 @@ const PrivacySection = ({
 
     return (
         <div className="space-y-1 text-[15px]">
-            <button className="flex items-center gap-3 hover:bg-[var(--secondary-color)] cursor-pointer rounded-lg px-2 py-3 w-full">
-                <Bell />
-                Tắt thông báo
-            </button>
             {isGroup && (
                 <button
                     onClick={handleLeaveChat}

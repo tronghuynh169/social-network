@@ -183,7 +183,7 @@ const ProfilePage = ({ setAvatar }) => {
                                     </button>
                                 </>
                             )}
-                            {isOwner && <Settings className="cursor-pointer" />}
+                            {isOwner && <Settings className="cursor-not-allowed" />}
                         </div>
                         <div className="flex space-x-6 mt-4 text-[var(--text-secondary-color)]">
                             <span>

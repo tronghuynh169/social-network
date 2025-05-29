@@ -37,11 +37,11 @@ const ChatInfo = ({
 
                 {/* Buttons */}
                 <div className="flex items-center gap-6 mt-4">
-                    <button className="flex flex-col items-center text-xs cursor-pointer">
+                    <button className="flex flex-col items-center text-xs cursor-not-allowed">
                         <Bell size={20} />
                         Mute
                     </button>
-                    <button className="flex flex-col items-center text-xs cursor-pointer">
+                    <button className="flex flex-col items-center text-xs cursor-not-allowed">
                         <Search size={20} />
                         Search
                     </button>
