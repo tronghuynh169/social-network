@@ -60,6 +60,10 @@ export default function PostCard({ post }) {
     const [hoverSource, setHoverSource] = useState(null); // 'avatar' or 'name'
     const [isOwner, setIsOwner] = useState(false);
     const [isOpenShareModal, setIsOpenShareModal] = useState(false);
+
+    //mention states
+    const [hasMentioned, setHasMentioned] = useState(false);
+
     // --- BEGIN AUTOCOMPLETE STATES ---
     const [followings, setFollowings] = useState([]);
     const [mentionSuggestions, setMentionSuggestions] = useState([]);
@@ -105,28 +109,14 @@ export default function PostCard({ post }) {
     
 
     const handleSelectMention = (user) => {
-      console.log(user)
-      // 1. text hiển thị dạng @Full Name
-      const mentionDisplay = `@${user.fullName} `;
-      // 2. text internal dạng @{id}|Full Name
-      const mentionMarkup  = `@{${user.slug}}|${user.fullName} `;
-    
-      // 3. Thay phần "@..." cuối chuỗi displayComment
-      //    \p{L} là mọi chữ (có dấu), space là khoảng trắng, * nghĩa là nhiều hay ít
-      const newDisplay = displayComment.replace(/@[\p{L} ]*$/u, mentionDisplay);
-      setDisplayComment(newDisplay);
-    
-      // 4. Thay phần "@..." cuối chuỗi comment
-      //    (?:\{[^}]*\}\|)? để bỏ qua trường hợp cũ đã có @{...}|  
-      const newComment = comment.replace(/@(?:\{[^}]*\}\|)?[\p{L} ]*$/u, mentionMarkup);
-      setComment(newComment);
-    
-      // 5. Ẩn dropdown
-      setShowSuggestions(false);
-    
-      // 6. (Tuỳ chọn) di con trỏ về cuối nếu cần, ví dụ:
-      //    const newPos = newDisplay.length;
-      //    setCursorPosition(newPos);
+        const mentionDisplay = `@${user.fullName}  `;
+        const mentionMarkup  = `@{${user.slug}}|${user.fullName}  `;
+        const newDisplay = displayComment.replace(/@[\p{L} ]*$/u, mentionDisplay);
+        setDisplayComment(newDisplay);
+        const newComment = comment.replace(/@(?:\{[^}]*\}\|)?[\p{L} ]*$/u, mentionMarkup);
+        setComment(newComment);
+        setShowSuggestions(false);
+        setHasMentioned(true); // ✅ Đánh dấu đã mention
     };
 
     const handleNavigateToDetail = () => {
@@ -314,6 +304,7 @@ export default function PostCard({ post }) {
         setDisplayComment("");
         setReplyTo(null);
         setReplyToUser(null);
+        setHasMentioned(false); // ✅ reset lại
       } catch (err) {
         console.error("Lỗi khi bình luận:", err);
       } finally {
@@ -648,25 +639,36 @@ export default function PostCard({ post }) {
               const cursorPos = e.target.selectionStart;
               setCursorPosition(cursorPos);
 
-              const textBeforeCursor = newDisplayValue.slice(0, cursorPos);
-              const atMatch = textBeforeCursor.match(/@(\w*)$/);
-
-              if (atMatch) {
-                const query = atMatch[1].toLowerCase();
-
-                // ✅ Nếu user chỉ mới gõ "@" (chưa có ký tự gì thêm)
-                if (query === "") {
-                  console.log("Hiển toàn bộ danh sách:", followings);
-                  setMentionSuggestions(followings); // hiện toàn bộ danh sách
-                } else {
-                  const matches = followings.filter((u) =>
-                    u.username.toLowerCase().startsWith(query)
-                  );
-                  setMentionSuggestions(matches);
+              // ✅ Nếu đã có mention nhưng bị xóa khỏi chuỗi => cho phép mention lại
+              if (hasMentioned) {
+                const mentionRegex = /@\{\w+\}\|\w+/g;
+                const found = newDisplayValue.match(mentionRegex);
+                if (!found) {
+                  setHasMentioned(false); // 🧠 Người dùng đã xóa mention
                 }
-                setShowSuggestions(true);
-              } else {
-                setShowSuggestions(false);
+              }
+              if (!hasMentioned)
+              {
+                const textBeforeCursor = newDisplayValue.slice(0, cursorPos);
+                const atMatch = textBeforeCursor.match(/(^|\s)@(\w*)$/);
+  
+                if (atMatch) {
+                  const query = atMatch[2]?.toLowerCase() || "";
+  
+                  // ✅ Nếu user chỉ mới gõ "@" (chưa có ký tự gì thêm)
+                  if (query === "") {
+
+                    setMentionSuggestions(followings); // hiện toàn bộ danh sách
+                  } else {
+                    const matches = followings.filter((u) =>
+                      u.username.toLowerCase().startsWith(query)
+                    );
+                    setMentionSuggestions(matches);
+                  }
+                  setShowSuggestions(true);
+                } else {
+                  setShowSuggestions(false);
+                }
               }
             }}
             onKeyDown={(e) => {

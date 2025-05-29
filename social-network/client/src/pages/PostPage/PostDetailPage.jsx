@@ -75,6 +75,9 @@ export default function PostDetailPage({ isModal = false }) {
     // slug
     const [mentionUsers, setMentionUsers] = useState([]); // {slug: userObject}
 
+    //mention states
+    const [hasMentioned, setHasMentioned] = useState(false);
+
     const location = useLocation();
     const params = new URLSearchParams(location.search);
     const highlightCommentId = params.get("commentId"); // luôn có
@@ -127,29 +130,18 @@ export default function PostDetailPage({ isModal = false }) {
       }, [user.id]);
   
     const handleSelectMention = (user) => {
-        console.log(user)
-        // 1. text hiển thị dạng @Full Name
-        const mentionDisplay = `@${user.fullName} `;
-        // 2. text internal dạng @{id}|Full Name
-        const mentionMarkup  = `@{${user.slug}}|${user.fullName} `;
-      
-        // 3. Thay phần "@..." cuối chuỗi displayComment
-        //    \p{L} là mọi chữ (có dấu), space là khoảng trắng, * nghĩa là nhiều hay ít
+        const mentionDisplay = `@${user.fullName}  `;
+        const mentionMarkup  = `@{${user.slug}}|${user.fullName}  `;
+        
         const newDisplay = displayComment.replace(/@[\p{L} ]*$/u, mentionDisplay);
         setDisplayComment(newDisplay);
-      
-        // 4. Thay phần "@..." cuối chuỗi comment
-        //    (?:\{[^}]*\}\|)? để bỏ qua trường hợp cũ đã có @{...}|  
+        
         const newComment = comment.replace(/@(?:\{[^}]*\}\|)?[\p{L} ]*$/u, mentionMarkup);
         setComment(newComment);
-      
-        // 5. Ẩn dropdown
+        
         setShowSuggestions(false);
-      
-        // 6. (Tuỳ chọn) di con trỏ về cuối nếu cần, ví dụ:
-        //    const newPos = newDisplay.length;
-        //    setCursorPosition(newPos);
-      };
+        setHasMentioned(true); // ✅ Đánh dấu đã mention
+    };
     
     const handleDelete = () => {
         setShowOptionModal(false);
@@ -337,6 +329,7 @@ export default function PostDetailPage({ isModal = false }) {
             setDisplayComment("");
             setReplyTo(null);
             setReplyToUser(null);
+            setHasMentioned(false); // ✅ reset lại
         } catch (err) {
             console.error("Lỗi khi bình luận:", err);
         }
@@ -727,24 +720,50 @@ export default function PostDetailPage({ isModal = false }) {
                                 const cursorPos = e.target.selectionStart;
                                 setCursorPosition(cursorPos);
 
-                                const textBeforeCursor = newDisplayValue.slice(0, cursorPos);
-                                const atMatch = textBeforeCursor.match(/@(\w*)$/);
+                                // ✅ Nếu đã có mention nhưng bị xóa khỏi chuỗi => cho phép mention lại
+                                const mentionRegex = /@\{[^}]+\}\|[^\s@]+/g;
+                                const matchesInComment = [...newDisplayValue.matchAll(mentionRegex)];
 
-                                if (atMatch) {
-                                    const query = atMatch[1].toLowerCase();
+                                if (hasMentioned && matchesInComment.length === 0) {
+                                    setHasMentioned(false); // 🧠 Người dùng đã xóa mention
+                                }
+                                if (!hasMentioned) {
+                                    const textBeforeCursor = newDisplayValue.slice(0, cursorPos);
+                                    const atMatch = textBeforeCursor.match(/(^|\s)@(\w*)$/); // match @username hoặc @
 
-                                    // ✅ Nếu user chỉ mới gõ "@" (chưa có ký tự gì thêm)
-                                    if (query === "") {
-                                    setMentionSuggestions(followings); // hiện toàn bộ danh sách
-                                    } else {
-                                    const matches = followings.filter((u) =>
-                                        u.username.toLowerCase().startsWith(query)
-                                    );
-                                    setMentionSuggestions(matches);
+                                    if (atMatch) {
+                                    // ✅ Check nếu con trỏ đang nằm ngay sau một mention => không bật gợi ý
+                                    const fullMentionRegex = /@\{[^}]+\}\|[^\s@]+/g;
+                                    let mentionBeforeCursor = false;
+
+                                    let match;
+                                    while ((match = fullMentionRegex.exec(newDisplayValue)) !== null) {
+                                        if (match.index <= cursorPos && fullMentionRegex.lastIndex >= cursorPos) {
+                                        mentionBeforeCursor = true;
+                                        break;
+                                        }
                                     }
+
+                                    if (mentionBeforeCursor) {
+                                        setShowSuggestions(false);
+                                        return;
+                                    }
+
+                                    const query = atMatch[2]?.toLowerCase() || "";
+
+                                    if (query === "") {
+                                        setMentionSuggestions(followings); // Gợi ý toàn bộ nếu chỉ gõ "@"
+                                    } else {
+                                        const matches = followings.filter((u) =>
+                                        u.username.toLowerCase().startsWith(query)
+                                        );
+                                        setMentionSuggestions(matches);
+                                    }
+
                                     setShowSuggestions(true);
-                                } else {
+                                    } else {
                                     setShowSuggestions(false);
+                                    }
                                 }
                               }}
                               onKeyDown={(e) => {

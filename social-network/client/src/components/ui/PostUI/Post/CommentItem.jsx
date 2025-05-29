@@ -419,9 +419,8 @@ const CommentItem = ({
 
 // 🔍 Chuyển @Tên -> <a>
 function renderCommentText(text, mentionUsers=[]) {
-    console.log("renderCommentText:", text);
     // Regex cải tiến để xử lý chính xác mọi trường hợp
-    const regex = /@(?:\{([^}]+)\}\|)?([\p{L}\p{N}][\p{L}\p{N}'-]*(?: [\p{L}\p{N}][\p{L}\p{N}'-]*)*)(?=\s|$|@)/gu;
+    const regex = /@(?:\{([^}]+)\}\|)?([\p{L}\p{N}][\p{L}\p{N}'-]*(?: (?! )[\p{L}\p{N}][\p{L}\p{N}'-]*)*)(?=\s|$|@)/gu;
     const parts = [];
     let lastIndex = 0;
     let match;
@@ -449,17 +448,19 @@ function renderCommentText(text, mentionUsers=[]) {
         />
     );
     } else {
-    // fallback: slug nhưng không có object, chỉ hiện link cơ bản
-    console.log("Mention không phải ObjectId, sử dụng slug:", userId);
-    parts.push(
-        <Link
-        key={`${userId}-${start}`}
-        to={`/${userId}`}
-        className="text-[#c8d7e4] hover:underline"
-        >
-        @{fullName.trim()}
-        </Link>
-    );
+        const slug = userId
+            ? userId
+            : slugify(fullName.trim());
+        parts.push(
+            <Link
+            key={`${slug}-${start}`}
+            to={`/${slug}`}
+            className="text-[#c8d7e4] hover:underline"
+            >
+            @{fullName.trim()}
+            </Link>
+        );
+        
     }
   
       lastIndex = start + fullMatch.length;
@@ -475,7 +476,15 @@ function renderCommentText(text, mentionUsers=[]) {
     return <>{parts}</>;
 }
 
-
+function slugify(text) {
+  return text
+    .normalize("NFD")                   // tách dấu
+    .replace(/[\u0300-\u036f]/g, "")   // bỏ các ký tự dấu
+    .toLowerCase()                     // lowercase
+    .trim()                            
+    .replace(/\s+/g, "-")              // khoảng trắng → dấu gạch ngang
+    .replace(/[^\w-]/g, "");           // chỉ giữ chữ, số, gạch ngang
+}
 
 
 
