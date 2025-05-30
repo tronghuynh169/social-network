@@ -73,10 +73,11 @@ export default function PostDetailPage({ isModal = false }) {
     const [isOpenShareModal, setIsOpenShareModal] = useState(false);
 
     // slug
-    const [mentionUsers, setMentionUsers] = useState([]); // {slug: userObject}
+    const [mentionUsers, setMentionUsers] = useState({}); // {slug: userObject}
 
     //mention states
     const [hasMentioned, setHasMentioned] = useState(false);
+    
 
     const location = useLocation();
     const params = new URLSearchParams(location.search);
@@ -128,6 +129,18 @@ export default function PostDetailPage({ isModal = false }) {
       
         fetchFollowings();
       }, [user.id]);
+
+      useEffect(() => {
+        const saved = localStorage.getItem('mentionUsers');
+        if (saved) {
+            try {
+            setMentionUsers(JSON.parse(saved));
+            } catch (e) {
+            console.error('Failed to parse mentionUsers from localStorage', e);
+            localStorage.removeItem('mentionUsers');
+            }
+        }
+        }, []);
   
     const handleSelectMention = (user) => {
         const mentionDisplay = `@${user.fullName}  `;
@@ -138,6 +151,13 @@ export default function PostDetailPage({ isModal = false }) {
         
         const newComment = comment.replace(/@(?:\{[^}]*\}\|)?[\p{L} ]*$/u, mentionMarkup);
         setComment(newComment);
+
+        setMentionUsers(prev => {
+            const updated = { ...prev, [user.slug]: user };
+            // 2) lưu vào localStorage
+            localStorage.setItem('mentionUsers', JSON.stringify(updated));
+            return updated;
+        });  
         
         setShowSuggestions(false);
         setHasMentioned(true); // ✅ Đánh dấu đã mention
@@ -728,8 +748,15 @@ export default function PostDetailPage({ isModal = false }) {
                                     setHasMentioned(false); // 🧠 Người dùng đã xóa mention
                                 }
                                 if (!hasMentioned) {
+                                    const atCount = (newDisplayValue.match(/@/g) || []).length;
+
+                                    const maxAllowedAts = replyTo ? 1 : 0;
+                                    if (atCount > maxAllowedAts + 1) {
+                                        setShowSuggestions(false);
+                                        return;
+                                    }
                                     const textBeforeCursor = newDisplayValue.slice(0, cursorPos);
-                                    const atMatch = textBeforeCursor.match(/(^|\s)@(\w*)$/); // match @username hoặc @
+                                    const atMatch = textBeforeCursor.match(/(^|\s)@(\w*)$/);
 
                                     if (atMatch) {
                                     // ✅ Check nếu con trỏ đang nằm ngay sau một mention => không bật gợi ý

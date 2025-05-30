@@ -21,7 +21,7 @@ const CommentItem = ({
     highlightCommentId,
     highlightedCommentIdsRef,
     fromNotification,
-    mentionUsers = [], // Danh sách mention users
+    mentionUsers = {}, // Danh sách mention users
 }) => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -385,6 +385,7 @@ const CommentItem = ({
                 isDirectReply={true}
                 showLikesModal={false}
                 setShowLikesModal={() => {}}
+                mentionUsers={mentionUsers}
             />
         })}
         </div>
@@ -420,7 +421,7 @@ const CommentItem = ({
 // 🔍 Chuyển @Tên -> <a>
 function renderCommentText(text, mentionUsers=[]) {
     // Regex cải tiến để xử lý chính xác mọi trường hợp
-    const regex = /@(?:\{([^}]+)\}\|)?([\p{L}\p{N}][\p{L}\p{N}'-]*(?: (?! )[\p{L}\p{N}][\p{L}\p{N}'-]*)*)(?=\s|$|@)/gu;
+    const regex = /@(?:\{([^}]+)\}\|)?([\p{L}\p{N}][\p{L}\p{N}'-]*(?: (?! )[\p{L}\p{N}][\p{L}\p{N}'-]*)*)(?=\s{2}|$|@)/gu;
     const parts = [];
     let lastIndex = 0;
     let match;
@@ -448,19 +449,46 @@ function renderCommentText(text, mentionUsers=[]) {
         />
     );
     } else {
-        const slug = userId
-            ? userId
-            : slugify(fullName.trim());
-        parts.push(
-            <Link
-            key={`${slug}-${start}`}
-            to={`/${slug}`}
-            className="text-[#c8d7e4] hover:underline"
-            >
-            @{fullName.trim()}
-            </Link>
-        );
-        
+        if (userId) {
+            // Có userId thì render Link với userId làm slug
+            parts.push(
+                <Link
+                    key={`${userId}-${start}`}
+                    to={`/${userId}`}
+                    className="text-[#c8d7e4] hover:underline"
+                >
+                    @{fullName.trim()}
+                </Link>
+            );
+        } else {
+            const trimmedName = typeof fullName === 'string' ? fullName.trim() : '';
+
+            // Kiểm tra fullName có trong mentionUsers không
+            const matchedUser = Object.values(mentionUsers).find(
+                (user) => user.fullName === trimmedName
+            );
+
+            if (matchedUser) {
+                // Nếu tìm thấy thì render Link với slug của user
+                parts.push(
+                    <Link
+                        key={`${slugify(matchedUser.fullName)}-${start}`}
+                        to={`/${slugify(matchedUser.fullName)}`}
+                        className="text-[#c8d7e4] hover:underline"
+                    >
+                        @{trimmedName}
+                    </Link>
+                );
+            } else {
+                // Nếu không có userId và không match fullName trong mentionUsers
+                // Chỉ render text bình thường, không thành Link
+                parts.push(
+                    <span key={`${start}-plain`}>
+                        @{trimmedName}
+                    </span>
+                );
+            }
+        }
     }
   
       lastIndex = start + fullMatch.length;

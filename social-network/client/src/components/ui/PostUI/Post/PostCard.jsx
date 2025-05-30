@@ -63,6 +63,7 @@ export default function PostCard({ post }) {
 
     //mention states
     const [hasMentioned, setHasMentioned] = useState(false);
+    const [mentionUsers, setMentionUsers] = useState({}); // {slug: userObject}
 
     // --- BEGIN AUTOCOMPLETE STATES ---
     const [followings, setFollowings] = useState([]);
@@ -106,6 +107,18 @@ export default function PostCard({ post }) {
     
       fetchFollowings();
     }, [user.id]);
+
+    useEffect(() => {
+        const saved = localStorage.getItem('mentionUsers');
+        if (saved) {
+            try {
+            setMentionUsers(JSON.parse(saved));
+            } catch (e) {
+            console.error('Failed to parse mentionUsers from localStorage', e);
+            localStorage.removeItem('mentionUsers');
+            }
+        }
+        }, []);
     
 
     const handleSelectMention = (user) => {
@@ -115,6 +128,12 @@ export default function PostCard({ post }) {
         setDisplayComment(newDisplay);
         const newComment = comment.replace(/@(?:\{[^}]*\}\|)?[\p{L} ]*$/u, mentionMarkup);
         setComment(newComment);
+        setMentionUsers(prev => {
+            const updated = { ...prev, [user.slug]: user };
+            // 2) lưu vào localStorage
+            localStorage.setItem('mentionUsers', JSON.stringify(updated));
+            return updated;
+        }); 
         setShowSuggestions(false);
         setHasMentioned(true); // ✅ Đánh dấu đã mention
     };
@@ -613,6 +632,7 @@ export default function PostCard({ post }) {
               onLike={handleCommentLike}
               onDelete={handleDeleteComment}
               onNavigateToDetail={handleNavigateToDetail}
+              mentionUsers={mentionUsers}
             />
           ) : null;
         })()}
@@ -640,35 +660,56 @@ export default function PostCard({ post }) {
               setCursorPosition(cursorPos);
 
               // ✅ Nếu đã có mention nhưng bị xóa khỏi chuỗi => cho phép mention lại
-              if (hasMentioned) {
-                const mentionRegex = /@\{\w+\}\|\w+/g;
-                const found = newDisplayValue.match(mentionRegex);
-                if (!found) {
-                  setHasMentioned(false); // 🧠 Người dùng đã xóa mention
-                }
-              }
-              if (!hasMentioned)
-              {
-                const textBeforeCursor = newDisplayValue.slice(0, cursorPos);
-                const atMatch = textBeforeCursor.match(/(^|\s)@(\w*)$/);
-  
-                if (atMatch) {
-                  const query = atMatch[2]?.toLowerCase() || "";
-  
-                  // ✅ Nếu user chỉ mới gõ "@" (chưa có ký tự gì thêm)
-                  if (query === "") {
+              const mentionRegex = /@\{[^}]+\}\|[^\s@]+/g;
+              const matchesInComment = [...newDisplayValue.matchAll(mentionRegex)];
 
-                    setMentionSuggestions(followings); // hiện toàn bộ danh sách
-                  } else {
-                    const matches = followings.filter((u) =>
-                      u.username.toLowerCase().startsWith(query)
-                    );
-                    setMentionSuggestions(matches);
+              if (hasMentioned && matchesInComment.length === 0) {
+                  setHasMentioned(false); // 🧠 Người dùng đã xóa mention
+              }
+              if (!hasMentioned) {
+                  const atCount = (newDisplayValue.match(/@/g) || []).length;
+
+                  const maxAllowedAts = replyTo ? 1 : 0;
+                  if (atCount > maxAllowedAts + 1) {
+                      setShowSuggestions(false);
+                      return;
                   }
+                  const textBeforeCursor = newDisplayValue.slice(0, cursorPos);
+                  const atMatch = textBeforeCursor.match(/(^|\s)@(\w*)$/);
+
+                  if (atMatch) {
+                  // ✅ Check nếu con trỏ đang nằm ngay sau một mention => không bật gợi ý
+                  const fullMentionRegex = /@\{[^}]+\}\|[^\s@]+/g;
+                  let mentionBeforeCursor = false;
+
+                  let match;
+                  while ((match = fullMentionRegex.exec(newDisplayValue)) !== null) {
+                      if (match.index <= cursorPos && fullMentionRegex.lastIndex >= cursorPos) {
+                      mentionBeforeCursor = true;
+                      break;
+                      }
+                  }
+
+                  if (mentionBeforeCursor) {
+                      setShowSuggestions(false);
+                      return;
+                  }
+
+                  const query = atMatch[2]?.toLowerCase() || "";
+
+                  if (query === "") {
+                      setMentionSuggestions(followings); // Gợi ý toàn bộ nếu chỉ gõ "@"
+                  } else {
+                      const matches = followings.filter((u) =>
+                      u.username.toLowerCase().startsWith(query)
+                      );
+                      setMentionSuggestions(matches);
+                  }
+
                   setShowSuggestions(true);
-                } else {
+                  } else {
                   setShowSuggestions(false);
-                }
+                  }
               }
             }}
             onKeyDown={(e) => {

@@ -81,8 +81,8 @@ const UserHoverCard = ({ info, hoverPosition, onFollowChange }) => {
     useEffect(() => {
       const fetchFollowingStatus = async () => {
         try {
-          const currentUserProfile = await getProfileByUserId(user.id);
-          const followingData = await getFollowing(currentUserProfile._id);
+          const currentUserProfile = await getProfileByUserId(user?.id);
+          const followingData = await getFollowing(currentUserProfile?._id);
           const followingUserIds = new Set(followingData.map(profile => profile.userId));
           setIsFollowing(followingUserIds.has(info.userId));
         } catch (error) {
