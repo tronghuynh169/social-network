@@ -16,13 +16,18 @@ exports.createConversation = async (req, res) => {
                 .json({ message: "Danh sách thành viên không hợp lệ." });
         }
 
-        const sortedMembers = [...members].sort();
+        // Loại bỏ ID trùng nhau nếu có
+        const uniqueMembers = [...new Set(members)];
+        const sortedMembers = uniqueMembers.sort();
 
-        // ✅ Kiểm tra nếu là chat 1-1 thì không tạo trùng
-        if (!isGroup && sortedMembers.length === 2) {
+        // Trường hợp 1-1 với 1 hoặc 2 thành viên
+        if (
+            !isGroup &&
+            (sortedMembers.length === 1 || sortedMembers.length === 2)
+        ) {
             const existing = await Conversation.findOne({
                 isGroup: false,
-                members: { $all: sortedMembers, $size: 2 },
+                members: { $all: sortedMembers, $size: sortedMembers.length },
             });
 
             if (existing) {

@@ -111,14 +111,7 @@ const MessagePage = () => {
 
             data.members = fullMembers;
             setConversation(data);
-
-            setNameGroupChat(
-                data.isGroup
-                    ? data.name
-                    : fullMembers.find((m) => m._id !== profile._id)
-                          ?.fullName || "Cuộc trò chuyện"
-            );
-
+            setNameGroupChat(data.name);
             setAvatar(data.avatar);
 
             if (data.admin) {
@@ -530,6 +523,7 @@ const MessagePage = () => {
                     handleRemoveMember={handleRemoveMember}
                     handleChangeAdmin={handleChangeAdmin}
                     handleOpenModal={handleOpenModal}
+                    messages={messages}
                 />
             )}
 

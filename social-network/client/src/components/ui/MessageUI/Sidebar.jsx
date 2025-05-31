@@ -58,15 +58,18 @@ const Sidebar = ({
             const uniqueUserIds = Array.from(userIdSet);
             const fetchUsers = async () => {
                 const users = await Promise.all(
-                    uniqueUserIds.map((id) => getProfileById(id))
+                    uniqueUserIds.map((id) =>
+                        getProfileById(id).catch(() => null)
+                    ) // xử lý lỗi 404
                 );
 
                 const userMap = {};
-                users.forEach((user) => {
-                    userMap[user._id] = user;
-                });
+                users
+                    .filter((user) => user && user._id) // ✅ lọc bỏ null hoặc object lỗi
+                    .forEach((user) => {
+                        userMap[user._id] = user;
+                    });
 
-                // Gộp thông tin người dùng vào danh sách cuộc trò chuyện
                 const merged = sortedConvs.map((conv) => {
                     const otherUsers = conv.members
                         .filter((id) => id !== profile._id)
@@ -74,18 +77,22 @@ const Sidebar = ({
                         .filter(Boolean);
 
                     const isGroup = conv.isGroup;
+
                     return {
                         conversationId: conv._id,
                         name: isGroup
                             ? conv.name
                             : otherUsers.length === 1
                             ? otherUsers[0]?.fullName
+                            : otherUsers.length === 0
+                            ? profile.fullName // chat với chính mình thì lấy tên bạn
                             : "Đối thoại riêng",
                         avatar: isGroup
                             ? conv.avatar
                             : otherUsers.length > 0
                             ? otherUsers[0]?.avatar
-                            : "http://localhost:5173/images/avatar-default-user.png",
+                            : profile.avatar ||
+                              "http://localhost:5173/images/avatar-default-user.png",
                         members: otherUsers,
                         latestMessage: conv.latestMessage,
                     };
