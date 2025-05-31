@@ -93,7 +93,7 @@ const Login = () => {
                             className="absolute inset-y-0 right-3 flex items-center cursor-pointer text-gray-400"
                             onClick={() => setShowPassword((prev) => !prev)}
                         >
-                            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                         </div>
                     </div>
 

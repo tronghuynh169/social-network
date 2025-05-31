@@ -60,6 +60,7 @@ export default function PostCard({ post }) {
     const [hoverSource, setHoverSource] = useState(null); // 'avatar' or 'name'
     const [isOwner, setIsOwner] = useState(false);
     const [isOpenShareModal, setIsOpenShareModal] = useState(false);
+    const [isLoadingComments, setIsLoadingComments] = useState(true);
 
     //mention states
     const [hasMentioned, setHasMentioned] = useState(false);
@@ -364,6 +365,7 @@ export default function PostCard({ post }) {
 
       useEffect(() => {
         const fetchPost = async () => {
+          setIsLoadingComments(true); // Bắt đầu loading
           try {
             const res = await getPostDetails(post._id);
             const rawComments = res.data.comments;
@@ -390,6 +392,8 @@ export default function PostCard({ post }) {
             setComments(commentsWithFullName);
           } catch (err) {
             console.error("Lỗi khi tải comment:", err);
+          } finally {
+            setIsLoadingComments(false); // Kết thúc loading
           }
         };
       
@@ -601,7 +605,11 @@ export default function PostCard({ post }) {
         )}
       </div>
       {/* Bình luận */}
-      {comments.length > 0 && ( 
+      {isLoadingComments ? (
+          <div className="flex justify-center py-4">
+            <Loader2 className="animate-spin text-gray-400 w-6 h-6" />
+          </div>
+        ) :(comments.length > 0 && ( 
         <div className="text-sm space-y-1">
           <button className="text-gray-400 text-sm hover:underline cursor-pointer mb-4" onClick={handleCommentClick}>
             Xem tất cả {comments.reduce((acc, comment) => {
@@ -637,7 +645,7 @@ export default function PostCard({ post }) {
           ) : null;
         })()}
         </div>
-      )}
+      ))}
 
       <div ref={wrapperRef} className="flex items-center space-x-2 pt-2 relative">
         <input

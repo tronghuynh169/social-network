@@ -6,18 +6,11 @@ import {
 import CopyLinkModal from "~/components/ui/PostUI/Post/CopyLinkModal";
 
 
-const friends = [
-  { name: "abc", avatar: "https://via.placeholder.com/40" },
-  { name: "Rikka Takanashi", avatar: "https://via.placeholder.com/40?text=RT" },
-];
 
 export default function ShareModal({ isOpen, onClose, postId  }) {
     const [search, setSearch] = useState("");
     const [isCopyModalVisible, setCopyModalVisible] = useState(false);
 
-    const filteredFriends = friends.filter((f) =>
-        f.name.toLowerCase().includes(search.toLowerCase())
-    );
 
     const handleCopyLink = () => {
       navigator.clipboard.writeText(`${window.location.origin}/post/${postId}`);
@@ -65,16 +58,7 @@ export default function ShareModal({ isOpen, onClose, postId  }) {
                     </div>
 
                 <div className="max-h-40 overflow-y-auto mb-4 space-y-2">
-                {filteredFriends.map((friend, i) => (
-                    <div key={i} className="flex items-center gap-3 px-2 py-1 hover:bg-neutral-800 rounded">
-                    <img
-                        src={friend.avatar}
-                        alt={friend.name}
-                        className="w-10 h-10 rounded-full"
-                    />
-                    <span>{friend.name}</span>
-                    </div>
-                ))}
+                
                 </div>
 
                 <div className="border-t-2 border-[var(--border-color)] pt-4">

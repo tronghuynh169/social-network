@@ -39,6 +39,8 @@ const ProfilePage = ({ setAvatar }) => {
     const postCount = getUserPostCount(profile?.userId);
 
     const handleChat = () => {
+        console.log("Starting chat with:", profile);
+        console.log("Current user ID:", currentProfileId);
         handleStartPrivateChat({
             currentUserId: currentProfileId,
             friend: profile,
@@ -217,7 +219,7 @@ const ProfilePage = ({ setAvatar }) => {
                             profile.website && Array.isArray(profile.website) && 
                             profile.website.some(item => item.trim() !== "") &&
                             <button
-                                className="text-[var(--text-link-color)] cursor-pointer mt-4 text-left flex items-center gap-2"
+                                className="text-[var(--text-primary-color)] cursor-pointer mt-4 text-left flex items-center gap-2"
                                 onClick={() => setLinkModalOpen(true)}
                             >
                                 <Link2 className="w-5 h-5" />

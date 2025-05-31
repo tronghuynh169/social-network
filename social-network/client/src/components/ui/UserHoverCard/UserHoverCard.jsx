@@ -10,6 +10,7 @@ import {
   followUser,
   unfollowUser,
 } from "~/api/profile";
+import { handleStartPrivateChat } from "~/components/utils/chatHelpers";
 
 const UserHoverCard = ({ info, hoverPosition, onFollowChange }) => {
     const navigate = useNavigate(); 
@@ -26,6 +27,28 @@ const UserHoverCard = ({ info, hoverPosition, onFollowChange }) => {
       avatar: "",
     });
     const [actionLoadingMap, setActionLoadingMap] = useState({});
+    const [currentUserProfile, setCurrentUserProfile] = useState(null);
+
+    useEffect(() => {
+      const fetchCurrentUserProfile = async () => {
+        if (!user?.id) return;
+        try {
+          const profile = await getProfileByUserId(user.id);
+          setCurrentUserProfile(profile);
+        } catch (error) {
+          console.error("Không thể lấy hồ sơ người dùng hiện tại:", error);
+        }
+      };
+      fetchCurrentUserProfile();
+    }, [user?.id]);
+
+    const handleChat = () => {
+        handleStartPrivateChat({
+            currentUserId: currentUserProfile._id,
+            friend: info,
+            navigate,
+        });
+    };
 
     const handleGoToProfile = () => {
       navigate(`/${info.slug}`, { replace: false });
@@ -162,7 +185,7 @@ const UserHoverCard = ({ info, hoverPosition, onFollowChange }) => {
                     <>
                         <div className="flex-1 flex items-center justify-center bg-[var(--button-enable-color)] text-[var(--text-primary-color)] text-sm font-semibold py-0 rounded-lg hover:opacity-90 cursor-pointer">
                             <MessageCircle className="w-6 h-6 mr-1"/>
-                            <button className="">
+                            <button onClick={handleChat} className="">
                                 Nhắn tin
                             </button>
                         </div>

@@ -21,6 +21,14 @@ export default function PostList() {
     ));
   };
 
+  if (loadingPosts) {
+    return (
+      <div className="flex justify-center items-center py-10">
+        <Loader className="animate-spin h-8 w-8 text-gray-500" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {posts.map((post) => 

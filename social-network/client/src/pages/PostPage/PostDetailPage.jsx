@@ -879,7 +879,7 @@ export default function PostDetailPage({ isModal = false }) {
         </div>
     ) : (
         <div className="min-h-screen bg-black text-white flex justify-center items-center">
-            <div className="w-full max-w-5xl flex flex-col md:flex-row">
+            <div className="w-full max-w-5xl flex flex-col justify-center items-center md:flex-row">
                 {modalContent}
             </div>
         </div>
