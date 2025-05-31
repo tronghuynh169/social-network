@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import AuthLayout from "../../components/layout/AuthLayout";
 import { Link } from "react-router-dom";
 import { useUser } from "../../context/UserContext"; // Import useUser
+import { Eye, EyeOff } from "lucide-react";
 
 const Login = () => {
     const [formData, setFormData] = useState({
@@ -14,6 +15,7 @@ const Login = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const { setUser } = useUser(); // Lấy hàm setUser từ UserContext
+    const [showPassword, setShowPassword] = useState(false);
 
     // Kiểm tra token khi component mount
     useEffect(() => {
@@ -68,7 +70,7 @@ const Login = () => {
 
                     <input
                         className="w-full p-3 mb-3 border border-gray-600 bg-black text-white rounded-md 
-              focus:outline-none focus:ring-0 focus:border-gray-500"
+                        focus:outline-none focus:ring-0 focus:border-gray-500"
                         name="usernameOrEmail"
                         placeholder="Tên người dùng hoặc email"
                         onChange={handleChange}
@@ -76,16 +78,24 @@ const Login = () => {
                         autoComplete="off" // Tắt autocomplete
                     />
 
-                    <input
-                        className="w-full p-3 mb-3 border border-gray-600 bg-black text-white rounded-md 
-              focus:outline-none focus:ring-0 focus:border-gray-500"
-                        type="password"
-                        name="password"
-                        placeholder="Mật khẩu"
-                        onChange={handleChange}
-                        required
-                        autoComplete="off" // Tắt autocomplete
-                    />
+                    <div className="relative mb-3">
+                        <input
+                            className="w-full p-3 pr-10 border border-gray-600 bg-black text-white rounded-md 
+                            focus:outline-none focus:ring-0 focus:border-gray-500"
+                            type={showPassword ? "text" : "password"}
+                            name="password"
+                            placeholder="Mật khẩu"
+                            onChange={handleChange}
+                            required
+                            autoComplete="off"
+                        />
+                        <div
+                            className="absolute inset-y-0 right-3 flex items-center cursor-pointer text-gray-400"
+                            onClick={() => setShowPassword((prev) => !prev)}
+                        >
+                            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                        </div>
+                    </div>
 
                     <button
                         type="submit"

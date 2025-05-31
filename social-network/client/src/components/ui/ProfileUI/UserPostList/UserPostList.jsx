@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { usePosts } from '~/context/PostContext';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Heart, Copy, MessageCircle, Loader   } from 'lucide-react';
+import { Heart, Copy, MessageCircle, Loader, CameraOff   } from 'lucide-react';
 
 export default function UserPostList({ userId }) {
     const {
@@ -41,6 +41,13 @@ export default function UserPostList({ userId }) {
 
     return (
         <div className="w-full">
+            {userPosts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center mt-12 text-[var(--text-primary-color)]">
+                <CameraOff className="w-12 h-12 mb-6" />
+                <p className="">Người dùng chưa đăng bài viết nào.</p>
+            </div>
+            ) :
+            (
             <div className="grid grid-cols-3 gap-[2px] sm:gap-1 md:gap-2">
                 {userPosts.map(post => {
                     const likesCount = post.likesCount || 0;
@@ -111,6 +118,7 @@ export default function UserPostList({ userId }) {
                     </div>
                 )})}
             </div>
+            )}
         </div>
     );
 }
