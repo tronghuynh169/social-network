@@ -4,7 +4,12 @@ import {  Loader   } from 'lucide-react';
 import { usePosts } from '~/context/PostContext';
 
 export default function PostList() {
-  const { posts, setPosts, loadingPosts } = usePosts();
+  const { posts, setPosts, loadingPosts, refreshPostsIfNeeded, postsToRefresh  } = usePosts();
+
+    useEffect(() => {
+      refreshPostsIfNeeded();
+    }, [postsToRefresh]);
+
 
   const handleLikeUpdate = (postId, update) => {
     setPosts(prevPosts => prevPosts.map(post => 

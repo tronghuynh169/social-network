@@ -42,7 +42,7 @@ import errorImage from '~/assets/img/404.jpg';
 import ShareModal from "~/components/ui/PostUI/Share/ShareModal";
 
 export default function PostDetailPage({ isModal = false }) {
-    const { updatePostLike, setPosts, posts, updatePostData, setUserPosts, setUserPostsMap, removePostData, refreshPostCount  } = usePosts(); // trong PostDetailPage
+    const { updatePostLike, setPosts, posts, updatePostData, setUserPosts, setUserPostsMap, removePostData, refreshPostCount, markPostNeedsRefresh  } = usePosts(); // trong PostDetailPage
     const { user } = useUser();
     const { id: postId } = useParams();
     const navigate = useNavigate();
@@ -408,6 +408,7 @@ export default function PostDetailPage({ isModal = false }) {
     }, [postDetails]);
 
     const handleClose = () => {
+        markPostNeedsRefresh(postDetails.post._id); // Ghi nhớ cần cập nhật
         navigate(-1);
     };
 

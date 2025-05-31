@@ -7,7 +7,9 @@ export default function UserPostList({ userId }) {
     const {
         fetchUserPosts,
         getUserPostsById,
-        loadingUserPostsMap
+        loadingUserPostsMap,
+        refreshPostsIfNeeded,   
+        postsToRefresh           
     } = usePosts();
 
     const navigate = useNavigate();
@@ -21,6 +23,20 @@ export default function UserPostList({ userId }) {
             fetchUserPosts(userId);
         }
     }, [userId]);
+
+    useEffect(() => {
+        if (!userPosts || userPosts.length === 0) return;
+
+        // Lấy tập ID của userPosts
+        const userPostIds = new Set(userPosts.map(p => p._id));
+        // Kiểm tra xem có post nào trong postsToRefresh trùng hay không
+        const intersection = Array.from(postsToRefresh).filter(id => userPostIds.has(id));
+        if (intersection.length > 0) {
+        // Gọi hàm refresh để cập nhật cả comment, likesCount, etc.
+        refreshPostsIfNeeded();
+        }
+        // Chỉ chạy mỗi khi postsToRefresh thay đổi
+    }, [postsToRefresh]);
 
 
     const handlePostClick = (postId) => {
