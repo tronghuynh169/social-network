@@ -749,12 +749,46 @@ export default function PostDetailPage({ isModal = false }) {
                                 onChange={(e) => {
                                     const newDisplayValue = e.target.value;
                                     setDisplayComment(newDisplayValue);
-                                    
+
+                                    // Biến lưu mapping giữa tên hiển thị và format đầy đủ
+                                    let updatedComment = newDisplayValue;
+
+                                    // Lặp qua tất cả các mention đang có
+                                    Object.entries(mentionUsers).forEach(([slug, user]) => {
+                                        const mentionDisplay = `@${user.fullName}`;
+                                        const mentionMarkup = `@{${slug}}|${user.fullName}`;
+
+                                        // Thay thế chuỗi hiển thị thành markup chính xác
+                                        // Lưu ý: Dùng regex để chỉ thay thế phần đúng (tránh bug khi có tên giống nhau)
+                                        updatedComment = updatedComment.replace(
+                                        new RegExp(`@${user.fullName}(?!\\}|\\|)`, 'g'),
+                                        mentionMarkup
+                                        );
+                                    });
+
                                     // Nếu đang reply và text bắt đầu bằng @Tên
                                     if (replyTo && newDisplayValue.startsWith(`@${replyToUser}`)) {
-                                      setComment(`@{${replyTo}}|${replyToUser} ${newDisplayValue.slice(replyToUser.length + 1)}`);
+                                        const afterReplyMention = newDisplayValue.slice(replyToUser.length + 1); // phần sau @Tên
+                                        let transformedText = afterReplyMention;
+
+                                        // ✅ Thay thế các mention còn lại trong phần phía sau
+                                        Object.entries(mentionUsers).forEach(([slug, user]) => {
+                                        const mentionDisplay = `@${user.fullName}`;
+                                        const mentionMarkup = `@{${slug}}|${user.fullName}`;
+
+                                        // Ghi chú: tránh chuyển mention chính (replyTo) vì nó đã được xử lý riêng
+                                        if (user.fullName !== replyToUser) {
+                                            transformedText = transformedText.replace(
+                                            new RegExp(`@${user.fullName}(?!\\}|\\|)`, 'g'),
+                                            mentionMarkup
+                                            );
+                                        }
+                                        });
+
+                                        // ✅ Kết hợp lại phần đầu mention + phần sau đã format
+                                        setComment(`@{${replyTo}}|${replyToUser} ${transformedText}`);
                                     } else {
-                                      setComment(newDisplayValue);
+                                      setComment(updatedComment);
                                     }
     
                                     const cursorPos = e.target.selectionStart;
