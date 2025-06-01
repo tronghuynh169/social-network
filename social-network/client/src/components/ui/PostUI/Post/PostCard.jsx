@@ -647,143 +647,163 @@ export default function PostCard({ post }) {
         </div>
       ))}
 
-      <div ref={wrapperRef} className="flex items-center space-x-2 pt-2 relative">
-        <input
-          type="text"
-          placeholder="Bình luận..."
-          disabled={isCommenting}
-          value={displayComment}
-          onChange={(e) => {
-              const newDisplayValue = e.target.value;
-              setDisplayComment(newDisplayValue);
-              
-              // Nếu đang reply và text bắt đầu bằng @Tên
-              if (replyTo && newDisplayValue.startsWith(`@${replyToUser}`)) {
-                setComment(`@{${replyTo}}|${replyToUser} ${newDisplayValue.slice(replyToUser.length + 1)}`);
-              } else {
-                setComment(newDisplayValue);
-              }
-
-              const cursorPos = e.target.selectionStart;
-              setCursorPosition(cursorPos);
-
-              // ✅ Nếu đã có mention nhưng bị xóa khỏi chuỗi => cho phép mention lại
-              const mentionRegex = /@\{[^}]+\}\|[^\s@]+/g;
-              const matchesInComment = [...newDisplayValue.matchAll(mentionRegex)];
-
-              if (hasMentioned && matchesInComment.length === 0) {
-                  setHasMentioned(false); // 🧠 Người dùng đã xóa mention
-              }
-              if (!hasMentioned) {
-                  const atCount = (newDisplayValue.match(/@/g) || []).length;
-
-                  const maxAllowedAts = replyTo ? 1 : 0;
-                  if (atCount > maxAllowedAts + 1) {
-                      setShowSuggestions(false);
-                      return;
-                  }
-                  const textBeforeCursor = newDisplayValue.slice(0, cursorPos);
-                  const atMatch = textBeforeCursor.match(/(^|\s)@(\w*)$/);
-
-                  if (atMatch) {
-                  // ✅ Check nếu con trỏ đang nằm ngay sau một mention => không bật gợi ý
-                  const fullMentionRegex = /@\{[^}]+\}\|[^\s@]+/g;
-                  let mentionBeforeCursor = false;
-
-                  let match;
-                  while ((match = fullMentionRegex.exec(newDisplayValue)) !== null) {
-                      if (match.index <= cursorPos && fullMentionRegex.lastIndex >= cursorPos) {
-                      mentionBeforeCursor = true;
-                      break;
-                      }
-                  }
-
-                  if (mentionBeforeCursor) {
-                      setShowSuggestions(false);
-                      return;
-                  }
-
-                  const query = atMatch[2]?.toLowerCase() || "";
-
-                  if (query === "") {
-                      setMentionSuggestions(followings); // Gợi ý toàn bộ nếu chỉ gõ "@"
-                  } else {
-                      const matches = followings.filter((u) =>
-                      u.username.toLowerCase().startsWith(query)
-                      );
-                      setMentionSuggestions(matches);
-                  }
-
-                  setShowSuggestions(true);
-                  } else {
-                  setShowSuggestions(false);
-                  }
-              }
-            }}
-            onKeyDown={(e) => {
-              if (showSuggestions) {
-                if (e.key === 'ArrowDown') {
-                  e.preventDefault();
-                  setActiveIndex(i =>
-                    i < mentionSuggestions.length - 1 ? i + 1 : 0
-                  );
-                } else if (e.key === 'ArrowUp') {
-                  e.preventDefault();
-                  setActiveIndex(i =>
-                    i > 0 ? i - 1 : mentionSuggestions.length - 1
-                  );
-                } else if (e.key === 'Enter' && activeIndex >= 0) {
-                  e.preventDefault();
-                  handleSelectMention(mentionSuggestions[activeIndex]);
-                } else if (e.key === 'Escape') {
-                  setShowSuggestions(false);
-                }
-                return;
-              }
-    
-              // Nếu không đang show suggestions, xử lý Enter bình thường
-              if (e.key === "Enter" && !isCommenting && displayComment.trim()) {
-                  e.preventDefault(); // tránh submit form nếu có
-                  handleAddComment();
-              }
-          }}
-          className="flex-1 text-white text-sm outline-none"
-      />
-      {
-          isCommenting ? (
-              <Loader2 className="animate-spin text-gray-400 w-4 h-4" />
-            ) : 
-            ( 
-              displayComment &&
-              <button
-                  className="text-[var(--text-enable-color)] text-sm font-medium cursor-pointer hover:text-[#c8d7e4]"
-                  onClick={handleAddComment}
-              >
-                  Đăng
-              </button>
-            
-          )
-      }
-      {showSuggestions && mentionSuggestions.length > 0 && (
-      <div className="absolute z-50 bg-[var(--primary-color)] bottom-full left-0 mb-1 w-[250px] max-h-60 overflow-y-auto">
-        {mentionSuggestions.map((user, idx) => (
-          <div
-            key={user._id}
-            className={`flex items-center gap-2 px-3 py-2 hover:bg-[var(--secondary-color)] cursor-pointer border-b border-[var(--border-color)] ${idx === activeIndex ? "bg-[var(--secondary-color)]" : ""}`}
-            onClick={() => handleSelectMention(user)}
+      <div className="flex flex-col pt-3 relative" ref={wrapperRef}>
+        {replyToUser && (
+          <div className="flex items-center mb-2 py-1 rounded">
+          <span className="text-xs text-[var(--text-primary-color)]">
+              Đang trả lời <span className="font-semibold">@{replyToUser}</span>
+          </span>
+          <button
+              className="ml-2 text-xs text-red-400 hover:underline cursor-pointer"
+              onClick={() => {
+              setReplyTo(null);
+              setReplyToUser(null);
+              setComment("");
+              setDisplayComment("");
+              }}
           >
-            <img
-              src={user.avatar || "/default-avatar.png"}
-              alt={user.username}
-              className="w-8 h-8 rounded-full object-cover"
-            />
-            <div className="flex flex-col">
-              <span className="text-[primary-color] text-xs">{user.fullName}</span>
-            </div>
+              Hủy
+          </button>
           </div>
-        ))}
-      </div>
-    )}
+      )}
+        <div className="flex items-center space-x-2">
+          <input
+            type="text"
+            placeholder="Bình luận..."
+            disabled={isCommenting}
+            value={displayComment}
+            onChange={(e) => {
+                const newDisplayValue = e.target.value;
+                setDisplayComment(newDisplayValue);
+                
+                // Nếu đang reply và text bắt đầu bằng @Tên
+                if (replyTo && newDisplayValue.startsWith(`@${replyToUser}`)) {
+                  setComment(`@{${replyTo}}|${replyToUser} ${newDisplayValue.slice(replyToUser.length + 1)}`);
+                } else {
+                  setComment(newDisplayValue);
+                }
+  
+                const cursorPos = e.target.selectionStart;
+                setCursorPosition(cursorPos);
+  
+                // ✅ Nếu đã có mention nhưng bị xóa khỏi chuỗi => cho phép mention lại
+                const mentionRegex = /@\{[^}]+\}\|[^\s@]+/g;
+                const matchesInComment = [...newDisplayValue.matchAll(mentionRegex)];
+  
+                if (hasMentioned && matchesInComment.length === 0) {
+                    setHasMentioned(false); // 🧠 Người dùng đã xóa mention
+                }
+                if (!hasMentioned) {
+                    const atCount = (newDisplayValue.match(/@/g) || []).length;
+  
+                    const maxAllowedAts = replyTo ? 1 : 0;
+                    if (atCount > maxAllowedAts + 1) {
+                        setShowSuggestions(false);
+                        return;
+                    }
+                    const textBeforeCursor = newDisplayValue.slice(0, cursorPos);
+                    const atMatch = textBeforeCursor.match(/(^|\s)@(\w*)$/);
+  
+                    if (atMatch) {
+                    // ✅ Check nếu con trỏ đang nằm ngay sau một mention => không bật gợi ý
+                    const fullMentionRegex = /@\{[^}]+\}\|[^\s@]+/g;
+                    let mentionBeforeCursor = false;
+  
+                    let match;
+                    while ((match = fullMentionRegex.exec(newDisplayValue)) !== null) {
+                        if (match.index <= cursorPos && fullMentionRegex.lastIndex >= cursorPos) {
+                        mentionBeforeCursor = true;
+                        break;
+                        }
+                    }
+  
+                    if (mentionBeforeCursor) {
+                        setShowSuggestions(false);
+                        return;
+                    }
+  
+                    const query = atMatch[2]?.toLowerCase() || "";
+  
+                    if (query === "") {
+                        setMentionSuggestions(followings); // Gợi ý toàn bộ nếu chỉ gõ "@"
+                    } else {
+                        const matches = followings.filter((u) =>
+                        u.username.toLowerCase().startsWith(query)
+                        );
+                        setMentionSuggestions(matches);
+                    }
+  
+                    setShowSuggestions(true);
+                    } else {
+                    setShowSuggestions(false);
+                    }
+                }
+              }}
+              onKeyDown={(e) => {
+                if (showSuggestions) {
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setActiveIndex(i =>
+                      i < mentionSuggestions.length - 1 ? i + 1 : 0
+                    );
+                  } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setActiveIndex(i =>
+                      i > 0 ? i - 1 : mentionSuggestions.length - 1
+                    );
+                  } else if (e.key === 'Enter' && activeIndex >= 0) {
+                    e.preventDefault();
+                    handleSelectMention(mentionSuggestions[activeIndex]);
+                  } else if (e.key === 'Escape') {
+                    setShowSuggestions(false);
+                  }
+                  return;
+                }
+      
+                // Nếu không đang show suggestions, xử lý Enter bình thường
+                if (e.key === "Enter" && !isCommenting && displayComment.trim()) {
+                    e.preventDefault(); // tránh submit form nếu có
+                    handleAddComment();
+                }
+            }}
+            className="flex-1 text-white text-sm outline-none"
+        />
+        {
+            isCommenting ? (
+                <Loader2 className="animate-spin text-gray-400 w-4 h-4" />
+              ) : 
+              ( 
+                displayComment &&
+                <button
+                    className="text-[var(--text-enable-color)] text-sm font-medium cursor-pointer hover:text-[#c8d7e4]"
+                    onClick={handleAddComment}
+                >
+                    Đăng
+                </button>
+              
+            )
+        }
+        {showSuggestions && mentionSuggestions.length > 0 && (
+        <div className="absolute z-50 bg-[var(--primary-color)] bottom-full left-0 mb-1 w-[250px] max-h-60 overflow-y-auto">
+          {mentionSuggestions.map((user, idx) => (
+            <div
+              key={user._id}
+              className={`flex items-center gap-2 px-3 py-2 hover:bg-[var(--secondary-color)] cursor-pointer border-b border-[var(--border-color)] ${idx === activeIndex ? "bg-[var(--secondary-color)]" : ""}`}
+              onClick={() => handleSelectMention(user)}
+            >
+              <img
+                src={user.avatar || "/default-avatar.png"}
+                alt={user.username}
+                className="w-8 h-8 rounded-full object-cover"
+              />
+              <div className="flex flex-col">
+                <span className="text-[primary-color] text-xs">{user.fullName}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        )}
+        </div>
       </div>
     </div>
   );
