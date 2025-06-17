@@ -1,14 +1,14 @@
-import axios from 'axios';
+import axios from "axios";
 
 // Tạo instance để dễ quản lý baseURL và headers
 const api = axios.create({
-    baseURL: 'http://localhost:5000/api/posts', // Đổi URL nếu khác
+    baseURL: `${import.meta.env.VITE_API_URL}/api/posts`, // Đổi URL nếu khác
     withCredentials: true, // nếu bạn dùng cookie-based auth
 });
 
 // 🛠️ Thêm interceptor để gắn token vào tất cả request
 api.interceptors.request.use((config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
@@ -17,16 +17,16 @@ api.interceptors.request.use((config) => {
 
 // Đăng bài viết (nhiều ảnh/video)
 export const createPost = async (formData) => {
-    return await api.post('/', formData, {
+    return await api.post("/", formData, {
         headers: {
-            'Content-Type': 'multipart/form-data',
+            "Content-Type": "multipart/form-data",
         },
     });
 };
 
 // Lấy tất cả bài viết của mình và người follow
 export const getAllPosts = async () => {
-    return await api.get('/');
+    return await api.get("/");
 };
 
 // Lấy bài viết của một user cụ thể
@@ -98,7 +98,7 @@ export const getUserPostCount = async (userId) => {
         const response = await api.get(`/user/${userId}/count`);
         return response.data.count; // Trả về số lượng
     } catch (error) {
-        console.error('Error fetching post count:', error);
+        console.error("Error fetching post count:", error);
         throw error.response?.data || error;
     }
 };
@@ -109,7 +109,7 @@ export const getReplyProfile = async (commentId) => {
         const response = await api.get(`/comments/${commentId}/reply-profile`);
         return response.data.profile;
     } catch (error) {
-        console.error('Lỗi khi lấy reply profile:', error);
+        console.error("Lỗi khi lấy reply profile:", error);
         throw error.response?.data || error;
     }
 };
@@ -120,7 +120,7 @@ export const getReplyChain = async (commentId) => {
         const response = await api.get(`/comments/${commentId}/reply-chain`);
         return response.data.chain; // Trả về mảng các commentId từ gốc đến gần nhất
     } catch (error) {
-        console.error('Lỗi khi lấy reply chain:', error);
+        console.error("Lỗi khi lấy reply chain:", error);
         throw error.response?.data || error;
     }
 };

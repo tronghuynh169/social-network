@@ -53,9 +53,7 @@ const CreateMenuPost = ({ onClose }) => {
               </button>
               <PostModal isOpen={showModal} onClose={() => setShowModal(false)} />
 
-              <button className="flex justify-between items-center w-full p-3 text-sm hover:bg-neutral-700 cursor-pointer">
-                AI <Sparkles size={18} />
-              </button>
+              
             </div>
           </motion.div>
       </AnimatePresence>

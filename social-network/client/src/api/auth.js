@@ -1,6 +1,6 @@
-import axios from 'axios';
+import axios from "axios";
 
-const API_URL = 'http://localhost:5000/api/auth';
+const API_URL = `${import.meta.env.VITE_API_URL}/api/auth`;
 
 export const register = async (userData) => {
     return axios.post(`${API_URL}/register`, userData);
@@ -15,7 +15,7 @@ export const forgotPassword = async (email) => {
 };
 
 export const resetPassword = (token, newPassword) => {
-    console.log('📤 Gửi request đến:', `/api/auth/reset-password/${token}`);
+    console.log("📤 Gửi request đến:", `/api/auth/reset-password/${token}`);
 
     return axios.post(`${API_URL}/reset-password/${token}`, {
         password: newPassword,

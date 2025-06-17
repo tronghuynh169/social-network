@@ -19,7 +19,11 @@ const app = express();
 app.use(express.json());
 app.use(
     cors({
-        origin: "http://localhost:5173", // Frontend URL
+        origin: [
+            "http://localhost:5173",
+            "https://largest-risks-sd-proceedings.trycloudflare.com", // FE cloudflare tunnel
+            "https://markets-nicholas-driven-andorra.trycloudflare.com", // BE cloudflare tunnel
+        ], // Frontend URL
         credentials: true,
     })
 );
@@ -32,7 +36,10 @@ app.use(express.static(path.join(__dirname, "public")));
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:5173",
+        origin: [
+            "http://localhost:5173",
+            "https://largest-risks-sd-proceedings.trycloudflare.com", // FE cloudflare tunnel
+        ],
         credentials: true,
     },
 });
